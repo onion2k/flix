@@ -118,7 +118,7 @@ origin is already allowed by `default-src 'self'`; checked in part 2).
 
 # Rows that show they scroll
 
-State: agreed 2026-11-22.
+State: landed on main at 454c8df, 2026-11-22.
 
 The owner asked on 2026-11-22 for the scrollbars under the rows to go, as on
 Netflix, and for it to be very clear that the rows scroll. From two mocks
@@ -139,4 +139,6 @@ Previous and Next buttons: the arrows take their place.
   and which shows, in words as well as marks.
 - Built after part 3 of the plan above, tests first, as before.
 
-- [ ] 1. Hidden scrollbars, edge arrows and page marks.
+- [x] 1. Hidden scrollbars, edge arrows and page marks. A page mark is a
+      place the arrows go, and an arrow's landing is told to a screen
+      reader, politely, and only after a press.
