@@ -117,6 +117,60 @@ describe('entryShape', () => {
   });
 });
 
+describe('entryShape, previews', () => {
+  const stills = (count: number) =>
+    Array.from(
+      { length: count },
+      (_, at) => `../pictures/previews/x-${at}.webp`,
+    );
+
+  it('passes an entry with none named, as it always did', () => {
+    expect(refusals(shape, goodEntry)).toEqual([]);
+  });
+
+  it('passes one to four previews', () => {
+    for (const count of [1, 2, 3, 4])
+      expect(
+        refusals(shape, { ...goodEntry, previews: stills(count) }),
+        `${count}`,
+      ).toEqual([]);
+  });
+
+  it('refuses an empty list, at previews', () => {
+    const found = refusals(shape, { ...goodEntry, previews: [] });
+    expect(found.map((f) => f.path)).toEqual(['previews']);
+  });
+
+  it('refuses five, at previews', () => {
+    const found = refusals(shape, { ...goodEntry, previews: stills(5) });
+    expect(found.map((f) => f.path)).toEqual(['previews']);
+    expect(found[0]?.code).toBe('too_big');
+  });
+
+  it('refuses a preview that is not a picture, at its place in the list', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      previews: ['../pictures/previews/x-0.webp', ''],
+    });
+    expect(found.map((f) => f.path)).toEqual(['previews.1']);
+  });
+
+  it('refuses a list that is not a list, at previews', () => {
+    const found = refusals(shape, { ...goodEntry, previews: 'a.webp' });
+    expect(new Set(found.map((f) => f.path)).size).toBe(1);
+    expect(found.map((f) => f.path)).toContain('previews');
+  });
+
+  it('still refuses an unknown field beside them, naming it', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      previews: stills(1),
+      preview: 'x',
+    });
+    expect(found[0]?.keys).toEqual(['preview']);
+  });
+});
+
 describe('catalogueShape', () => {
   it('passes a good catalogue file', () => {
     expect(refusals(catalogueShape, goodCatalogue)).toEqual([]);

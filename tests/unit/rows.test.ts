@@ -96,6 +96,19 @@ describe('buildPage', () => {
     expect(card).not.toHaveProperty('linkName');
   });
 
+  it("passes an entry's previews through, in order, and gives a card none where it has none", () => {
+    const stills = [{ src: '/p1.webp' }, { src: '/p2.webp' }];
+    const page = buildPage(
+      [{ ...entry('alpha', true), previews: stills }, ...entries.slice(1)],
+      config,
+    );
+    const card = page.rows[0]?.cards[1];
+    expect(card?.previews).toEqual(stills);
+    expect(card?.previews?.[0]).toBe(stills[0]);
+    expect(page.rows[0]?.cards[0]).not.toHaveProperty('previews');
+    expect(page.feature).not.toHaveProperty('previews');
+  });
+
   it('passes the picture through untouched, the same object', () => {
     const page = buildPage(entries, config);
     expect(page.rows[0]?.cards[1]?.picture).toBe(entries[0]?.picture);

@@ -73,7 +73,10 @@ commit of its own that says what it is for.
   the clock's reading handed in (whole days since 1970-01-01 UTC, modulo
   the count). `buildPage` returns `candidates`: `feature`, then the
   optional `features` list of `catalogue.json`, each refused by name if it
-  has no file, repeats or is `feature` itself.
+  has no file, repeats or is `feature` itself. `preview.ts` says which of
+  a card's previews shows, from how long it has been hovered or focused
+  (time handed in): none for 600ms, then each for 1000ms, then none for
+  good, so under 5s for the four an entry's `previews` may hold.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
