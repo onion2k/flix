@@ -1,6 +1,6 @@
 # Ooerflix: the first site
 
-State: building, part 3 of 6.
+State: building, part 4 of 6.
 
 ## Context
 
@@ -168,7 +168,7 @@ session. Each part is checked here against its files before the next.
       cases, Gates, Done here, What is not held, How a change lands
       (merge commit, nothing pushed without asking, stale after 30 days:
       the kit's defaults until you say otherwise). Updated as parts land.
-- [ ] **3. The catalogue.** `src/catalogue/{schema,rows}.ts` with
+- [x] **3. The catalogue.** `src/catalogue/{schema,rows}.ts` with
       `tests/unit/{schema,rows,structure}.test.ts` first (spec 1, 2, 8;
       and that `src/catalogue` imports nothing of the page); the entries,
       `rows.yaml` and pictures of the table above; live screenshots of
