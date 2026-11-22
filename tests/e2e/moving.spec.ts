@@ -411,7 +411,7 @@ test.describe('keys', () => {
     expect(await keysPrevented(page)).toEqual([false]);
   });
 
-  test('a nav link, a row button and the page are left to the browser', async ({
+  test('a nav link, a row arrow and the page are left to the browser', async ({
     page,
   }) => {
     await ready(page);

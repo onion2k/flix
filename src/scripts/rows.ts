@@ -11,12 +11,18 @@
 // string and sets no style, since the content policy refuses both, and it adds
 // three listeners and one observer to each strip, once, so nothing it keeps
 // grows. Smoothness is the stylesheet's and only where motion is allowed.
-// The words are not a live region: a glide would otherwise read out a page
-// for every frame it crossed, so they are written only when the page changes
-// and are read in their place in the row, on demand. Without it a row that
+// The words in each row are not a live region: a glide would otherwise read
+// out a page for every frame it crossed, so they are written only when the
+// page changes and are read in their place in the row, on demand. Where an
+// arrow press lands is told by the page's one polite live region instead,
+// empty until then: it is filled with the row's words only once a press has
+// settled (the strip's `scrollend`), and no other scroll, by wheel, drag or
+// key, touches it. Without it a row that
 // overflows has no arrows and keeps its scrollbar, which is the page working
 // without script, not a fault.
 import { paging } from '../catalogue/paging';
+
+const live = document.querySelector<HTMLElement>('[data-rows-live]');
 
 for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
   const strip = row.querySelector<HTMLElement>('ul.strip');
@@ -41,6 +47,7 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
       scrollLeft: strip.scrollLeft,
       clientWidth: strip.clientWidth,
       scrollWidth: strip.scrollWidth,
+      cardWidth: strip.querySelector('li')?.offsetWidth ?? 0,
     });
 
   /** Hides an arrow, and if it had focus hands it to the strip, so that a keyboard is not sent back to the top of the page. */
@@ -86,13 +93,40 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
     if (words.textContent !== said) words.textContent = said;
   };
 
+  // Whether the strip is on its way somewhere an arrow sent it: only then is
+  // where it lands told to a screen reader.
+  let sent = false;
+
+  const go = (to: number) => {
+    if (Math.abs(to - strip.scrollLeft) <= 1) return;
+    sent = true;
+    strip.scrollTo({ left: to });
+    // A browser with no scrollend cannot say when the strip has stopped, so
+    // the words of where it is going are given at once.
+    if (!('onscrollend' in window) && live !== null) {
+      const stops = read().stops;
+      let at = 0;
+      for (const [index, stop] of stops.entries())
+        if (Math.abs(stop - to) < Math.abs((stops[at] ?? 0) - to)) at = index;
+      live.textContent = `Page ${at + 1} of ${stops.length}, ${title}`;
+      sent = false;
+    }
+  };
+
   previous.addEventListener('click', () => {
     const now = read();
-    if (now.previous.live) strip.scrollTo({ left: now.previous.to });
+    if (now.previous.live) go(now.previous.to);
   });
   next.addEventListener('click', () => {
     const now = read();
-    if (now.next.live) strip.scrollTo({ left: now.next.to });
+    if (now.next.live) go(now.next.to);
+  });
+
+  strip.addEventListener('scrollend', () => {
+    if (!sent) return;
+    sent = false;
+    update();
+    if (live !== null) live.textContent = words.textContent;
   });
 
   // A browser scrolls a focused card into view only when none of it shows, so

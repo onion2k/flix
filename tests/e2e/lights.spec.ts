@@ -50,7 +50,7 @@ async function quiet(page: Page): Promise<void> {
   );
 }
 
-/** The page has loaded and script has run (the row buttons have their state). */
+/** The page has loaded and script has run (the rows have been given their arrows). */
 async function ready(page: Page): Promise<void> {
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();

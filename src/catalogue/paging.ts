@@ -1,7 +1,7 @@
 // Says, from where a row's strip is scrolled, whether it overflows, whether
 // the Previous and Next arrows are live and where each would take it, and how
-// many pages the strip has and which one it is on (a page is the window, as
-// Next takes it). It is numbers in and numbers out, with no page in it, so
+// where the row's stops are: its pages, which are the places the arrows take
+// it, the marks that are drawn and the lit one. It is numbers in and numbers out, with no page in it, so
 // that the end cases are tried in a unit test. Without it the rule would live
 // in the script that works the arrows, and an arrow live at an end with
 // nowhere to go, or a page mark that said the wrong page, would be found only
@@ -12,6 +12,8 @@ export interface StripScroll {
   scrollLeft: number;
   clientWidth: number;
   scrollWidth: number;
+  /** One card's width, which says how little of a strip is too little to be a page. */
+  cardWidth: number;
 }
 
 /** One arrow: whether it works, and the scrollLeft it would move to. */
@@ -24,9 +26,11 @@ export interface Paging {
   overflows: boolean;
   previous: Direction;
   next: Direction;
-  /** How many pages the strip has: one where it fits. */
+  /** The places the arrows take the strip, as scrollLeft: from 0, ending at the furthest. */
+  stops: number[];
+  /** How many stops there are, and so marks: one where the strip fits. */
   pages: number;
-  /** The page the strip is on, counted from 0, and always one that exists. */
+  /** The stop the strip is at or nearest, counted from 0, and always one that exists. */
   page: number;
 }
 
@@ -39,38 +43,54 @@ export function paging({
   scrollLeft,
   clientWidth,
   scrollWidth,
+  cardWidth,
 }: StripScroll): Paging {
   const furthest = Math.max(0, scrollWidth - clientWidth);
   const overflows = scrollWidth - clientWidth > TOLERANCE;
-  // A page is the window, so the way to the end is that many pages and a part
-  // of one more. The pixel forgiven at the end is forgiven here too, or a
-  // strip a pixel over a whole number of pages would show a page of no width.
-  const pages =
-    overflows && clientWidth > 0
-      ? 1 + Math.ceil((furthest - TOLERANCE) / clientWidth)
-      : 1;
   const next = furthest - scrollLeft > TOLERANCE;
   const previous = scrollLeft > TOLERANCE;
-  // The nearest page by position, except that the two ends are the first and
-  // last page however short: the end of a strip that is two and a half
-  // windows wide is only one and a half in, and would round to the middle.
-  let page = 0;
+
+  // The stops: the start, then a window on at a time, and the end. A stop with
+  // less than a card of strip left after it is not kept: the end is the stop
+  // in its place, since the strip would come to rest there anyway, and so no
+  // mark is a place the arrows cannot take it.
+  const stops = [0];
   if (overflows && clientWidth > 0) {
-    if (!next) page = pages - 1;
-    else if (previous)
-      page = Math.min(pages - 1, Math.round(scrollLeft / clientWidth));
+    for (
+      let at = clientWidth;
+      at < furthest && furthest - at >= cardWidth;
+      at += clientWidth
+    )
+      stops.push(at);
+    stops.push(furthest);
   }
+
+  // A strip comes to rest on a card's start, which is short of a stop or past
+  // it by less than a card, so a stop is passed when the strip is within a
+  // card of it: Next goes to the first stop a card or more ahead, and
+  // Previous to the last a card or more behind, and the end or the start where
+  // there is none.
+  const ahead = stops.find((stop) => stop > scrollLeft + cardWidth);
+  const behind = stops.findLast((stop) => stop < scrollLeft - cardWidth);
+
+  let page = 0;
+  stops.forEach((stop, at) => {
+    if (Math.abs(stop - scrollLeft) < Math.abs((stops[page] ?? 0) - scrollLeft))
+      page = at;
+  });
+
   return {
-    pages,
-    page,
     overflows,
+    stops,
+    pages: stops.length,
+    page,
     previous: {
       live: overflows && previous,
-      to: Math.max(0, scrollLeft - clientWidth),
+      to: behind ?? 0,
     },
     next: {
       live: overflows && next,
-      to: Math.min(furthest, scrollLeft + clientWidth),
+      to: ahead ?? furthest,
     },
   };
 }

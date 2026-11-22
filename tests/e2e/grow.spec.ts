@@ -82,7 +82,7 @@ function watch(page: Page): { urls: string[] } {
 
 /**
  * The page with the clock installed from the start and then held, and script
- * run (the row buttons have their state).
+ * run (the rows have their arrows).
  */
 async function opened(page: Page): Promise<void> {
   await page.clock.install({ time: DAY_ZERO });
@@ -656,7 +656,7 @@ test.describe('only one, and what closes it', () => {
     await opens(page, await idOf(b));
   });
 
-  test('scrolling its strip by the row button closes it at once', async ({
+  test('scrolling its strip by a row’s arrow closes it at once', async ({
     page,
   }) => {
     await opened(page);
@@ -665,7 +665,7 @@ test.describe('only one, and what closes it', () => {
     await tabTo(page, id);
     await pastPause(page);
     await opens(page, id);
-    // The button is pressed by script so that neither the mouse nor focus
+    // The arrow is pressed by script so that neither the mouse nor focus
     // moves: what closes it is the strip's scroll and nothing else.
     await page.evaluate(() =>
       document

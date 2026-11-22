@@ -4,9 +4,11 @@
 // Tab order and not merely dimmed), each as tall as the cards' pictures and at
 // the window's edge, a click or Enter moving the strip about a page, the old
 // Previous and Next in the row's heading gone, and the page marks and the
-// words that say which page the strip is on. The counts of pages and the
-// place of the lit mark are worked out here from the strip's own widths and
-// not from the rule under test. Waits are on a state reached (a scroll end, a
+// words that say which page the strip is on. A mark is a stop, a place the
+// arrows take the strip, and the one live region for the rows says where an
+// arrow press has landed, and says nothing for any other scroll. The stops and
+// the place of the lit mark are worked out here from the strip's own widths
+// and a card's and not from the rule under test. Waits are on a state reached (a scroll end, a
 // position), never on a time.
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
@@ -68,9 +70,7 @@ async function ready(page: Page): Promise<void> {
 /**
  * Moves a strip part way along with the mouse's wheel, over the empty band
  * below its cards (so that no card is pointed at and none grows), and waits
- * for it to stop. A click on Next goes a page, which in a row of two or three
- * pages is already the end, so the middle is reached the way a trackpad
- * reaches it.
+ * for it to stop: a scroll that is not an arrow's, as a trackpad makes it.
  */
 async function toMiddle(page: Page, list: Locator): Promise<void> {
   await list.scrollIntoViewIfNeeded();
@@ -87,24 +87,40 @@ async function toMiddle(page: Page, list: Locator): Promise<void> {
   );
 }
 
-/** How many pages the strip has, from its own widths: the width over the window, up. */
-function pagesOf(list: Locator): Promise<number> {
-  return list.evaluate((el) =>
-    el.scrollWidth - el.clientWidth > 1
-      ? Math.ceil(el.scrollWidth / el.clientWidth)
-      : 1,
-  );
-}
-
-/** The page a strip is on, from where it is: the nearest, and the ends are the first and last. */
-function pageOf(list: Locator): Promise<number> {
+/**
+ * The row's stops, worked out here from the strip's own widths and the card's
+ * and not from the rule under test: the start, a window on at a time, and the
+ * end in place of any stop with less than a card of strip left after it.
+ */
+function stopsOf(list: Locator): Promise<number[]> {
   return list.evaluate((el) => {
     const furthest = el.scrollWidth - el.clientWidth;
-    if (furthest <= 1) return 0;
-    const pages = Math.ceil(el.scrollWidth / el.clientWidth);
-    if (furthest - el.scrollLeft <= 1) return pages - 1;
-    return Math.min(pages - 1, Math.round(el.scrollLeft / el.clientWidth));
+    if (furthest <= 1) return [0];
+    const card = el.querySelector('li')?.getBoundingClientRect().width ?? 0;
+    const found = [0];
+    for (let at = el.clientWidth; at < furthest; at += el.clientWidth) {
+      if (furthest - at < card) break;
+      found.push(at);
+    }
+    found.push(furthest);
+    return found;
   });
+}
+
+/** How many stops, and so marks, the strip has. */
+async function pagesOf(list: Locator): Promise<number> {
+  return (await stopsOf(list)).length;
+}
+
+/** The stop a strip is at or nearest to. */
+async function pageOf(list: Locator): Promise<number> {
+  const stops = await stopsOf(list);
+  const at = await left(list);
+  let best = 0;
+  stops.forEach((stop, index) => {
+    if (Math.abs(stop - at) < Math.abs((stops[best] ?? 0) - at)) best = index;
+  });
+  return best;
 }
 
 test.describe('at a desk', () => {
@@ -209,41 +225,6 @@ test.describe('at a desk', () => {
     }
   });
 
-  test('the arrows cover the cards’ pictures, as tall as them and aligned, at the window’s edges', async ({
-    page,
-  }) => {
-    const first = catalogue.rows[0];
-    if (first === undefined) throw new Error('no rows were read');
-    const list = strip(page, first.id);
-    await toMiddle(page, list);
-    await expect(previous(page, first.id)).toBeVisible();
-    await expect(next(page, first.id)).toBeVisible();
-    const picture = await section(page, first.id)
-      .locator('li.card .frame')
-      .first()
-      .boundingBox();
-    const window = await page.evaluate(
-      () => document.documentElement.clientWidth,
-    );
-    expect(picture).not.toBeNull();
-    for (const which of [previous, next]) {
-      const box = await which(page, first.id).boundingBox();
-      expect(box).not.toBeNull();
-      expect(box?.y ?? 0).toBeCloseTo(picture?.y ?? -1, 0);
-      expect(box?.height ?? 0).toBeCloseTo(picture?.height ?? -1, 0);
-      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
-    }
-    const before = await previous(page, first.id).boundingBox();
-    const after = await next(page, first.id).boundingBox();
-    expect(before?.x ?? 99).toBeLessThanOrEqual(1);
-    expect((after?.x ?? 0) + (after?.width ?? 0)).toBeGreaterThanOrEqual(
-      window - 1,
-    );
-    expect((after?.x ?? 0) + (after?.width ?? 0)).toBeLessThanOrEqual(
-      window + 1,
-    );
-  });
-
   test('an arrow is over the strip’s cards, and under nothing of the row’s', async ({
     page,
   }) => {
@@ -295,41 +276,6 @@ test.describe('at a desk', () => {
     await next(page, first.id).focus();
     await untilScrolled(list, () => page.keyboard.press('Space'));
     expect(await left(list)).toBeGreaterThan(0);
-  });
-
-  test('both arrows part way along, and at the end Previous and no Next', async ({
-    page,
-  }) => {
-    // Found by shape: a row with room for a middle, so that a step by the
-    // wheel is neither the start nor the end.
-    let target: (typeof catalogue.rows)[number] | undefined;
-    for (const each of catalogue.rows)
-      if ((await pagesOf(strip(page, each.id))) >= 3) target = each;
-    if (target === undefined) throw new Error('no row has three pages');
-    const list = strip(page, target.id);
-    await toMiddle(page, list);
-    await expect(previous(page, target.id)).toBeVisible();
-    await expect(next(page, target.id)).toBeVisible();
-    let clicks = 0;
-    while ((await next(page, target.id).count()) > 0) {
-      clicks += 1;
-      expect(clicks).toBeLessThanOrEqual(target.entries.length);
-      await untilScrolled(list, () => next(page, target.id).click());
-      await atRest(list);
-    }
-    await expect(next(page, target.id)).toHaveCount(0);
-    await expect(previous(page, target.id)).toBeVisible();
-    const furthest = await list.evaluate(
-      (el) => el.scrollWidth - el.clientWidth,
-    );
-    expect(await left(list)).toBeGreaterThan(furthest - 2);
-    // And back to the start: Previous goes, Next returns.
-    while ((await previous(page, target.id).count()) > 0) {
-      await untilScrolled(list, () => previous(page, target.id).click());
-      await atRest(list);
-    }
-    expect(await left(list)).toBe(0);
-    await expect(next(page, target.id)).toBeVisible();
   });
 
   test('an arrow that goes while it has focus hands focus to the strip, not to the page', async ({
@@ -427,7 +373,7 @@ test.describe('at a desk', () => {
     if (first === undefined) throw new Error('no rows were read');
     const list = strip(page, first.id);
     const pages = await pagesOf(list);
-    expect(pages).toBeGreaterThan(2);
+    expect(pages).toBeGreaterThan(1);
     const seen: number[] = [];
     let clicks = 0;
     while ((await next(page, first.id).count()) > 0) {
@@ -450,8 +396,7 @@ test.describe('at a desk', () => {
     }
     // It went from the first page to the last.
     expect(seen.at(-1)).toBe(pages - 1);
-    // And back to the start, and to a place in the middle by the wheel, where
-    // the lit mark is neither the first nor the last.
+    // And back to the start, where the first mark is lit.
     while ((await previous(page, first.id).count()) > 0) {
       await untilScrolled(list, () => previous(page, first.id).click());
       await atRest(list);
@@ -459,20 +404,6 @@ test.describe('at a desk', () => {
     await expect(marks(page, first.id).first()).toHaveAttribute(
       'data-current',
       '',
-    );
-    await toMiddle(page, list);
-    const middle = await pageOf(list);
-    expect(middle).toBeGreaterThan(0);
-    expect(middle).toBeLessThan(pages - 1);
-    await expect(marks(page, first.id).nth(middle)).toHaveAttribute(
-      'data-current',
-      '',
-    );
-    await expect(
-      section(page, first.id).locator('.row-pages [data-current]'),
-    ).toHaveCount(1);
-    await expect(words(page, first.id)).toHaveText(
-      `Page ${middle + 1} of ${pages}, ${first.title}`,
     );
   });
 
@@ -516,6 +447,147 @@ test.describe('at a desk', () => {
     expect(state.scrolls).toBeGreaterThan(3);
     expect(state.writes).toBeGreaterThan(0);
     expect(state.writes).toBeLessThanOrEqual(2);
+  });
+
+  test('the first row at a desk has two marks, and one Next goes to the end', async ({
+    page,
+  }) => {
+    const first = catalogue.rows[0];
+    if (first === undefined) throw new Error('no rows were read');
+    const list = strip(page, first.id);
+    // The row is a window and a bit: a mark is a place the arrows go, so two.
+    await expect(marks(page, first.id)).toHaveCount(2);
+    const furthest = await list.evaluate(
+      (el) => el.scrollWidth - el.clientWidth,
+    );
+    expect(furthest).toBeGreaterThan(0);
+    await untilScrolled(list, () => next(page, first.id).click());
+    await atRest(list);
+    expect(await left(list)).toBeGreaterThan(furthest - 2);
+    await expect(next(page, first.id)).toHaveCount(0);
+    await expect(marks(page, first.id).nth(1)).toHaveAttribute(
+      'data-current',
+      '',
+    );
+    await untilScrolled(list, () => previous(page, first.id).click());
+    await atRest(list);
+    expect(await left(list)).toBe(0);
+    await expect(marks(page, first.id).nth(0)).toHaveAttribute(
+      'data-current',
+      '',
+    );
+  });
+
+  test('every mark is a place the arrows go: Next from each stop lands on the next', async ({
+    page,
+  }) => {
+    let reached = 0;
+    for (const each of catalogue.rows) {
+      const list = strip(page, each.id);
+      if (!(await overflows(list))) continue;
+      const stops = await stopsOf(list);
+      expect(stops.length).toBeGreaterThan(1);
+      let landed = 1;
+      while ((await next(page, each.id).count()) > 0) {
+        await untilScrolled(list, () => next(page, each.id).click());
+        await atRest(list);
+        landed += 1;
+        expect(landed).toBeLessThanOrEqual(stops.length);
+      }
+      // Next ran out exactly when the marks did.
+      expect(landed).toBe(stops.length);
+      reached += 1;
+    }
+    expect(reached).toBeGreaterThan(0);
+  });
+
+  // The live region: one for the page's rows, empty until an arrow has been
+  // pressed and the strip has stopped, and then the row's words, once. Nothing
+  // but an arrow fills it, so a wheel, a drag or a key on the strip is silent.
+  const LIVE = '[data-rows-live]';
+
+  test('the live region is one, polite, and empty when the page has loaded', async ({
+    page,
+  }) => {
+    await expect(page.locator(LIVE)).toHaveCount(1);
+    await expect(page.locator(LIVE)).toHaveAttribute('aria-live', 'polite');
+    await expect(page.locator(LIVE)).toHaveText('');
+  });
+
+  test('after a Next click and the strip settling, the live region holds the row’s words, once', async ({
+    page,
+  }) => {
+    const first = catalogue.rows[0];
+    if (first === undefined) throw new Error('no rows were read');
+    const list = strip(page, first.id);
+    await page.evaluate((selector) => {
+      const target = document.querySelector(selector);
+      if (target === null) throw new Error('no live region');
+      const state = { writes: 0 };
+      new MutationObserver((records) => {
+        state.writes += records.length;
+      }).observe(target, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+      (window as unknown as { live: typeof state }).live = state;
+    }, LIVE);
+    const pages = await pagesOf(list);
+    await untilScrolled(list, () => next(page, first.id).click());
+    await atRest(list);
+    const at = await pageOf(list);
+    await expect(page.locator(LIVE)).toHaveText(
+      `Page ${at + 1} of ${pages}, ${first.title}`,
+    );
+    const writes = await page.evaluate(
+      () => (window as unknown as { live: { writes: number } }).live.writes,
+    );
+    expect(writes, 'the region was written once').toBeGreaterThan(0);
+    expect(writes, 'and not once a frame').toBeLessThanOrEqual(2);
+  });
+
+  test('a wheel scroll leaves the live region as it was, empty or filled', async ({
+    page,
+  }) => {
+    const first = catalogue.rows[0];
+    if (first === undefined) throw new Error('no rows were read');
+    const list = strip(page, first.id);
+    await toMiddle(page, list);
+    await expect(page.locator(LIVE)).toHaveText('');
+    // And with something said, a later wheel scroll does not change it.
+    await untilScrolled(list, () => next(page, first.id).click());
+    await atRest(list);
+    const said = await page.locator(LIVE).textContent();
+    expect(said).not.toBe('');
+    await page.evaluate((selector) => {
+      const target = document.querySelector(selector);
+      const state = { writes: 0 };
+      new MutationObserver((records) => {
+        state.writes += records.length;
+      }).observe(target as Node, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+      (window as unknown as { live: typeof state }).live = state;
+    }, LIVE);
+    await list.focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect
+      .poll(() => left(list))
+      .toBeLessThan(
+        (await list.evaluate((el) => el.scrollWidth - el.clientWidth)) - 2,
+      );
+    await atRest(list);
+    await page.mouse.wheel(-200, 0);
+    await atRest(list);
+    expect(await page.locator(LIVE).textContent()).toBe(said);
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { live: { writes: number } }).live.writes,
+      ),
+    ).toBe(0);
   });
 
   test('the words are not a live region, so a glide announces nothing', async ({
@@ -572,6 +644,114 @@ test.describe('where a page is shorter than the row', () => {
     await expect(next(page, first.id)).toHaveCount(0);
     await previous(page, first.id).click();
     await expect.poll(() => left(list)).toBeLessThan(furthest - width * 0.6);
+  });
+});
+
+test.describe('where a row has three stops or more', () => {
+  test.use({ viewport: { width: 700, height: 1000 } });
+
+  test.beforeEach(async ({ page }) => {
+    await ready(page);
+  });
+
+  test('the arrows cover the cards’ pictures, as tall as them and aligned, at the window’s edges', async ({
+    page,
+  }) => {
+    const first = catalogue.rows[0];
+    if (first === undefined) throw new Error('no rows were read');
+    const list = strip(page, first.id);
+    await untilScrolled(list, () => next(page, first.id).click());
+    await atRest(list);
+    await expect(previous(page, first.id)).toBeVisible();
+    await expect(next(page, first.id)).toBeVisible();
+    const picture = await section(page, first.id)
+      .locator('li.card .frame')
+      .first()
+      .boundingBox();
+    const window = await page.evaluate(
+      () => document.documentElement.clientWidth,
+    );
+    expect(picture).not.toBeNull();
+    for (const which of [previous, next]) {
+      const box = await which(page, first.id).boundingBox();
+      expect(box).not.toBeNull();
+      expect(box?.y ?? 0).toBeCloseTo(picture?.y ?? -1, 0);
+      expect(box?.height ?? 0).toBeCloseTo(picture?.height ?? -1, 0);
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    }
+    const before = await previous(page, first.id).boundingBox();
+    const after = await next(page, first.id).boundingBox();
+    expect(before?.x ?? 99).toBeLessThanOrEqual(1);
+    expect((after?.x ?? 0) + (after?.width ?? 0)).toBeGreaterThanOrEqual(
+      window - 1,
+    );
+    expect((after?.x ?? 0) + (after?.width ?? 0)).toBeLessThanOrEqual(
+      window + 1,
+    );
+  });
+
+  test('both arrows part way along, and at the end Previous and no Next', async ({
+    page,
+  }) => {
+    // Found by shape: a row with three stops or more, so that a step by the
+    // arrow is neither the start nor the end.
+    let target: (typeof catalogue.rows)[number] | undefined;
+    for (const each of catalogue.rows)
+      if ((await pagesOf(strip(page, each.id))) >= 3) target = each;
+    if (target === undefined) throw new Error('no row has three stops');
+    const list = strip(page, target.id);
+    await untilScrolled(list, () => next(page, target.id).click());
+    await atRest(list);
+    await expect(previous(page, target.id)).toBeVisible();
+    await expect(next(page, target.id)).toBeVisible();
+    let clicks = 0;
+    while ((await next(page, target.id).count()) > 0) {
+      clicks += 1;
+      expect(clicks).toBeLessThanOrEqual(target.entries.length);
+      await untilScrolled(list, () => next(page, target.id).click());
+      await atRest(list);
+    }
+    await expect(next(page, target.id)).toHaveCount(0);
+    await expect(previous(page, target.id)).toBeVisible();
+    const furthest = await list.evaluate(
+      (el) => el.scrollWidth - el.clientWidth,
+    );
+    expect(await left(list)).toBeGreaterThan(furthest - 2);
+    // And back to the start: Previous goes, Next returns.
+    while ((await previous(page, target.id).count()) > 0) {
+      await untilScrolled(list, () => previous(page, target.id).click());
+      await atRest(list);
+    }
+    expect(await left(list)).toBe(0);
+    await expect(next(page, target.id)).toBeVisible();
+  });
+
+  test('the lit mark and the words follow the arrows through a middle stop', async ({
+    page,
+  }) => {
+    await ready(page);
+    const first = catalogue.rows[0];
+    if (first === undefined) throw new Error('no rows were read');
+    const list = strip(page, first.id);
+    const pages = await pagesOf(list);
+    expect(pages).toBeGreaterThan(2);
+    await expect(marks(page, first.id)).toHaveCount(pages);
+    const lit: number[] = [];
+    while ((await next(page, first.id).count()) > 0) {
+      await untilScrolled(list, () => next(page, first.id).click());
+      await atRest(list);
+      const at = await pageOf(list);
+      lit.push(at);
+      await expect(marks(page, first.id).nth(at)).toHaveAttribute(
+        'data-current',
+        '',
+      );
+      await expect(words(page, first.id)).toHaveText(
+        `Page ${at + 1} of ${pages}, ${first.title}`,
+      );
+    }
+    // Every stop was lit in turn, the middle ones included.
+    expect(lit).toEqual(Array.from({ length: pages - 1 }, (_, i) => i + 1));
   });
 });
 

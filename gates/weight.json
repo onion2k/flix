@@ -10,13 +10,13 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 75612,
-        "gzip": 12598
+        "bytes": 75677,
+        "gzip": 12619
       },
       "script": {
         "count": 1,
-        "bytes": 13638,
-        "gzip": 4982
+        "bytes": 14159,
+        "gzip": 5172
       },
       "stylesheet": {
         "count": 0,
@@ -43,13 +43,13 @@
     "1440x1000 day 1": {
       "document": {
         "count": 1,
-        "bytes": 75612,
-        "gzip": 12598
+        "bytes": 75677,
+        "gzip": 12619
       },
       "script": {
         "count": 1,
-        "bytes": 13638,
-        "gzip": 4982
+        "bytes": 14159,
+        "gzip": 5172
       },
       "stylesheet": {
         "count": 0,
@@ -76,13 +76,13 @@
     "1440x1000 day 2": {
       "document": {
         "count": 1,
-        "bytes": 75612,
-        "gzip": 12598
+        "bytes": 75677,
+        "gzip": 12619
       },
       "script": {
         "count": 1,
-        "bytes": 13638,
-        "gzip": 4982
+        "bytes": 14159,
+        "gzip": 5172
       },
       "stylesheet": {
         "count": 0,
@@ -109,13 +109,13 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 75612,
-        "gzip": 12598
+        "bytes": 75677,
+        "gzip": 12619
       },
       "script": {
         "count": 1,
-        "bytes": 13638,
-        "gzip": 4982
+        "bytes": 14159,
+        "gzip": 5172
       },
       "stylesheet": {
         "count": 0,

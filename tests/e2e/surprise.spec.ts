@@ -496,7 +496,7 @@ test.describe('too few playable cards', () => {
   }) => {
     const page = await onlyPlayable(browser, baseURL ?? '', 1);
     await page.goto('/');
-    // Script has run once the row buttons have taken their state.
+    // Script has run once the rows have been given their arrows.
     await expect(
       page.locator('section.row[data-arrows]').first(),
     ).toBeAttached();

@@ -120,13 +120,13 @@ for (const [width, height] of [
 ] as const) {
   test(`the home page at ${width}`, async ({ page }) => {
     await openWhole(page, '/', width, height, async (opened) => {
-      // Script has run once the row buttons have taken their state, except
-      // at 320, where a row is stacked and has none; and the header's
-      // Surprise me button is shown by the same script, at every width.
-      if (width >= 340)
-        await expect(
-          opened.locator('section.row[data-arrows]').first(),
-        ).toBeAttached();
+      // Script has run once the rows have been given their arrows (the mark
+      // is set at every width, a stacked row's included, though it draws
+      // none); and the header's Surprise me button is shown by the same
+      // script, at every width.
+      await expect(
+        opened.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       await expect(
         opened.getByRole('button', { name: 'Surprise me' }),
       ).toBeVisible();
@@ -194,7 +194,7 @@ test('the first row at 1440 part way along, with both arrows and the page marks'
   await row.evaluate((el: HTMLElement) => {
     const strip = el.querySelector<HTMLElement>('.strip');
     if (strip === null) throw new Error('the row has no strip');
-    strip.scrollTo({ left: strip.clientWidth * 0.5 });
+    strip.scrollTo({ left: strip.clientWidth * 0.6 });
   });
   await expect(row.getByRole('button', { name: /^Previous/ })).toBeVisible();
   await expect(row.getByRole('button', { name: /^Next/ })).toBeVisible();

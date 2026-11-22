@@ -44,6 +44,9 @@ for (const strip of document.querySelectorAll<HTMLElement>('ul.strip')) {
       scrollLeft: strip.scrollLeft,
       clientWidth: strip.clientWidth,
       scrollWidth: strip.scrollWidth,
+      // Only whether the strip overflows is asked, which no card's width
+      // changes.
+      cardWidth: 0,
     }).overflows;
 
   const end = (event: PointerEvent) => {

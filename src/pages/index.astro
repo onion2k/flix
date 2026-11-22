@@ -51,6 +51,7 @@ if (page.notListed.length > 0) {
   {page.rows.map((row, at) => (
     <Row row={row} at={at} />
   ))}
+  <p class="visually-hidden" aria-live="polite" data-rows-live></p>
 </Base>
 
 <script>

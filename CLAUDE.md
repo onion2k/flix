@@ -64,7 +64,8 @@ commit of its own that says what it is for.
   a catalogue that does not hold together (naming file and id) and returns
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next arrows are live, where
-  each goes, how many pages the strip has and which it is on. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
+  each goes, the row's stops (its pages: a window on from the last, the end standing
+  in for a stop with less than a card left) and which one it is at. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
   `hero.ts` says what the moving hero does at load (play its loop, offer
@@ -518,11 +519,12 @@ The nine points of the definition of done, as this project has them.
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with
   `--disable-features=OverlayScrollbar` and without `--hide-scrollbars`;
   the look pictures draw none either way.
-- **The page marks can outnumber the arrows' stops.** A page is the
-  window, so the first row at 1440 has three marks, yet Next goes from the
-  start to the end in one step (the second page is reached by wheel, drag
-  or key). The words are not a live region: a screen reader reads them in
-  place, and is told nothing as the strip moves.
+- **Only an arrow press is told to a screen reader.** The page's one
+  polite live region (`data-rows-live`, in `index.astro`) is empty until a
+  press has settled (`scrollend`), then holds the row's words; a wheel, a
+  drag or a key on the strip is silent, and a browser with no `scrollend`
+  is told at once, with where the press is going. The marks and arrows are
+  not seen by any screen reader test here.
 
 ## Keeps
 
