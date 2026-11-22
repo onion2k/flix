@@ -74,7 +74,7 @@ async function drawn(
   expect(entries.length).toBeGreaterThan(0);
   await expect.poll(() => fetched(seen, entries)).toEqual(entries);
   for (const id of entries) {
-    const img = page.locator(`[data-entry="${id}"] img:not(.previews img)`);
+    const img = page.locator(`[data-entry="${id}"] img`);
     await expect
       .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
       .toBeGreaterThan(0);

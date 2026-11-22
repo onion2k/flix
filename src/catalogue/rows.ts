@@ -30,7 +30,7 @@ export interface Entry<Picture> {
   description: string;
   picture: Picture;
   pictureAlt: string;
-  previews?: Picture[] | undefined;
+  loop?: string | undefined;
   url?: string | undefined;
 }
 
@@ -42,8 +42,8 @@ export interface Card<Picture> {
   description: string;
   picture: Picture;
   pictureAlt: string;
-  /** Stills shown in turn on hover or focus; absent where there are none. */
-  previews?: Picture[];
+  /** The entry's loop as written, a path relative to its file; absent where there is none. */
+  loop?: string;
   label: string;
   href?: string;
   /** What the link says to a sighted reader, where there is a link. */
@@ -86,7 +86,7 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
     pictureAlt: entry.pictureAlt,
     label: `${KIND_WORDS[entry.kind]} · ${playable ? 'Play now' : 'In the workshop'}`,
   };
-  if (entry.previews !== undefined) card.previews = entry.previews;
+  if (entry.loop !== undefined) card.loop = entry.loop;
   if (entry.url !== undefined) {
     card.href = entry.url;
     card.linkText = `Play ${entry.title}`;

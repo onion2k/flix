@@ -59,8 +59,6 @@ const EDGES: [string, string, string][] = [
   ['--color-accent', '--color-ground', 'a live row button edge'],
   ['--color-text', '--color-ground', 'a disabled row button edge'],
   ['--color-accent', '--color-ground', 'the bar before a row title'],
-  ['--color-accent', '--color-ground', 'the lit segment of a card bar'],
-  ['--color-segment', '--color-ground', 'an unlit segment of a card bar'],
 ];
 
 describe('contrast from the tokens', () => {

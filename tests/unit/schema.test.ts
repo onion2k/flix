@@ -117,57 +117,49 @@ describe('entryShape', () => {
   });
 });
 
-describe('entryShape, previews', () => {
-  const stills = (count: number) =>
-    Array.from(
-      { length: count },
-      (_, at) => `../pictures/previews/x-${at}.webp`,
-    );
-
+describe('entryShape, loop', () => {
   it('passes an entry with none named, as it always did', () => {
     expect(refusals(shape, goodEntry)).toEqual([]);
   });
 
-  it('passes one to four previews', () => {
-    for (const count of [1, 2, 3, 4])
+  it('passes a path to a .webm file', () => {
+    expect(
+      refusals(shape, { ...goodEntry, loop: '../loops/nuclear-fishin.webm' }),
+    ).toEqual([]);
+  });
+
+  it('refuses a file of another kind, at loop', () => {
+    for (const loop of [
+      '../loops/x.mp4',
+      '../loops/x.gif',
+      '../loops/x.webp',
+      '../loops/x.webm.png',
+      '../loops/x.WEBM',
+      '../loops/webm',
+    ]) {
+      const found = refusals(shape, { ...goodEntry, loop });
       expect(
-        refusals(shape, { ...goodEntry, previews: stills(count) }),
-        `${count}`,
-      ).toEqual([]);
+        found.map((f) => f.path),
+        loop,
+      ).toEqual(['loop']);
+    }
   });
 
-  it('refuses an empty list, at previews', () => {
-    const found = refusals(shape, { ...goodEntry, previews: [] });
-    expect(found.map((f) => f.path)).toEqual(['previews']);
+  it('refuses an empty path and a thing that is not a path, at loop', () => {
+    for (const loop of ['', 3, null, ['../loops/x.webm']]) {
+      const found = refusals(shape, { ...goodEntry, loop });
+      expect(new Set(found.map((f) => f.path))).toEqual(new Set(['loop']));
+    }
   });
 
-  it('refuses five, at previews', () => {
-    const found = refusals(shape, { ...goodEntry, previews: stills(5) });
-    expect(found.map((f) => f.path)).toEqual(['previews']);
-    expect(found[0]?.code).toBe('too_big');
+  it('says in its message that a loop is a .webm file', () => {
+    const found = refusals(shape, { ...goodEntry, loop: '../loops/x.mp4' });
+    expect(found[0]?.message).toContain('.webm');
   });
 
-  it('refuses a preview that is not a picture, at its place in the list', () => {
-    const found = refusals(shape, {
-      ...goodEntry,
-      previews: ['../pictures/previews/x-0.webp', ''],
-    });
-    expect(found.map((f) => f.path)).toEqual(['previews.1']);
-  });
-
-  it('refuses a list that is not a list, at previews', () => {
-    const found = refusals(shape, { ...goodEntry, previews: 'a.webp' });
-    expect(new Set(found.map((f) => f.path)).size).toBe(1);
-    expect(found.map((f) => f.path)).toContain('previews');
-  });
-
-  it('still refuses an unknown field beside them, naming it', () => {
-    const found = refusals(shape, {
-      ...goodEntry,
-      previews: stills(1),
-      preview: 'x',
-    });
-    expect(found[0]?.keys).toEqual(['preview']);
+  it('refuses the field the loops replaced, previews, as an unknown one', () => {
+    const found = refusals(shape, { ...goodEntry, previews: ['a.webp'] });
+    expect(found[0]?.keys).toEqual(['previews']);
   });
 });
 

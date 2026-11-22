@@ -91,26 +91,4 @@
    */
   --share-waiting: 50%;
   --duration-arrive: 400ms;
-
-  /*
-   * A card's previews: how long one takes to fade into the next, or back to
-   * the card's own picture. Under a third of the second each is shown, so that
-   * a still is plainly there for most of its turn and a leave is quick.
-   */
-  --duration-preview: 300ms;
-
-  /*
-   * The bar of segments along the foot of a card's picture that says a card
-   * has previews, one segment a picture. It sits on a strip of the ground, so
-   * that it reads on any picture. The unlit segment is a muted green of the
-   * ground's own hue, 3.75:1 on the ground (held by contrast.test.ts) so that
-   * each segment is plainly there and the lit one, the accent, is plainly
-   * another. The inset is how far the strip is from the picture's left, right
-   * and foot, and the pad is the strip's own room round the segments.
-   */
-  --color-segment: #5f7469;
-  --size-cue-inset: 0.5rem;
-  --size-cue-pad: 0.375rem;
-  --size-segment: 0.25rem;
-  --space-segment: 0.25rem;
 }

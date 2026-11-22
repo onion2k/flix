@@ -4,3 +4,4 @@ description: 'A 3D WebGL slot machine with drum reels, bloom lighting and a dot 
 picture: ../pictures/tiny-slots.png
 pictureAlt: 'A neon slot machine in the dark, five reels of fruit and stars, with bet and start buttons below.'
 url: https://tinyslots.ooer.com
+loop: ../loops/tiny-slots.webm

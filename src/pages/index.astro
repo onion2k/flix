@@ -4,13 +4,14 @@
 // together, naming the file and the id, so that a broken one stops the build;
 // this page only draws what comes back. The page's script, which pages the
 // rows, brings in the late rows' pictures, lets a mouse drag a strip, moves
-// focus by arrow key and gamepad, works the Surprise me button and plays a
-// card's previews, is added here and nowhere else.
+// focus by arrow key and gamepad and works the Surprise me button, is added
+// here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Feature from '../components/Feature.astro';
 import Row from '../components/Row.astro';
 import { buildPage } from '../catalogue/rows';
+import { checkLoops } from '../build/loops';
 
 const entries = await getCollection('entries');
 const [config] = await getCollection('catalogue');
@@ -24,6 +25,10 @@ const page = buildPage(
   entries.map((entry) => ({ id: entry.id, ...entry.data })),
   config.data,
 );
+
+// Every entry's loop must be a file that is there, listed or not, so a bad one
+// stops the build and names its entry even where no card draws it.
+checkLoops(entries.map((entry) => ({ id: entry.id, ...entry.data })));
 
 // A site left out is not an error, but it is said once, so that one left out
 // by accident is seen. Nothing is said when every site is listed. The line
@@ -54,5 +59,4 @@ if (page.notListed.length > 0) {
   import '../scripts/drag';
   import '../scripts/moving';
   import '../scripts/surprise';
-  import '../scripts/preview';
 </script>

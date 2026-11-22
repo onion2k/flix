@@ -10,7 +10,7 @@
 // so that the inline script runs both ways), the privacy page and the 404 are
 // opened under it. Nothing may be refused, said to the console or reported as a
 // violation, and what the policy exists to leave alone still works: the fonts,
-// the page's script, a late row's pictures, a card's preview and the day's
+// the page's script, a late row's pictures and the day's
 // feature. That the header was applied is shown, not assumed: the response is
 // read back, and two controls, a header that forbids every script and one that
 // leaves out the hashes of the styles written before the page's own meta tag
@@ -332,40 +332,6 @@ test.describe('under the header, as a browser enforces it', () => {
         ),
       )
       .toBe(true);
-    await clean(page, watched);
-  });
-
-  test("a card's preview plays on hover, with the clock stepped", async ({
-    page,
-  }) => {
-    const watched = await enforce(page, headerFile().policy);
-    const start = noonOf(0);
-    await page.clock.install({ time: start });
-    await page.goto('/');
-    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
-    await page.clock.pauseAt(start + 1000);
-    const card = page.locator('li.card[data-entry="aquaclysm"]').first();
-    await card.scrollIntoViewIfNeeded();
-    await card.hover();
-    // Past the pause, the previews asked for and arrived, then into the first
-    // turn: a frame at a time, as preview.spec.ts steps it.
-    for (let done = 0; done < 700; done += 16) await page.clock.runFor(16);
-    await expect
-      .poll(() =>
-        page.evaluate(() =>
-          [
-            ...document.querySelectorAll<HTMLImageElement>(
-              'li.card[data-entry="aquaclysm"] .previews img',
-            ),
-          ].every((img) => img.complete && img.naturalWidth > 0),
-        ),
-      )
-      .toBe(true);
-    for (let done = 0; done < 200; done += 16) await page.clock.runFor(16);
-    await expect(
-      card.locator('.previews img[data-showing]'),
-      'a preview is showing',
-    ).toHaveCount(1);
     await clean(page, watched);
   });
 });

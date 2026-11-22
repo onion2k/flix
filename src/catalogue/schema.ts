@@ -7,7 +7,6 @@
 // The module takes its picture field as an argument and never learns what a
 // picture is: at build it is Astro's image(), in a unit test a string.
 import { z } from 'astro/zod';
-import { MAX_PREVIEWS } from './preview';
 
 /**
  * The strict shape of one entry. Strict, so that an unknown field is refused
@@ -21,10 +20,15 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
     description: z.string().min(1),
     picture,
     pictureAlt: z.string().min(1),
-    // Stills a card shows in turn when it is hovered or focused: one to the
-    // most a pass can hold, or none written at all. An empty list is refused,
-    // since it says there are previews and gives none.
-    previews: z.array(picture).min(1).max(MAX_PREVIEWS).optional(),
+    // A short silent recording of the game being played, a path to a .webm
+    // file relative to this entry's own file, which the card plays when it
+    // grows. Absent, the card grows with its picture. Only the kind of file is
+    // held here, since the catalogue knows no file system; that the file is
+    // there is checked by the build (src/build/loop-address.ts), naming the entry.
+    loop: z
+      .string()
+      .regex(/\.webm$/, { error: 'a loop is a path to a .webm file' })
+      .optional(),
     // Only a secure address: a card links straight to the game, and a page
     // served over https must not send a visitor to one that is not.
     url: z

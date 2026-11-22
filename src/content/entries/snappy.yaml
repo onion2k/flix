@@ -3,7 +3,3 @@ kind: game
 description: 'A game where the player explores an environment and takes pictures of things.'
 picture: ../pictures/snappy.png
 pictureAlt: 'A meadow with four straw stooks behind a wooden fence, wildflowers in the grass.'
-previews:
-  - ../pictures/previews/snappy-1.webp
-  - ../pictures/previews/snappy-2.webp
-  - ../pictures/previews/snappy-3.webp

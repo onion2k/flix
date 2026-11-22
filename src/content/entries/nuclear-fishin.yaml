@@ -4,7 +4,4 @@ description: 'A calm, cosy fishing game in 3D, for a phone or a desktop.'
 picture: ../pictures/nuclear-fishin.png
 pictureAlt: 'A green lake below a dark rock face with two waterfalls, pine trees to the left.'
 url: https://fish.ooer.com
-previews:
-  - ../pictures/previews/nuclear-fishin-1.webp
-  - ../pictures/previews/nuclear-fishin-2.webp
-  - ../pictures/previews/nuclear-fishin-3.webp
+loop: ../loops/nuclear-fishin.webm

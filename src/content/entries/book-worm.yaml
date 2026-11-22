@@ -4,3 +4,4 @@ description: 'A word-grid game: drag across the letter grid to create words and 
 picture: ../pictures/book-worm.png
 pictureAlt: 'A grid of blue letter tiles, eight across, under the title Book Worm.'
 url: https://bookworm.ooer.com
+loop: ../loops/book-worm.webm

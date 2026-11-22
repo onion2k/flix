@@ -380,29 +380,6 @@ p {
   display: block;
 }
 
-/* A card's previews are stacked over its picture, in the frame and under its
-   edge, fully clear. The script marks the one that shows, and it is opaque. The
-   layer takes no pointer, so the card's own link and hover are as they were. A
-   preview that has not been fetched has no picture to draw, and is clear too. */
-.previews {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.frame .previews img {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  opacity: 0;
-  /* Its fade is the page's, with this length (see the foot of the file). */
-  --opacity-ease: var(--duration-preview);
-}
-
-.frame .previews img[data-showing] {
-  opacity: 1;
-}
-
 /* Until a late picture has loaded (or failed, which marks it too so that its
    alt words show) it is fully transparent and the frame's colour shows. Only
    the placeholder is reached: the plain picture in the noscript is a child of
@@ -417,33 +394,6 @@ p {
   .frame[data-late] > picture {
     display: none;
   }
-}
-
-/* The bar that says a card has previews, along the foot of its frame: a strip
-   of the ground, inset from the picture the same on three sides so that it
-   reads on any picture, holding equal segments. It is after the layer, and in
-   the frame and not over the picture, so the picture's zoom never moves it, and
-   inside the edge, which is drawn over it. A segment is a border and not a
-   background, so that it is still drawn where backgrounds are taken away. The
-   script shows it (it is hidden in the markup) and marks the lit one. */
-.cue {
-  position: absolute;
-  inset: auto var(--size-cue-inset) var(--size-cue-inset);
-  display: flex;
-  gap: var(--space-segment);
-  padding: var(--size-cue-pad);
-  background: var(--color-ground);
-  pointer-events: none;
-}
-
-.segment {
-  flex: 1 1 0;
-  height: 0;
-  border-top: var(--size-segment) solid var(--color-segment);
-}
-
-.segment[data-lit] {
-  border-top-color: var(--color-accent);
 }
 
 .frame::after {
@@ -679,24 +629,13 @@ main {
   .card[data-linked]:hover .frame::after {
     border-color: Highlight;
   }
-
-  .segment {
-    border-top-color: GrayText;
-  }
-
-  .segment[data-lit] {
-    border-top-color: Highlight;
-  }
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
    the strip glides when a button or a key moves it, the picture of a linked
    card eases to a slight zoom inside its own frame, and the pictures of its
    row's other cards ease to their dim (the dim itself is above), and a late
-   picture eases in from its frame's colour (the transparency is above). The
-   same rule fades a card's previews in and out, over --duration-preview and not
-   the arrival's, by the custom property the previews set above, which is a
-   value and not motion. The lit segment of a card's bar eases the same way. */
+   picture eases in from its frame's colour (the transparency is above). */
 @media (prefers-reduced-motion: no-preference) {
   .strip {
     scroll-behavior: smooth;
@@ -706,15 +645,10 @@ main {
     transition:
       transform var(--duration-hover) ease-out,
       filter var(--duration-dim) ease-out,
-      opacity var(--opacity-ease, var(--duration-arrive)) ease-out;
+      opacity var(--duration-arrive) ease-out;
   }
 
   .card[data-linked]:hover .frame img {
     transform: scale(var(--zoom-hover));
-  }
-
-  /* The lit segment of a card's bar moves with the pass by the same fade. */
-  .segment {
-    transition: border-top-color var(--duration-preview) ease-out;
   }
 }

@@ -10,19 +10,12 @@
 // card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
 // <noscript>, so that script brings the one in and no script has the other. It
-// also carries the colour of its picture, which the frame waits in. A card
-// with previews draws them as a decoration layer over its picture, in its
-// frame, with their addresses in data- attributes that nothing fetches until
-// script, on a first hover or focus, moves them (see src/scripts/preview.ts):
-// each is WebP alone at two widths, and the layer is hidden from the
-// accessibility tree with empty alt words so that the card's own picture is
-// still the one picture it has. The picture of a card with previews is wrapped
-// in a frame of its own, since a <picture> can hold no layer.
+// also carries the colour of its picture, which the frame waits in.
 import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
 import { pictureColour } from '../build/picture-colour';
+import { loopFor } from '../build/loops';
 import NewWindowIcon from './NewWindowIcon.astro';
-import Previews from './Previews.astro';
 
 interface Props {
   card: Card<ImageMetadata>;
@@ -33,6 +26,11 @@ interface Props {
 }
 
 const { card, eager, late } = Astro.props;
+
+// The address the build gave the card's loop, if it has one. It is written as
+// an attribute and nothing more, which no browser fetches: the loop is asked
+// for by script, the first time the card grows.
+const loop = card.loop === undefined ? undefined : loopFor(card.id, card.loop);
 
 // What the card's width is at each window width, as the stylesheet makes it:
 // the whole window less two gutters below 340px, 78vw on a phone, then
@@ -69,38 +67,14 @@ const [avif, webp, jpeg] = late
       getImage({ ...shared, format: 'jpeg' }),
     ])
   : [];
-
-// A preview is WebP alone at 480 and 800 wide, cropped 16 by 9 as the card's
-// picture is, and read with the card's own sizes. Each width is its own
-// request to the image service, so that no 1280 file is made that nothing
-// would fetch. The smaller is also the plain src a browser falls back to.
-const previewWidths = [480, 800];
-const previews = await Promise.all(
-  (card.previews ?? []).map(async (picture) => {
-    const [small, large] = await Promise.all(
-      previewWidths.map((width) =>
-        getImage({
-          src: picture,
-          width,
-          height: Math.round((width * 9) / 16),
-          format: 'webp',
-        }),
-      ),
-    );
-    if (small === undefined || large === undefined)
-      throw new Error(`${card.id}: a preview could not be made`);
-    return {
-      src: small.src,
-      srcset: `${small.src} ${previewWidths[0]}w, ${large.src} ${previewWidths[1]}w`,
-      // The larger file's size, for the width and height the picture states.
-      width: large.attributes['width'] as number,
-      height: large.attributes['height'] as number,
-    };
-  }),
-);
 ---
 
-<li class="card" data-entry={card.id} data-linked={card.href ? '' : undefined}>
+<li
+  class="card"
+  data-entry={card.id}
+  data-linked={card.href ? '' : undefined}
+  data-loop={loop}
+>
   {late && avif && webp && jpeg ? (
     <div class="frame" data-late data-waiting={waiting}>
       <picture>
@@ -135,19 +109,6 @@ const previews = await Promise.all(
           decoding="async"
         />
       </noscript>
-      {previews.length > 0 && <Previews previews={previews} sizes={sizes} />}
-    </div>
-  ) : previews.length > 0 ? (
-    <div class="frame">
-      <Picture
-        {...shared}
-        alt={card.pictureAlt}
-        formats={['avif', 'webp']}
-        fallbackFormat="jpeg"
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-      />
-      <Previews previews={previews} sizes={sizes} />
     </div>
   ) : (
     <Picture

@@ -22,7 +22,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the ten pictures, tests/look, against baselines
+    npm run look         the nine pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -77,14 +77,17 @@ commit of its own that says what it is for.
   the clock's reading handed in (whole days since 1970-01-01 UTC, modulo
   the count). `buildPage` returns `candidates`: `feature`, then the
   optional `features` list of `catalogue.json`, each refused by name if it
-  has no file, repeats or is `feature` itself. `preview.ts` says which of
-  a card's previews shows, from how long it has been hovered or focused
-  (time handed in): none for 600ms, then each for 1000ms, then none for
-  good, so under 5s for the four an entry's `previews` may hold.
+  has no file, repeats or is `feature` itself. `growing.ts` says when a hovered
+  or focused card may grow: from 600ms of it, the time handed in.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
-  late card's frame as `data-waiting`.
+  late card's frame as `data-waiting`. `loops.ts` and `loop-address.ts` give
+  an entry's `loop` (a path to a `.webm` in `src/content/loops/`, relative to
+  its YAML) the hashed address the build made for it under `/_astro/`, as a
+  picture has, and refuse by entry a path that names no file or not a
+  `.webm` (`index.astro` checks every entry, listed or not). The address is
+  written on the card as `data-loop`, which no browser fetches.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and `catalogue.json`, the one file that says which sites are
   listed (the `feature` and each row's `sites`), in which rows and in what
@@ -115,21 +118,8 @@ commit of its own that says what it is for.
   where two or more cards have a link): it picks with `chance.ts`, never
   the card focus came from nor the last pick, and focuses its link. It is
   the one place the generator is made and (with the next) the clock is
-  read. `src/scripts/preview.ts` plays a card's previews (below). All six
-  are imported by the one script block in
-  `index.astro`. **Previews:** an entry's `previews` are drawn by
-  `Previews.astro` as a `.previews` layer in the card's frame (a card
-  with previews gets a `div.frame`; `aria-hidden`, empty alt, WebP at
-  480 and 800, addresses in `data-preview-src(set)`, which `pictures.ts`
-  does not take). `preview.ts` starts a pass on a mouse (`pointerType`
-  mouse, `(hover: hover) and (pointer: fine)`) entering the card or
-  `:focus-visible` on its link; it moves the addresses to `src` after the
-  600ms pause, once, marks one preview `data-showing` a frame at a time,
-  and does nothing for reduced motion, Save-Data, touch or a card whose own
-  picture has not arrived. The same `Previews.astro` writes a `.cue` bar
-  (a `.segment` for the card's picture and one a preview; `aria-hidden`,
-  `hidden`), which `preview.ts` shows only where the previews could play
-  and marks the lit segment `data-lit` (the first at rest). **The feature by the day:** with a list, `Feature.astro`
+  read. All five are imported by the one script block in
+  `index.astro`. **The feature by the day:** with a list, `Feature.astro`
   writes a `section.feature` for each candidate (`data-place`, its own
   title id, all but the first `hidden`, pictures as a late card's, the
   first with a `<noscript>` picture), then one inline classic script,
@@ -163,10 +153,11 @@ the social card uses. Empty or absent, the page is one feature as before.
 
 **To list, unlist or move a site:** edit `src/content/catalogue.json`. A
 new site also needs its `entries/<id>.yaml` and its picture in
-`pictures/`. **To give a site previews:** put one to four WebP files, 1280
-wide, in `src/content/pictures/previews/` (named `<id>-1.webp` and so on)
-and list them in order under `previews:` in its YAML; a fifth or a missing
-file stops the build. Run `npm run check`. The look and weight baselines move when
+`pictures/`. **To give a site a loop:** make it with
+`npm run loops -- <id>`, have the owner approve it, copy it, bytes
+unchanged, to `src/content/loops/<id>.webm` and name it in the site's YAML
+as `loop: ../loops/<id>.webm`; a file that is missing or not `.webm` stops
+the build and names the entry. A site with none keeps its picture. Run `npm run check`. The look and weight baselines move when
 the page does, and are then written again on purpose (`look:update`,
 `weight:update`).
 
@@ -252,10 +243,6 @@ Every new thing is taken through each of these that it can reach.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
-- A card with previews: hovered or focused it plays once, after 600ms, in
-  under 5s; leaving stops it; and with reduced motion, Save-Data, touch
-  or its own picture not yet arrived it does nothing and fetches nothing;
-  its bar of segments shows only where it could play, lit with the pass.
 - A card hovered (mouse) and focused (Tab), and a tap on touch: the others
   in its row dim, nothing else does, text stays 7:1.
 - An entry with an address and one without. A link inside the site and
@@ -282,7 +269,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/chance.test.ts`         | the seeded run, pick's exclusions and fairness       |
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
-| `tests/unit/preview.test.ts`        | the preview rule: pause, turns, end, under 5s        |
+| `tests/unit/growing.test.ts`        | the pause rule: 600ms to the millisecond             |
+| `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry     |
 | `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
 | `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals  |
@@ -311,11 +299,10 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
-| `tests/e2e/preview.spec.ts`         | a pass and its bar, stepped; where they must not run |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | eleven pictures of the built site, as written        |
+| `tests/look/look.spec.ts`           | nine pictures of the built site, as written          |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the whole policy (not in check) |
@@ -358,11 +345,9 @@ The nine points of the definition of done, as this project has them.
   remembered between visits (nothing is stored). Focus moved by script
   after a mouse press is ringed through `focus({ focusVisible: true })`,
   which Chromium honours and Safari and Firefox are not seen to.
-- **A keyboard cannot reach an unlinked card,** so its previews (Snappy's)
-  are seen by mouse alone. Save-Data and touch are stood in (the page's
-  `navigator.connection` made to say so; a touch context and a dispatched
-  `pointerenter`), not real; no real phone has been tried. A preview that
-  arrives after its turn has begun shows for what is left of it.
+- **Save-Data and touch are stood in** (the page's `navigator.connection`
+  made to say so; a touch context and a dispatched `pointerenter`), not real;
+  no real phone has been tried.
 - **With a list of features the big picture is found by the inline
   script and not by the browser's look-ahead,** so it may start a moment
   later; nothing times that (the weight gate counts requests and bytes). A

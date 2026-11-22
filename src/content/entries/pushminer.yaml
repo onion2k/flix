@@ -4,7 +4,4 @@ description: 'A bulldozer in a cave full of coins, and a hole to push them into.
 picture: ../pictures/pushminer.png
 pictureAlt: 'A dark cave floor scattered with glowing coins and purple crystal, a round hole lit at the left.'
 url: https://miner.ooer.com
-previews:
-  - ../pictures/previews/pushminer-1.webp
-  - ../pictures/previews/pushminer-2.webp
-  - ../pictures/previews/pushminer-3.webp
+loop: ../loops/pushminer.webm
