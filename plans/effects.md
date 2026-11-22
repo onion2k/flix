@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 6 of 7.
+State: building, part 7 of 7.
 
 ## Context
 
@@ -96,7 +96,7 @@ and this plan is copied to `plans/effects.md`.
       **Tests:** the same seed gives the same picks; every playable site
       comes up over many picks; no button with script off; target size,
       contrast and axe. The home look pictures are written again.
-- [ ] **6. A feature that changes by the day.** `catalogue.json` gains
+- [x] **6. A feature that changes by the day.** `catalogue.json` gains
       an optional `features` list of site ids. With none, nothing
       changes. With some, the day's feature is taken in turn from
       `feature` then `features`, by the date. `feature` is still what
@@ -108,8 +108,8 @@ and this plan is copied to `plans/effects.md`.
       by the browser's own look-ahead, so it may start a moment later.
       **Files:** `schema.ts` and `rows.ts` (the list, refused by name
       when it names no file or repeats), `src/catalogue/today.ts`,
-      `Feature.astro`, `index.astro`. **Tests:** three fixed dates give
-      three features, one shown and one fetched each; script off gives
+      `Feature.astro`, `index.astro`. **Tests:** four fixed dates give
+      four features, one shown and one fetched each; script off gives
       the default; every other spec, the look and the weight gate hold
       the clock so that they see the same page every day. **The first
       list is yours:** I will start with Aquaclysm, Ooergolf and Chopdrop
