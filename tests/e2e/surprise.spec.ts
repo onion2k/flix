@@ -292,10 +292,16 @@ test('Enter held down on the button follows no link, and a fresh Enter on the ca
   expect(page.context().pages().length).toBe(1);
   expect((await landed(page)).onLink).toBe(true);
   // Let go and pressed again, Enter on the card is the reader's own choice.
+  // The link opens a new window, and the window is waited for by its own
+  // event, asked for before the press: counting the context's pages straight
+  // after the request was seen read 1 about one run in five, since the
+  // request can be recorded before the new page has been handed over.
+  const opened = page.context().waitForEvent('page');
   await page.keyboard.press('Enter');
-  // The link opens a new window, so the request is what is read.
+  const window_ = await opened;
   await expect.poll(() => left.length).toBeGreaterThan(0);
   expect(page.context().pages().length).toBe(2);
+  await window_.close();
 });
 
 test.describe('what it leaves out', () => {
