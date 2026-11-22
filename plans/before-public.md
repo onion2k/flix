@@ -1,6 +1,6 @@
 # Before it goes public
 
-State: building, part 2 of 4.
+State: building, part 4 of 4.
 
 ## Context
 
@@ -107,7 +107,7 @@ Each outside address above answered 200 on 2026-11-22.
 
 - [x] **1. The licence.** `LICENCE`, and a `license` field in
       `package.json` pointing to it. Written in this session.
-- [ ] **2. The footer and the privacy page.** Tests first, in the
+- [x] **2. The footer and the privacy page.** Tests first, in the
       existing specs, seen red: the footer on all three pages, the privacy
       page's structure and links, line length, and the storage claim of
       spec 3. Then `src/components/Footer.astro` in `Base.astro`,
@@ -118,7 +118,7 @@ Each outside address above answered 200 on 2026-11-22.
       baselines written again, since a footer moves every one, each opened
       and looked at; the weight baseline written again for the same
       reason.
-- [ ] **3. The budgets.** `gates/weight.json` holds 60 000 and 150 000 as
+- [x] **3. The budgets.** `gates/weight.json` holds 60 000 and 150 000 as
       agreed figures. **Proved by:** the gate seen failing with a budget
       set under the measurement, then green.
 - [ ] **4. The pass.** Full check, preflight against the built site, the
