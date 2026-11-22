@@ -22,7 +22,9 @@ Agreed, from the mocks and your answers:
 - **Git only, no kit.** Held to `~/projects/guardrails/GUARDRAILS.md` and
   `~/.claude/rules/websites.md` all the same.
 - **Commits:** local, on `main`, a dependency each and a part each.
-  Nothing is pushed and no remote or GitHub repo is made.
+- **Pushing:** `main` goes to `https://github.com/onion2k/flix.git`, the
+  repo you made, once the pass of part 6 is green and not before, on
+  your word of 2026-11-22. Nothing else is pushed.
 - **Deploy:** a `netlify.toml` only. Netlify builds `main`; linking it,
   and DNS, are yours.
 - **Chess and coinpusher pictures:** screenshot of the live page,

@@ -1,0 +1,10 @@
+# What a tool writes and can write again is not kept: installed packages, the
+# build, Astro's generated types, and the test runner's reports. Without this
+# each build would show up as a change nobody made.
+node_modules
+dist
+.astro
+test-results
+playwright-report
+.netlify
+.DS_Store
