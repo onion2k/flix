@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 7 of 7.
+State: landed on main at bcb79be, 2026-11-22.
 
 ## Context
 
@@ -114,7 +114,7 @@ and this plan is copied to `plans/effects.md`.
       the clock so that they see the same page every day. **The first
       list is yours:** I will start with Aquaclysm, Ooergolf and Chopdrop
       unless you say otherwise.
-- [ ] **7. A preview on a card.** A site's file may name up to four more
+- [x] **7. A preview on a card.** A site's file may name up to four more
       pictures under `previews`. On a card that has some, a mouse hover
       or keyboard focus shows them in turn after a short pause, one pass
       of under five seconds (WCAG 2.2.2), then rests on the card's own
