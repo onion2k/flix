@@ -1,9 +1,9 @@
 {
   "note": "Page weight of the built home page, without scrolling, at 1440x1000 and 390x844. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. Written by npm run weight:update, only for a change meant to move it.",
   "budgets": {
-    "status": "ESTIMATES, awaiting the owner: the plan's own guesses, not agreed figures. KB here is 1000 bytes.",
-    "pageWithFontsNoPicturesBytes": 80000,
-    "firstScreenPicturesDeskBytes": 250000
+    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. KB here is 1000 bytes.",
+    "pageWithFontsNoPicturesBytes": 60000,
+    "firstScreenPicturesDeskBytes": 150000
   },
   "measured": {
     "1440x1000": {
