@@ -9,13 +9,13 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 80235,
-        "gzip": 12696
+        "bytes": 72798,
+        "gzip": 12011
       },
       "script": {
         "count": 1,
-        "bytes": 9808,
-        "gzip": 3642
+        "bytes": 11461,
+        "gzip": 4228
       },
       "stylesheet": {
         "count": 0,
@@ -28,7 +28,7 @@
       },
       "image": {
         "count": 13,
-        "bytes": 116076
+        "bytes": 157436
       },
       "other": {
         "count": 0,
@@ -38,13 +38,13 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 80235,
-        "gzip": 12696
+        "bytes": 72798,
+        "gzip": 12011
       },
       "script": {
         "count": 1,
-        "bytes": 9808,
-        "gzip": 3642
+        "bytes": 11461,
+        "gzip": 4228
       },
       "stylesheet": {
         "count": 0,
@@ -56,8 +56,8 @@
         "bytes": 36840
       },
       "image": {
-        "count": 11,
-        "bytes": 51259
+        "count": 12,
+        "bytes": 85317
       },
       "other": {
         "count": 0,

@@ -91,4 +91,17 @@
    */
   --share-waiting: 50%;
   --duration-arrive: 400ms;
+
+  /*
+   * The card that grows: how large its title is (a card's own, grown by about
+   * the same as the card), where its growing starts from, as a share of its
+   * full size (two thirds, the inverse of one and a half), and how long the
+   * grow takes. Short, so that it answers the pointer and does not make it
+   * wait; it is the only motion the card makes and is only for a reader who
+   * has not asked for less. How much wider it is than its card, and how far
+   * it is kept from the window's edges, are the catalogue's (growing.ts).
+   */
+  --size-grown-title: 2.1rem;
+  --grow-from: 0.667;
+  --duration-grow: 220ms;
 }

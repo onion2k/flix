@@ -472,6 +472,14 @@ p {
   filter: brightness(var(--brightness-dim));
 }
 
+/* While a card is grown (script marks it) its copy is over it, so the pointer
+   is on the copy and not the card, and the card is no longer :hover. The
+   others stay dim all the same, and the grown card's own picture, under its
+   copy, is not one of them. */
+.strip:has(.card[data-grown]) .card:not([data-grown]) .frame img {
+  filter: brightness(var(--brightness-dim));
+}
+
 /* Hover only where there is a mouse: a tap on a touch screen leaves its hover
    stuck, and would leave a row dimmed with nothing to undo it. A card with no
    link is not a control, so hovering it starts nothing. */
@@ -479,6 +487,84 @@ p {
   .strip:has(.card[data-linked]:hover) .card:not(:hover) .frame img {
     filter: brightness(var(--brightness-dim));
   }
+}
+
+/* A card that has grown: an enlarged copy of it over its row, placed in the
+   document by script, which gives it its width, left and top. It is a picture
+   of the card, so the whole of it is the click that follows the card's link,
+   and its words cannot be selected by the click. The accent edge is drawn
+   over the picture as a border, as a card's edge is, so that nothing in the
+   picture covers it. The ring is on the copy while the real link has
+   keyboard focus (script marks it), since the card itself is under it. */
+.grown {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  background: var(--color-panel);
+  border: var(--size-edge) solid var(--color-picture-edge);
+  transform-origin: 50% 20%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.grown[data-focused] {
+  outline: var(--size-ring) solid var(--color-accent);
+  outline-offset: var(--size-ring-offset);
+}
+
+.grown-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--color-ground);
+}
+
+.grown-frame img,
+.grown-frame video {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grown-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: var(--size-edge-hover) solid var(--color-accent);
+  pointer-events: none;
+}
+
+.grown-words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-s);
+  padding: var(--space-l) var(--space-l) var(--space-xl);
+}
+
+.grown-words .label {
+  margin-top: 0;
+}
+
+.grown-words h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-grown-title);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.grown-words .description {
+  margin: 0;
+}
+
+/* The Play link's look, on a span: it is not a link. */
+.grown-play {
+  margin-top: var(--space-s);
 }
 
 .lost {
@@ -629,6 +715,14 @@ main {
   .card[data-linked]:hover .frame::after {
     border-color: Highlight;
   }
+
+  .grown {
+    border-color: CanvasText;
+  }
+
+  .grown-frame::after {
+    border-color: Highlight;
+  }
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
@@ -650,5 +744,21 @@ main {
 
   .card[data-linked]:hover .frame img {
     transform: scale(var(--zoom-hover));
+  }
+
+  /* A card grows from the size of its card to its own, and no sooner: with
+     the starting style the browser draws its first frame from the smaller
+     one. A reader who asked for less never sees it open at all (script does
+     not make it), and one whose browser does not know @starting-style sees it
+     open at once. */
+  .grown {
+    transition:
+      transform var(--duration-grow) ease-out,
+      opacity var(--duration-grow) ease-out;
+
+    @starting-style {
+      transform: scale(var(--grow-from));
+      opacity: 0;
+    }
   }
 }

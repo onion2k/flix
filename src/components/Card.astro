@@ -74,6 +74,7 @@ const [avif, webp, jpeg] = late
   data-entry={card.id}
   data-linked={card.href ? '' : undefined}
   data-loop={loop}
+  data-play={card.linkText}
 >
   {late && avif && webp && jpeg ? (
     <div class="frame" data-late data-waiting={waiting}>

@@ -22,7 +22,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the nine pictures, tests/look, against baselines
+    npm run look         the ten pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -78,7 +78,9 @@ commit of its own that says what it is for.
   the count). `buildPage` returns `candidates`: `feature`, then the
   optional `features` list of `catalogue.json`, each refused by name if it
   has no file, repeats or is `feature` itself. `growing.ts` says when a hovered
-  or focused card may grow: from 600ms of it, the time handed in.
+  or focused card may grow (from 600ms of it, the time handed in) and where
+  its grown copy goes: `GROW` (1.5) times the card's width, centred, `LIFT`
+  above its top, kept `MARGIN` from the window's edges.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -118,8 +120,30 @@ commit of its own that says what it is for.
   where two or more cards have a link): it picks with `chance.ts`, never
   the card focus came from nor the last pick, and focuses its link. It is
   the one place the generator is made and (with the next) the clock is
-  read. All five are imported by the one script block in
-  `index.astro`. **The feature by the day:** with a list, `Feature.astro`
+  read. `src/scripts/grow.ts` grows a card (below). All six are imported
+  by the one script block in `index.astro`. **The grown card:** a mouse on
+  a linked card (`pointerType` mouse, `(hover: hover) and (pointer: fine)`)
+  or `:focus-visible` on its link, held for the pause (counted on
+  `requestAnimationFrame`, handed to `pauseOver`), opens a `div.grown`
+  appended to `body`, placed in the document by `placeGrown` so that it
+  follows its card when the page scrolls. It is made by cloning the card's
+  label, title (its link taken out) and description and writing nothing from
+  a string; the Play look is a `span.button` with the words of the card's
+  `data-play` and the label's icon; the picture area holds the card's own
+  picture (the file it already shows: `currentSrc`) and, where the card has
+  `data-loop` and Save-Data is off, a `<video>` (muted, looping, `playsinline`)
+  made with its `src` then, which is the first any browser hears of the loop.
+  It is `aria-hidden`, holds nothing focusable, and a click on it is
+  `.click()` on the card's link. It carries `data-focused` (the ring) while
+  the real link has keyboard focus, and the card carries `data-grown` (house
+  lights keep the row dim while the pointer is on the copy). It is taken
+  down at once when the pointer leaves both, focus leaves the link, Escape
+  (kept down until the pointer leaves the card), the card's strip scrolls
+  (and the pause starts again if the card is still pointed at and in the
+  window) and on resize. Reduced motion, touch, an unlinked card and a card
+  whose picture has not arrived do not grow; Save-Data grows with the still.
+  Only the grow's transition (`@starting-style`) is motion, in the
+  no-preference block. **The feature by the day:** with a list, `Feature.astro`
   writes a `section.feature` for each candidate (`data-place`, its own
   title id, all but the first `hidden`, pictures as a late card's, the
   first with a `<noscript>` picture), then one inline classic script,
@@ -157,7 +181,8 @@ new site also needs its `entries/<id>.yaml` and its picture in
 `npm run loops -- <id>`, have the owner approve it, copy it, bytes
 unchanged, to `src/content/loops/<id>.webm` and name it in the site's YAML
 as `loop: ../loops/<id>.webm`; a file that is missing or not `.webm` stops
-the build and names the entry. A site with none keeps its picture. Run `npm run check`. The look and weight baselines move when
+the build and names the entry. A site with none keeps its picture and grows
+with it. Run `npm run check`. The look and weight baselines move when
 the page does, and are then written again on purpose (`look:update`,
 `weight:update`).
 
@@ -243,6 +268,10 @@ Every new thing is taken through each of these that it can reach.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
+- A card grown (hover or focus; reduced motion, Save-Data, touch, no loop,
+  not a link, script off): one open at a time, closed by leaving, Escape,
+  its strip scrolling and resize, followed by the page's scroll; one picture
+  a card in the tree and the same tree throughout; its words 7:1.
 - A card hovered (mouse) and focused (Tab), and a tap on touch: the others
   in its row dim, nothing else does, text stays 7:1.
 - An entry with an address and one without. A link inside the site and
@@ -299,10 +328,11 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
+| `tests/e2e/grow.spec.ts`            | the grown card, stepped; where it must not happen    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | nine pictures of the built site, as written          |
+| `tests/look/look.spec.ts`           | ten pictures of the built site, as written           |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the whole policy (not in check) |
@@ -345,6 +375,16 @@ The nine points of the definition of done, as this project has them.
   remembered between visits (nothing is stored). Focus moved by script
   after a mouse press is ringed through `focus({ focusVisible: true })`,
   which Chromium honours and Safari and Firefox are not seen to.
+- **A real touch device and Safari's video are not tried.** The loops are
+  WebM (VP9): Chromium plays them here, and Safari 16+ and Firefox are only
+  read of (caniuse), not seen. The loops are recordings of other sites made on
+  one day and do not change when those sites do. Playwright's media time is
+  the browser's and not the clock's, so a loop's playing is asked of the
+  video (`currentTime`, `paused`), and the grown card's look picture holds
+  Chopdrop's loop paused at 2.0 s. Reopening a card asks the browser for the
+  loop again (the copy and its video are taken down, not kept); Netlify's
+  `immutable` header on `/_astro/*` is what answers that from cache, and
+  nothing here reads it.
 - **Save-Data and touch are stood in** (the page's `navigator.connection`
   made to say so; a touch context and a dispatched `pointerenter`), not real;
   no real phone has been tried.

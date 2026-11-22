@@ -184,7 +184,7 @@ function keysPrevented(page: Page): Promise<boolean[]> {
 }
 
 test.describe('keys', () => {
-  test('the catalogue has a row of linked cards, and one row with none', async ({
+  test('the catalogue has a row of linked cards, and a row with a card that is not linked', async ({
     page,
   }) => {
     await ready(page);
@@ -193,7 +193,10 @@ test.describe('keys', () => {
       catalogue.rows.map((row) => row.entries),
     );
     expect(rows[0]?.linked.length).toBeGreaterThan(3);
-    expect(rows.some((row) => row.linked.length === 0)).toBe(true);
+    // By shape and not by the owner's order: a row holding a card with no
+    // link, so that an arrow key has one to pass over. (The catalogue once had
+    // a row of none; since the reorder of 2026-11-22 none is wholly unlinked.)
+    expect(rows.some((row) => row.linked.length < row.all.length)).toBe(true);
     expect(rows.filter((row) => row.linked.length > 0).length).toBeGreaterThan(
       2,
     );

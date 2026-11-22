@@ -10,7 +10,7 @@
 // so that the inline script runs both ways), the privacy page and the 404 are
 // opened under it. Nothing may be refused, said to the console or reported as a
 // violation, and what the policy exists to leave alone still works: the fonts,
-// the page's script, a late row's pictures and the day's
+// the page's script, a late row's pictures, a card's loop and the day's
 // feature. That the header was applied is shown, not assumed: the response is
 // read back, and two controls, a header that forbids every script and one that
 // leaves out the hashes of the styles written before the page's own meta tag
@@ -330,6 +330,40 @@ test.describe('under the header, as a browser enforces it', () => {
                 (img as HTMLImageElement).naturalWidth > 0,
             ),
         ),
+      )
+      .toBe(true);
+    await clean(page, watched);
+  });
+});
+
+test.describe('a card that grows, under the header', () => {
+  test("a card's loop plays in its grown copy, with the clock stepped, and the policy refuses nothing", async ({
+    page,
+  }) => {
+    const watched = await enforce(page, headerFile().policy);
+    const start = noonOf(0);
+    await page.clock.install({ time: start });
+    await page.goto('/');
+    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await page.clock.pauseAt(start + 1000);
+    const card = page
+      .locator('section.row')
+      .first()
+      .locator('li.card[data-linked][data-loop]')
+      .first();
+    await card.scrollIntoViewIfNeeded();
+    await card.hover();
+    // Past the pause, a frame at a time, as grow.spec.ts steps it.
+    for (let done = 0; done < 700; done += 16) await page.clock.runFor(16);
+    await expect(page.locator('.grown')).toHaveCount(1);
+    // Media time is the browser's, not the clock's: it is asked of the video.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const video =
+            document.querySelector<HTMLVideoElement>('.grown video');
+          return video !== null && !video.paused && video.currentTime > 0.2;
+        }),
       )
       .toBe(true);
     await clean(page, watched);

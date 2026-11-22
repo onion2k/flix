@@ -94,6 +94,28 @@ test('the home page with a card focused has no axe violation', async ({
   await audit(page, 'home with a card focused');
 });
 
+test('the home page with a card grown has no axe violation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.getByRole('button', { name: 'Surprise me' })).toBeVisible();
+  const card = page
+    .locator('section.row')
+    .first()
+    .locator('li.card[data-linked][data-loop]')
+    .first();
+  await card.hover();
+  // The pause is the page's own time, so the state is waited for and not a
+  // number of milliseconds.
+  await expect(page.locator('.grown')).toHaveCount(1);
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((each) => each.finished)),
+  );
+  await audit(page, 'home with a card grown');
+});
+
 test('the home page has no axe violation once the late rows have loaded', async ({
   page,
 }) => {

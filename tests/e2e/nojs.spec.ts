@@ -93,3 +93,25 @@ test('a focused strip scrolls by the arrow key', async ({ page }) => {
     .poll(() => list.evaluate((el) => el.scrollLeft))
     .toBeGreaterThan(0);
 });
+
+test('no card grows, no loop is fetched and the page holds no video, though cards carry their loops’ addresses', async ({
+  page,
+}) => {
+  const urls: string[] = [];
+  page.on('request', (request) => urls.push(request.url()));
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  // The addresses are in the markup, so that a page with none does not pass
+  // in silence; they are only attributes, which no browser fetches.
+  const looped = page.locator('li.card[data-loop]');
+  expect(await looped.count()).toBeGreaterThan(0);
+  // A real mouse on one, as long as a reader would hold it, grows nothing.
+  const card = looped.first();
+  await card.scrollIntoViewIfNeeded();
+  await card.hover();
+  await expect(page.locator('.grown')).toHaveCount(0);
+  await expect(page.locator('video')).toHaveCount(0);
+  expect(urls.filter((url) => /\.webm(\?|$)/.test(url))).toEqual([]);
+  // Each card keeps the one picture it had.
+  await expect(card.getByRole('img')).toHaveCount(1);
+});
