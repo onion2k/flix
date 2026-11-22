@@ -1,6 +1,6 @@
 // Holds spec 5: no animation, transition or smooth scroll exists outside a
 // `prefers-reduced-motion: no-preference` block. It walks every rule of every
-// stylesheet of the built home page and 404 through the CSSOM (nested media
+// stylesheet of the built home page, 404 and privacy page through the CSSOM (nested media
 // rules and keyframes included), so it reads what the browser holds and not
 // what the source says, and then checks the effect: with reduced motion
 // emulated a card's picture has no transition time and a strip jumps rather
@@ -14,6 +14,7 @@ import { expect, test } from '@playwright/test';
 const PAGES = [
   { name: 'the home page', path: '/' },
   { name: 'the 404', path: '/nowhere-here/' },
+  { name: 'the privacy page', path: '/privacy/' },
 ];
 
 interface Walk {

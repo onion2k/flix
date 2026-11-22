@@ -356,7 +356,8 @@ p {
   padding: var(--space-xl) var(--gutter);
 }
 
-.lost h1 {
+.lost h1,
+.prose h1 {
   margin: 0 0 var(--space-m);
   font-family: var(--font-display);
   font-weight: 800;
@@ -365,8 +366,62 @@ p {
   text-transform: uppercase;
 }
 
+/* The privacy page: prose in a measure, under the 404's kind of heading. The
+   limit is on the paragraphs and not the column, so a heading may run wider. */
+.prose {
+  padding: var(--space-xl) var(--gutter) 0;
+}
+
+.prose p {
+  max-width: var(--measure);
+  margin: 0 0 var(--space-m);
+}
+
+.prose h2 {
+  margin: var(--space-xl) 0 var(--space-m);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-section-title);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.prose a {
+  text-underline-offset: 0.3em;
+  text-decoration-thickness: 2px;
+}
+
 main {
   padding-bottom: var(--space-xl);
+}
+
+/* The footer: a row that wraps, set off by a rule in the picture-edge colour.
+   Each link is a 44px target, the licences' too, though they sit in a
+   sentence: an inline link here would be exempt from WCAG 2.5.8 and a thumb
+   would still miss it. */
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-s) var(--space-xxl);
+  margin: 0 var(--gutter);
+  padding: var(--space-m) 0 var(--space-xl);
+  border-top: var(--size-edge) solid var(--color-picture-edge);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--size-target);
+  min-height: var(--size-target);
+  text-underline-offset: 0.3em;
+  text-decoration-thickness: 2px;
 }
 
 /* The feature's words column is five twelfths of the page, and below 1024px
@@ -394,7 +449,8 @@ main {
   }
 
   .feature h2,
-  .lost h1 {
+  .lost h1,
+  .prose h1 {
     font-size: var(--size-feature-title-phone);
   }
 

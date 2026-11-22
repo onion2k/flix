@@ -43,9 +43,14 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
+      // Drawn in software: the GPU path coloured a card's picture two ways,
+      // by chance, so a baseline could not be held to. See look.spec.ts.
       name: 'look',
       testDir: 'tests/look',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: { args: ['--disable-gpu'] },
+      },
     },
   ],
 });

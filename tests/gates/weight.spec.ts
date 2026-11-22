@@ -5,7 +5,7 @@
 // The figures are held to gates/weight.json both ways: a count must be equal,
 // bytes equal to within TOLERANCE, and a drop fails as surely as a rise so
 // that it is looked at and written again on purpose (npm run weight:update).
-// The budgets in that file are the plan's estimates and await the owner; a
+// The budgets in that file are agreed figures, set by the owner; a
 // measurement over one fails this gate and neither is moved here. Without it
 // a picture made eager, a font weight added or a script grown would cost the
 // visitor and no other check would say. The judgement is in judging.ts, with

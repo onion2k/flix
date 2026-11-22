@@ -246,8 +246,62 @@ test('robots.txt and the sitemap answer and name the address', async ({
   expect(robotsText).toContain(`Sitemap: ${SITE}/sitemap.xml`);
   const sitemap = await request.get('/sitemap.xml');
   expect(sitemap.status()).toBe(200);
-  expect(await sitemap.text()).toContain(`<loc>${SITE}/</loc>`);
+  const listed = await sitemap.text();
+  expect(listed).toContain(`<loc>${SITE}/</loc>`);
+  expect(listed).toContain(`<loc>${SITE}/privacy/</loc>`);
 });
+
+// Spec 1 of plans/before-public.md: every page ends in the same footer. Each
+// page is reached and each of its parts counted, so a page with none fails.
+for (const { name, path } of [
+  { name: 'the home page', path: '/' },
+  { name: 'the 404', path: '/nowhere-here/' },
+  { name: 'the privacy page', path: '/privacy/' },
+]) {
+  test(`${name} ends in one footer with Privacy, the licences and Source`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    const footer = page.getByRole('contentinfo');
+    await expect(footer).toHaveCount(1);
+    await expect(footer.getByRole('link')).toHaveCount(4);
+    await expect(
+      footer.getByRole('link', { name: 'Privacy', exact: true }),
+    ).toHaveAttribute('href', '/privacy/');
+    await expect(
+      footer.getByRole('link', { name: 'Source', exact: true }),
+    ).toHaveAttribute('href', 'https://github.com/onion2k/flix');
+    // The words are one line, and each licence in it is a link that says so.
+    const line = footer.locator('p');
+    await expect(line).toHaveCount(1);
+    await expect(line).toHaveText('Words and pictures CC BY 4.0, code MIT');
+    for (const [label, address] of [
+      ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/'],
+      ['MIT', 'https://opensource.org/license/mit'],
+    ] as const) {
+      const link = line.getByRole('link', { name: label, exact: true });
+      await expect(link).toHaveCount(1);
+      await expect(link).toHaveAttribute('href', address);
+      await expect(link).toHaveAttribute('rel', 'license');
+    }
+    // It ends the page: after main, and not inside it.
+    const after = await page.evaluate(() => {
+      const main = document.querySelector('main');
+      const foot = document.querySelector('footer');
+      return {
+        inMain: main?.contains(foot ?? null) ?? true,
+        follows:
+          main !== null &&
+          foot !== null &&
+          Boolean(
+            main.compareDocumentPosition(foot) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+      };
+    });
+    expect(after).toEqual({ inMain: false, follows: true });
+  });
+}
 
 test('an unknown path answers 404 with the 404 page', async ({ page }) => {
   const response = await page.goto('/no-such-page/');

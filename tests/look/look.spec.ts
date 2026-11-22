@@ -1,6 +1,7 @@
 // Takes the pictures the look is held to: the built home page at a desk's
-// width, a phone's and 320px, the 404 at a desk's, and the first row with its
-// second card focused by a real Tab. Reduced motion is emulated so that
+// width, a phone's and 320px, the 404 at a desk's, the privacy page at a desk's
+// width and a phone's, and the first row with its second card focused by a
+// real Tab. Reduced motion is emulated so that
 // nothing is mid-glide, fonts are ready and every picture has decoded before
 // a shot, and nothing waits on a timeout. Pictures below the first screen are
 // lazy and a full-page shot does not scroll to them, so each is made eager
@@ -10,7 +11,11 @@
 //
 // The baselines are in tests/look/baselines/ and are one machine's (a Mac,
 // Chromium 1.65.1's own). Another GPU or font stack draws them a little
-// differently, and is not argued with from there.
+// differently, and is not argued with from there. The look project draws in
+// software (--disable-gpu, in playwright.config.ts): with the footer in, the
+// first card's picture came out one of two ways, about one run in two, on a
+// cold browser, and 5929 pixels separate them; drawn in software it was the
+// same in 22 runs in a row.
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, test, type Page } from '@playwright/test';
@@ -70,6 +75,19 @@ test('the 404 at 1440', async ({ page }) => {
     ...TOLERANCE,
   });
 });
+
+for (const width of [1440, 390]) {
+  test(`the privacy page at ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width > 800 ? 1000 : 844 });
+    await page.goto('/privacy/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Privacy');
+    await settle(page);
+    await expect(page).toHaveScreenshot(`privacy-${width}.png`, {
+      fullPage: true,
+      ...TOLERANCE,
+    });
+  });
+}
 
 test('the first row at 1440 with its second card focused by keyboard', async ({
   page,

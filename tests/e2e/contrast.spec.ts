@@ -1,5 +1,5 @@
 // Holds contrast as the page is drawn, not as the tokens say it should be:
-// every piece of text on the home page and the 404, at a desk's width and a
+// every piece of text on the home page, the 404 and the privacy page, at a desk's width and a
 // phone's, against the nearest background that is not transparent, is 7:1 or
 // better (4.5:1 where WCAG calls the text large); and each control that a real
 // Tab press focuses has a ring that is 3:1 or better against what is behind
@@ -13,6 +13,7 @@ const WIDTHS = [1440, 390];
 const PAGES = [
   { name: 'the home page', path: '/' },
   { name: 'the 404', path: '/nowhere-here/' },
+  { name: 'the privacy page', path: '/privacy/' },
 ];
 
 /** The two measures written into the page, as a function run in it. */

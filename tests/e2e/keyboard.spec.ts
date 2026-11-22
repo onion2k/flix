@@ -3,12 +3,18 @@
 // every link, button and strip in reading order, each one inside the window,
 // ringed by an outline of at least 2px, and not covered by anything else.
 // Every visible link and button is also at least 44 by 44 (a card's link by
-// the card, its hit area). Without it a ring
+// the card, its hit area; a link inside a paragraph of running text in main
+// is exempt, see below). The home page and the privacy page are both walked,
+// the footer included. Without it a ring
 // lost in a stylesheet, a control under another, or a target too small would
 // pass every other check, since none of them presses Tab.
 import { expect, test, type Page } from '@playwright/test';
 
 const WIDTHS = [1440, 390];
+const PAGES = [
+  { name: 'the home page', path: '/', skip: 'Skip to the games' },
+  { name: 'the privacy page', path: '/privacy/', skip: 'Skip to the content' },
+];
 
 interface Stop {
   tag: string;
@@ -79,83 +85,107 @@ function active(page: Page) {
 }
 
 for (const width of WIDTHS) {
-  test.describe(`at ${width} wide`, () => {
-    test.use({ viewport: { width, height: width > 800 ? 1000 : 844 } });
+  for (const { name: pageName, path, skip } of PAGES) {
+    test.describe(`${pageName} at ${width} wide`, () => {
+      test.use({ viewport: { width, height: width > 800 ? 1000 : 844 } });
 
-    test.beforeEach(async ({ page }) => {
-      await page.goto('/');
-      // Script has run once the row buttons have taken their state.
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
-    });
+      test.beforeEach(async ({ page }) => {
+        await page.goto(path);
+        // Script has run once the row buttons have taken their state; the
+        // privacy page has no script and no row buttons.
+        if (path === '/')
+          await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      });
 
-    test('the skip link is first, is seen, and takes focus into main', async ({
-      page,
-    }) => {
-      await page.keyboard.press('Tab');
-      const skip = page.getByRole('link', { name: 'Skip to the games' });
-      await expect(skip).toBeFocused();
-      await expect(skip).toBeInViewport({ ratio: 1 });
-      await page.keyboard.press('Enter');
-      await page.keyboard.press('Tab');
-      const insideMain = await page.evaluate(
-        () => document.activeElement?.closest('main') !== null,
-      );
-      expect(insideMain).toBe(true);
-    });
-
-    test('Tab reaches every link and button in order, each seen, ringed and uncovered', async ({
-      page,
-    }) => {
-      const expected = await tabbable(page);
-      expect(expected.length).toBeGreaterThan(3);
-      expect(expected[0]?.name).toBe('Skip to the games');
-      let reached = 0;
-      for (const stop of expected) {
+      test('the skip link is first, is seen, and takes focus into main', async ({
+        page,
+      }) => {
         await page.keyboard.press('Tab');
-        // A strip scrolls a card in smoothly, so wait for it to be in.
-        await expect
-          .poll(async () => (await active(page))?.inside, {
-            message: `${stop.name} is in the window`,
-          })
-          .toBe(true);
-        const now = await active(page);
-        expect(now?.tag).toBe(stop.tag);
-        expect(now?.name).toBe(stop.name);
-        expect(now?.outlineStyle).not.toBe('none');
-        expect(now?.outlineWidth).toBeGreaterThanOrEqual(2);
-        expect(now?.ringSeen, `${stop.name} has a ring that shows`).toBe(true);
-        expect(now?.covered).toBe(false);
-        reached += 1;
-      }
-      expect(reached).toBe(expected.length);
-    });
+        const link = page.getByRole('link', { name: skip });
+        await expect(link).toBeFocused();
+        await expect(link).toBeInViewport({ ratio: 1 });
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('Tab');
+        const insideMain = await page.evaluate(
+          () => document.activeElement?.closest('main') !== null,
+        );
+        expect(insideMain).toBe(true);
+      });
 
-    test('every visible link and button is at least 44 by 44', async ({
-      page,
-    }) => {
-      const targets = page.locator('a[href], button');
-      const count = await targets.count();
-      let measured = 0;
-      for (let at = 0; at < count; at += 1) {
-        const target = targets.nth(at);
-        if (!(await target.isVisible())) continue;
-        // A card's link is only its title in size, and is hit through a
-        // stretched ::after over the whole card, so the card is the area it
-        // can be hit in. Every other link and button is measured as drawn.
-        const card = target.locator(
-          'xpath=ancestor::li[contains(@class,"card")]',
-        );
-        const box = await (
-          (await card.count()) > 0 ? card : target
-        ).boundingBox();
-        const name = (await target.textContent()) ?? '';
-        expect(box?.width, `${name} is wide enough`).toBeGreaterThanOrEqual(44);
-        expect(box?.height, `${name} is tall enough`).toBeGreaterThanOrEqual(
-          44,
-        );
-        measured += 1;
-      }
-      expect(measured).toBeGreaterThan(3);
+      test('Tab reaches every link and button in order, each seen, ringed and uncovered', async ({
+        page,
+      }) => {
+        const expected = await tabbable(page);
+        expect(expected.length).toBeGreaterThan(3);
+        expect(expected[0]?.name).toBe(skip);
+        let reached = 0;
+        for (const stop of expected) {
+          await page.keyboard.press('Tab');
+          // A strip scrolls a card in smoothly, so wait for it to be in.
+          await expect
+            .poll(async () => (await active(page))?.inside, {
+              message: `${stop.name} is in the window`,
+            })
+            .toBe(true);
+          const now = await active(page);
+          expect(now?.tag).toBe(stop.tag);
+          expect(now?.name).toBe(stop.name);
+          expect(now?.outlineStyle).not.toBe('none');
+          expect(now?.outlineWidth).toBeGreaterThanOrEqual(2);
+          expect(now?.ringSeen, `${stop.name} has a ring that shows`).toBe(
+            true,
+          );
+          expect(now?.covered).toBe(false);
+          reached += 1;
+        }
+        expect(reached).toBe(expected.length);
+      });
+
+      test('every visible link and button is at least 44 by 44', async ({
+        page,
+      }) => {
+        const targets = page.locator('a[href], button');
+        const count = await targets.count();
+        let measured = 0;
+        let exempt = 0;
+        for (let at = 0; at < count; at += 1) {
+          const target = targets.nth(at);
+          if (!(await target.isVisible())) continue;
+          // WCAG 2.5.8 exempts a link that is inline in a sentence, since its
+          // size is set by the text around it. That is a link inside a
+          // paragraph of running text in main (the privacy page's outside
+          // links) and nothing else: the footer's links are drawn in a
+          // paragraph too, and are not exempt, so they are measured.
+          if (
+            (await target
+              .locator('xpath=ancestor::p[ancestor::main]')
+              .count()) > 0
+          ) {
+            exempt += 1;
+            continue;
+          }
+          // A card's link is only its title in size, and is hit through a
+          // stretched ::after over the whole card, so the card is the area it
+          // can be hit in. Every other link and button is measured as drawn.
+          const card = target.locator(
+            'xpath=ancestor::li[contains(@class,"card")]',
+          );
+          const box = await (
+            (await card.count()) > 0 ? card : target
+          ).boundingBox();
+          const name = (await target.textContent()) ?? '';
+          expect(box?.width, `${name} is wide enough`).toBeGreaterThanOrEqual(
+            44,
+          );
+          expect(box?.height, `${name} is tall enough`).toBeGreaterThanOrEqual(
+            44,
+          );
+          measured += 1;
+        }
+        expect(measured).toBeGreaterThan(3);
+        // The privacy page's text holds links; the exemption must be reached.
+        if (path === '/privacy/') expect(exempt).toBeGreaterThan(0);
+      });
     });
-  });
+  }
 }

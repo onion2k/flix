@@ -1,5 +1,6 @@
-// Runs the axe audit over the built home page and 404 at a desk's width and a
-// phone's, and once more over the home page with a card focused, with every
+// Runs the axe audit over the built home page, 404 and privacy page at a
+// desk's width and a phone's, and once more over the home page with a card
+// focused, with every
 // WCAG tag the installed axe has for 2.0, 2.1 and 2.2 (A, AA and the AAA rules
 // it holds; it has no AAA tags for 2.1 or 2.2) and its best-practice rules.
 // A violation fails the test, printed with its rule id and the elements; an
@@ -60,6 +61,11 @@ for (const width of WIDTHS) {
     test('the 404 has no axe violation', async ({ page }) => {
       await page.goto('/nowhere-here/');
       await audit(page, `404 at ${width}`);
+    });
+
+    test('the privacy page has no axe violation', async ({ page }) => {
+      await page.goto('/privacy/');
+      await audit(page, `privacy at ${width}`);
     });
   });
 }

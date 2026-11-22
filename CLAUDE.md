@@ -21,7 +21,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the five pictures, tests/look, against baselines
+    npm run look         the seven pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -66,7 +66,8 @@ commit of its own that says what it is for.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
   out. `Base.astro` is the head, skip link and header;
-  `index.astro` and `404.astro` are the pages, `Feature`, `Row` and
+  `Footer.astro` (drawn by `Base` on every page: Privacy, the licences,
+  Source); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
   `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
   `src/scripts/rows.ts` is the one script: it works the row buttons
   from `paging.ts` and nothing else. Building the catalogue in
@@ -130,7 +131,7 @@ Every new thing is taken through each of these that it can reach.
 - An entry with an address and one without. A row that overflows and one
   that fits. A long title, a long description.
 - A picture slow to arrive or missing: the words still stand.
-- The 404 page.
+- The 404 page and the privacy page.
 
 ## Gates
 
@@ -148,7 +149,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
-| `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404          |
+| `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
+| `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
 | `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
 | `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
 | `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
@@ -157,8 +159,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
-| `tests/e2e/origin.spec.ts`          | own origin only, clean console under the policy      |
-| `tests/look/look.spec.ts`           | five pictures of the built site, as written          |
+| `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
+| `tests/look/look.spec.ts`           | seven pictures of the built site, as written         |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the five headers (not in check) |
@@ -168,8 +170,10 @@ pictures in `tests/look/baselines/` and its tolerance and the wobble
 measured for it are `TOLERANCE` in `tests/look/look.spec.ts`. The weight's
 baseline and its budgets are `gates/weight.json`; its tolerance (0, bytes
 held exactly, with the evidence) is `TOLERANCE` in
-`tests/gates/weight.spec.ts`. The budgets there are the plan's estimates,
-marked as awaiting the owner. The contrast pairs are `TEXT` and `EDGES` in
+`tests/gates/weight.spec.ts`. The budgets there are agreed figures, set
+by the owner on 2026-11-22. The privacy page's words are the owner's, and
+the date they were last reviewed is the last paragraph of
+`src/pages/privacy.astro`: move it when they are read again. The contrast pairs are `TEXT` and `EDGES` in
 `tests/unit/contrast.test.ts`.
 
 ## Done, here
@@ -205,12 +209,12 @@ The nine points of the definition of done, as this project has them.
   dependency the project does not have. A refusal there is seen as a
   failed `npm run build`, not as a failed test.
 - **No licence or unused-dependency check.** `npm run audit` is by hand.
-- **The weight budgets are the plan's estimates, not agreed figures,**
-  and are marked so in `gates/weight.json`. Making a card picture eager
+- **The weight gate measures the home page alone.** Making a card picture eager
   does not move the weight, since Chromium already loads the near lazy
   ones: only the document's few bytes show it. Nothing here times a load
   or an interaction.
-- **The look is one machine's.** Its baselines are this Mac's Chromium
+- **The look is one machine's.** Its baselines are this Mac's Chromium,
+  drawn in software (`--disable-gpu`: the GPU path drew a picture two ways)
   and were looked at by one person, once. Another GPU or font stack would
   draw them a little differently. Nothing holds the 640 or forced-colors
   pictures.
@@ -236,8 +240,8 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
   chose from the mocks (`plans/first-site-look/`) is a cinema listing.
 - **`--color-text` is a warm off-white.** The scanner reads it as a cream.
   It is the ink on a dark ground and never a ground itself.
-- **No footer and no print styles.** Preflight asks for both. There are no
-  agreed words for a footer yet, and the page is not one to print.
+- **No print styles.** Preflight asks for them, and the page is not one to
+  print.
 
 ## How a change lands
 

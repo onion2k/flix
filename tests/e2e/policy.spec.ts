@@ -1,4 +1,4 @@
-// Holds that the built home page and 404 each carry a content-security policy
+// Holds that the built home page, 404 and privacy page each carry a content-security policy
 // in a <meta> tag, and that its script-src allows neither 'unsafe-inline' nor
 // 'unsafe-eval'. The policy is written by the build from a hash of each inline
 // script, so a change that stops that (an inline handler, a script the build
@@ -9,6 +9,7 @@ import { expect, test } from '@playwright/test';
 for (const { name, path } of [
   { name: 'the home page', path: '/' },
   { name: 'the 404', path: '/nowhere-here/' },
+  { name: 'the privacy page', path: '/privacy/' },
 ]) {
   test(`${name} has a policy whose script-src allows no inline or eval`, async ({
     page,

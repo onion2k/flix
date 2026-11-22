@@ -91,6 +91,25 @@ for (const width of WIDTHS) {
   }
 }
 
+// The privacy page is prose alone, and the same widths and the same spacing
+// hold it: a long line of words or an outside link must not push it sideways.
+for (const width of WIDTHS) {
+  for (const spaced of [false, true]) {
+    test(`the privacy page at ${width} wide${spaced ? ' with text spacing' : ''}: no sideways scroll, nothing clipped`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto('/privacy/');
+      if (spaced) await page.addStyleTag({ content: SPACING });
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        'Privacy',
+      );
+      expect(await page.locator('main p').count()).toBeGreaterThan(5);
+      expect(await problems(page)).toEqual([]);
+    });
+  }
+}
+
 test('at 320 wide a row stacks its cards and does not scroll sideways', async ({
   page,
 }) => {

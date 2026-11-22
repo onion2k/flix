@@ -1,12 +1,13 @@
 ---
 // The document every page is drawn in: the head (title, description, address,
 // social card, icon, the self-hosted fonts and the two stylesheets), the skip
-// link, the header with the wordmark and the row links, and the main that the
-// page's content goes in. Without it each page would repeat the head, and one
+// link, the header with the wordmark and the row links, the main that the
+// page's content goes in, and the footer every page ends in. Without it each page would repeat the head, and one
 // that forgot the viewport tag, the canonical link or the skip link would be
 // the odd one out. Every absolute address is made here from Astro's `site`,
 // which astro.config.mjs says once.
 import { Font, getImage } from 'astro:assets';
+import Footer from '../components/Footer.astro';
 import '../styles/tokens.css';
 import '../styles/site.css';
 
@@ -19,6 +20,11 @@ interface Props {
   /** The picture the social card shows, and what it shows, in words. */
   card?: { picture: ImageMetadata; alt: string };
   skipLabel?: string;
+  /** What the page is, for search results and link previews. */
+  description?: string;
+  /** True for a page to be found: a canonical address and no noindex. The
+   *  home page always is. */
+  indexed?: boolean;
 }
 
 const {
@@ -27,9 +33,9 @@ const {
   rows = [],
   card,
   skipLabel = 'Skip to the games',
+  description = 'Games and toys to play in a browser.',
+  indexed = home,
 } = Astro.props;
-
-const description = 'Games and toys to play in a browser.';
 const address = new URL(Astro.url.pathname, Astro.site).href;
 // Social cards are cut to 1200 by 630, the size they are drawn at, and as a
 // JPEG because not every crawler reads a newer format.
@@ -52,14 +58,13 @@ const cardImage = card
     <meta name="description" content={description} />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    {home ? (
+    {indexed ? (
       <>
         <link rel="canonical" href={address} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={address} />
-        <meta name="twitter:card" content="summary_large_image" />
       </>
     ) : (
       <meta name="robots" content="noindex" />
@@ -71,6 +76,7 @@ const cardImage = card
           content={new URL(cardImage.src, Astro.site).href}
         />
         <meta property="og:image:alt" content={card.alt} />
+        <meta name="twitter:card" content="summary_large_image" />
       </>
     ) : null}
     {/* Both faces are preloaded: the first screen draws titles in one and
@@ -103,5 +109,6 @@ const cardImage = card
     <main id="main">
       <slot />
     </main>
+    <Footer />
   </body>
 </html>

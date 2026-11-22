@@ -29,6 +29,10 @@
   --size-feature-title-phone: 3rem;
   --size-row-title: 2.25rem;
   --size-card-title: 1.75rem;
+  /* A section of the privacy page: between a card's title and a row's. */
+  --size-section-title: 2rem;
+  /* The longest line of prose, about 75 characters, under WCAG 1.4.8's 80. */
+  --measure: 32rem;
   --gutter: 3rem;
   --gutter-phone: 1rem;
 
