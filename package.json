@@ -1,6 +1,7 @@
 {
   "name": "ooerflix",
   "private": true,
+  "license": "SEE LICENSE IN LICENCE",
   "type": "module",
   "scripts": {
     "dev": "astro dev",
