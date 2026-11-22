@@ -1,6 +1,6 @@
 # Ooerflix: the first site
 
-State: building, part 1 of 6.
+State: building, part 3 of 6.
 
 ## Context
 
@@ -148,7 +148,7 @@ Built in order by the `builder` agent on sonnet, one at a time, tests
 first, from `plans/first-site.md`. Parts 2 and 6 are done in this
 session. Each part is checked here against its files before the next.
 
-- [ ] **1. Repo and scaffold.** `git init -b main`; copy this plan to
+- [x] **1. Repo and scaffold.** `git init -b main`; copy this plan to
       `plans/first-site.md` and the two Marquee mock pictures beside it.
       `package.json` (`dev`, `build`, `preview`, `format`, `types`,
       `lint`, `test:unit`, `check:quick`, `check`, and `prepare` setting
@@ -163,7 +163,7 @@ session. Each part is checked here against its files before the next.
       **Proved by:** `npm run check:quick` green in under 30s; the hook
       seen to refuse a badly formatted file; `npm run build` writing
       `dist/index.html` on this machine's Node 23.4.
-- [ ] **2. The project file.** `CLAUDE.md` through `/project-file`, from
+- [x] **2. The project file.** `CLAUDE.md` through `/project-file`, from
       what part 1 made: Commands, Layout, Model features, Test API, Edge
       cases, Gates, Done here, What is not held, How a change lands
       (merge commit, nothing pushed without asking, stale after 30 days:
@@ -175,8 +175,8 @@ session. Each part is checked here against its files before the next.
       Chess and coinpusher at 1280x800. **Out:** any markup. **Proved
       by:** unit tests seen red then green; each refusal of spec 8 seen
       by breaking a real entry and building.
-- [ ] **4. The page.** `tests/e2e/{page,rows,keyboard,reflow,nojs,
-      origin}.spec.ts` first (spec 1 to 4, 6, 9 to 11), then
+- [ ] **4. The page.** The specs `page`, `rows`, `keyboard`, `reflow`,
+      `nojs` and `origin` in `tests/e2e/` first (spec 1 to 4, 6, 9 to 11), then
       `paging.ts` with its unit test, the components, `site.css`,
       `rows.ts`, the 404, `robots.txt`, sitemap, head tags and a plain
       favicon. **Out:** baselines, budgets. **Proved by:** e2e seen red
@@ -189,8 +189,8 @@ session. Each part is checked here against its files before the next.
       how many it read; spec 5); `tests/e2e/axe.spec.ts` (WCAG 2.0 to 2.2
       A, AA, AAA and best practice, at 1440 and 390, violations fail,
       incompletes listed); `tests/look/` pictures of the home page at
-      1440, 390 and 320 and of the 404, each looked at; `scripts/
-      weight.mjs` with `gates/weight.json`; `scripts/links.mjs` (a `url`
+      1440, 390 and 320 and of the 404, each looked at;
+      `scripts/weight.mjs` with `gates/weight.json`; `scripts/links.mjs` (a `url`
       that is gone fails; needs the network, so outside `check`).
       **Proved by:** the fault and the failure for each, in the report.
 - [ ] **6. The pass.** Full check; `/ooer-design:polish` over the look;
