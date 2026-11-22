@@ -147,27 +147,49 @@ p {
   flex: none;
 }
 
+/* The moving hero: the feature is a band across the whole window, at least
+   the token's share of its height, with its picture (and, once the page has
+   loaded, its loop) filling the whole of it, its panel of words on the ground
+   colour at the lower left and the Pause button at the lower right. The three
+   are placed on one grid, the picture across all of it, and the panel and the
+   button in the same bottom row, in columns of their own, so that the button
+   can never be over the panel however narrow the room. They overlap by
+   design, and each of the panel and the button is positioned with a z-index so
+   that it is painted above the picture, which is positioned itself. */
 .feature {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-  margin: 0 var(--gutter) var(--space-xxl);
+  grid-template-columns:
+    var(--gutter) minmax(0, var(--width-hero-panel)) minmax(0, 1fr)
+    auto var(--gutter);
+  grid-template-rows: minmax(0, 1fr) auto var(--space-xxl);
+  min-height: min(var(--height-hero), var(--height-hero-max));
+  margin: 0 0 var(--space-xxl);
+  background: var(--color-ground);
+}
+
+.feature-frame {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  grid-area: 1 / 1 / -1 / -1;
+  /* With a list of features the picture is brought in by script, and the frame
+     keeps the room it will fill and waits in the panel's colour until then. */
   background: var(--color-panel);
 }
 
 .feature-picture,
-.feature-picture img {
+.feature-picture img,
+.hero-loop {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.feature-frame {
-  display: block;
-  width: 100%;
-  height: 100%;
-  /* With a list of features the picture is brought in by script, and the frame
-     keeps the room it will fill and waits in the panel's colour until then. */
-  background: var(--color-panel);
+.feature-picture img,
+.hero-loop {
+  object-fit: cover;
 }
 
 /* With script off nothing will fill the placeholder: the plain picture in the
@@ -178,18 +200,21 @@ p {
   }
 }
 
-.feature-picture img {
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-}
-
 .words {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
   gap: var(--space-m);
   padding: var(--space-words);
+  /* Solid, so that the words are on a flat colour whatever the loop shows. */
+  background: var(--color-ground);
+}
+
+.feature > .words {
+  grid-area: 2 / 2;
 }
 
 .words p {
@@ -278,7 +303,8 @@ p {
    button is drawn the same way, as one of the page's rectangular buttons with
    the accent edge, and is never at an end. */
 .row-button,
-.surprise-button {
+.surprise-button,
+.hero-button {
   min-width: var(--size-target);
   min-height: var(--size-target);
   padding: 0 var(--space-l);
@@ -289,6 +315,22 @@ p {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* The hero's button is over a moving picture, so unlike the row buttons it has
+   the ground behind it, which keeps its words at 7:1 and its edge at 3:1
+   whatever the loop shows; its ring has a gap of the ground inside it for the
+   same reason, so that the ring is drawn against a flat colour. */
+.hero-button {
+  position: relative;
+  z-index: 1;
+  grid-area: 2 / 4;
+  align-self: end;
+  background: var(--color-ground);
+}
+
+.hero-button:focus-visible {
+  box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
 }
 
 .row-button[aria-disabled='true'] {
@@ -642,14 +684,34 @@ main {
   text-decoration-thickness: 2px;
 }
 
-/* The feature's words column is five twelfths of the page, and below 1024px
-   that is narrower than a word of its title at full size, more so once a
-   reader lays their own text spacing on (WCAG 1.4.12). So the picture goes
-   above the words well before the phone's width, and the title keeps its
-   size. Found by preflight at 200% zoom; held by reflow.spec.ts. */
+/* Below 1024px the band is a picture with its panel under it, as it was a
+   picture with its words under it before the hero: the panel and the button
+   side by side at the lower edge would meet in a window this narrow, more so
+   once a reader lays their own text spacing on (WCAG 1.4.12), and the title
+   keeps its size. The picture is 16 by 9 across the window, the button is on
+   its lower right and the panel is the whole width below it, so that on a
+   phone the loop is above the panel and never behind it. Found by preflight
+   at 200% zoom; held by reflow.spec.ts and hero.spec.ts. */
 @media (max-width: 64rem) {
   .feature {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    min-height: 0;
+  }
+
+  .feature-frame {
+    grid-area: 1 / 1;
+    aspect-ratio: 16 / 9;
+  }
+
+  .feature > .words {
+    grid-area: 2 / 1;
+  }
+
+  .hero-button {
+    grid-area: 1 / 1;
+    justify-self: end;
+    margin: 0 var(--gutter) var(--space-m) 0;
   }
 }
 

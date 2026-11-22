@@ -121,6 +121,19 @@ describe('buildPage', () => {
     expect(page.feature).not.toHaveProperty('loop');
   });
 
+  it("passes an entry's hero loop through as written, and gives a card none where it has none", () => {
+    const page = buildPage(
+      [
+        { ...entry('alpha', true), heroLoop: '../loops/alpha.hero.webm' },
+        ...entries.slice(1),
+      ],
+      { ...config, feature: 'alpha' },
+    );
+    expect(page.feature.heroLoop).toBe('../loops/alpha.hero.webm');
+    expect(page.candidates[0]?.heroLoop).toBe('../loops/alpha.hero.webm');
+    expect(page.rows[0]?.cards[0]).not.toHaveProperty('heroLoop');
+  });
+
   it('passes the picture through untouched, the same object', () => {
     const page = buildPage(entries, config);
     expect(page.rows[0]?.cards[1]?.picture).toBe(entries[0]?.picture);

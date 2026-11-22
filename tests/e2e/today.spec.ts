@@ -15,12 +15,32 @@
 // The clock is held by tests/clock.ts; a test of another day sets it before it
 // opens the page. Each test counts what it reached, so that finding nothing is
 // a failure and not a pass.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, type Page } from '@playwright/test';
 import { DAY_MS, noonOf, test } from '../clock';
 import { featureIndex } from '../../src/catalogue/today';
 import { candidatesOf, readRows } from './catalogue';
 
 const catalogue = readRows();
+
+/** The hero's least height, as a share of the window's: a token. */
+const HERO_VH = Number(
+  /--height-hero:\s*([\d.]+)vh/.exec(
+    readFileSync(
+      join(import.meta.dirname, '../../src/styles/tokens.css'),
+      'utf8',
+    ),
+  )?.[1],
+);
+const HERO_MAX_REM = Number(
+  /--height-hero-max:\s*([\d.]+)rem/.exec(
+    readFileSync(
+      join(import.meta.dirname, '../../src/styles/tokens.css'),
+      'utf8',
+    ),
+  )?.[1],
+);
 const candidates = candidatesOf(catalogue);
 const COUNT = candidates.length;
 
@@ -316,14 +336,29 @@ test.describe('the frame while the picture is on its way', () => {
         width: box.width,
         height: box.height,
         background: getComputedStyle(frame).backgroundColor,
-        panel: getComputedStyle(el).backgroundColor,
+        // The panel token, resolved by a probe that takes its colour.
+        panel: (() => {
+          const probe = document.createElement('i');
+          probe.style.color = 'var(--color-panel)';
+          el.append(probe);
+          const colour = getComputedStyle(probe).color;
+          probe.remove();
+          return colour;
+        })(),
+        window: window.innerHeight,
+        rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
       };
     });
     release();
     expect(found, 'the feature picture frame was found').not.toBeNull();
-    // The 16 by 9 of the picture, at least: the words beside it may be taller.
+    // The band's own box, whole: a window's width, and at least the hero's
+    // share of the window's height (the token), before any picture has come.
+    expect(found?.width).toBe(1440);
     expect(found?.height ?? 0).toBeGreaterThanOrEqual(
-      ((found?.width ?? 0) * 9) / 16 - 1,
+      Math.min(
+        ((found?.window ?? 0) * HERO_VH) / 100,
+        HERO_MAX_REM * (found?.rem ?? 0),
+      ) - 1,
     );
     expect(found?.background).toBe(found?.panel);
   });

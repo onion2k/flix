@@ -5,3 +5,4 @@ picture: ../pictures/pushminer.png
 pictureAlt: 'A dark cave floor scattered with glowing coins and purple crystal, a round hole lit at the left.'
 url: https://miner.ooer.com
 loop: ../loops/pushminer.webm
+heroLoop: ../loops/pushminer.hero.webm

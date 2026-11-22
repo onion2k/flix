@@ -1,0 +1,38 @@
+---
+// The feature's panel of words and its Pause button, the two things the
+// moving hero draws over its picture: the label line, the title, the
+// description and the Play link, on a solid ground-coloured panel at the lower
+// left, and the button at the lower right. They are one component because the
+// hero is written in two places (one section a candidate when there is a list,
+// one section when there is not) and the words, which are held to 7:1 and to
+// the Play link's new-window words, must not differ between them. The button
+// is hidden until the page's script has a loop to offer (src/scripts/hero.ts),
+// so with script off there is no control that does nothing. Without this the
+// two copies of the markup would drift apart.
+import type { Card } from '../catalogue/rows';
+import OutsideLink from './OutsideLink.astro';
+
+interface Props {
+  card: Card<ImageMetadata>;
+  /** The id of the title, which the section is labelled by. */
+  titleId: string;
+}
+
+const { card, titleId } = Astro.props;
+---
+
+<div class="words">
+  <p class="label" data-label>
+    {card.label}
+  </p>
+  <h2 id={titleId}>{card.title}</h2>
+  <p class="description">{card.description}</p>
+  {card.href ? (
+    <OutsideLink class="button" href={card.href}>
+      {card.linkText}
+    </OutsideLink>
+  ) : null}
+</div>
+<button type="button" class="hero-button" data-hero-button hidden>
+  Pause
+</button>

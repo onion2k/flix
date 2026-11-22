@@ -1,6 +1,7 @@
 // Holds the page's weight: what the built home page asks for, without
 // scrolling, at a desk's width (1440x1000) and a phone's (390x844), counted
-// by kind (document, script, stylesheet, font, picture) in requests and in
+// by kind (document, script, stylesheet, font, picture, and the hero's loop as
+// media) in requests and in
 // bytes, with the text kinds also gzipped since the preview does not compress.
 // The figures are held to gates/weight.json both ways: a count must be equal,
 // bytes equal to within TOLERANCE, and a drop fails as surely as a rise so
@@ -15,7 +16,8 @@
 // that it shares the test server and the project's one way of opening the
 // built site. It waits on the network going quiet, a state, never a timeout.
 import { expect, type Page } from '@playwright/test';
-import { holdClock, test } from '../clock';
+import { dayAt, holdClock, noonOf, test } from '../clock';
+import { candidatesOf, readRows } from '../e2e/catalogue';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -39,9 +41,26 @@ const FILE = resolve(import.meta.dirname, '../../gates/weight.json');
  */
 const TOLERANCE = 0;
 
+/**
+ * What is measured: a desk's width on each day that gives a different feature
+ * (the first is the page's day 0, whose figures have always been held as
+ * "1440x1000"), and a phone's on day 0. The day changes the feature's still
+ * and its loop, so each day's weight is its own: the owner's budgets are held
+ * to every one. What is not measured: a phone's width on the other days, a
+ * reader who scrolls (the loop is the hero's alone and is asked for once),
+ * reduced motion or Save-Data (which ask for none), and anything after the
+ * network has gone quiet.
+ */
+const PLACES = candidatesOf(readRows()).length;
 const VIEWPORTS = [
-  { name: '1440x1000', width: 1440, height: 1000 },
-  { name: '390x844', width: 390, height: 844 },
+  { name: '1440x1000', width: 1440, height: 1000, place: 0 },
+  ...Array.from({ length: PLACES - 1 }, (_, at) => ({
+    name: `1440x1000 day ${at + 1}`,
+    width: 1440,
+    height: 1000,
+    place: at + 1,
+  })),
+  { name: '390x844', width: 390, height: 844, place: 0 },
 ];
 
 interface BaselineFile {
@@ -94,9 +113,12 @@ test('the page weight is the baseline, within the budgets', async ({
 }) => {
   const baseline = JSON.parse(readFileSync(FILE, 'utf8')) as BaselineFile;
   const measured: Record<string, Weight> = {};
-  for (const { name, width, height } of VIEWPORTS) {
+  for (const { name, width, height, place } of VIEWPORTS) {
     const context = await browser.newContext();
-    await holdClock(context);
+    await holdClock(
+      context,
+      place === 0 ? undefined : noonOf(dayAt(place, PLACES)),
+    );
     measured[name] = await measure(await context.newPage(), width, height);
     await context.close();
     expect(measured[name]?.document.count, `${name} documents`).toBe(1);
@@ -120,7 +142,16 @@ test('the page weight is the baseline, within the budgets', async ({
     }
     found.push(...judge(was, now, TOLERANCE).map((line) => `${name}: ${line}`));
   }
-  const desk = measured['1440x1000'];
-  if (desk !== undefined) found.push(...overBudget(desk, baseline.budgets));
+  for (const { name, width } of VIEWPORTS) {
+    const weight = measured[name];
+    if (weight !== undefined)
+      found.push(
+        ...overBudget(
+          weight,
+          baseline.budgets,
+          width > 800 ? 'desk' : 'phone',
+        ).map((line) => `${name}: ${line}`),
+      );
+  }
   expect(found, 'weight against baseline and budget').toEqual([]);
 });

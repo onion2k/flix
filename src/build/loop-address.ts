@@ -21,8 +21,9 @@ export function loopAddress(
   id: string,
   loop: string,
   files: Record<string, string>,
+  field: 'loop' | 'heroLoop' = 'loop',
 ): string {
-  const where = `src/content/entries/${id}.yaml: the loop "${loop}"`;
+  const where = `src/content/entries/${id}.yaml: the ${field} "${loop}"`;
   if (!loop.endsWith('.webm')) throw new Error(`${where} is not a .webm file.`);
   const found = files[posix.join(ENTRIES_FOLDER, loop)];
   if (found === undefined)
@@ -34,12 +35,40 @@ export function loopAddress(
 
 /** The address of each entry's loop, for the entries that have one. */
 export function loopAddresses(
-  entries: { id: string; loop?: string | undefined }[],
+  entries: {
+    id: string;
+    loop?: string | undefined;
+    heroLoop?: string | undefined;
+  }[],
   files: Record<string, string>,
 ): Map<string, string> {
   const found = new Map<string, string>();
   for (const entry of entries)
     if (entry.loop !== undefined)
       found.set(entry.id, loopAddress(entry.id, entry.loop, files));
+  return found;
+}
+
+/**
+ * The address of each entry's hero loop, for the entries that have one, which
+ * the moving hero plays. It is held to the same rule as a card's loop and a
+ * refusal names the field, so that the person reading the build's output knows
+ * which of the two to mend.
+ */
+export function heroLoopAddresses(
+  entries: {
+    id: string;
+    loop?: string | undefined;
+    heroLoop?: string | undefined;
+  }[],
+  files: Record<string, string>,
+): Map<string, string> {
+  const found = new Map<string, string>();
+  for (const entry of entries)
+    if (entry.heroLoop !== undefined)
+      found.set(
+        entry.id,
+        loopAddress(entry.id, entry.heroLoop, files, 'heroLoop'),
+      );
   return found;
 }

@@ -31,6 +31,7 @@ export interface Entry<Picture> {
   picture: Picture;
   pictureAlt: string;
   loop?: string | undefined;
+  heroLoop?: string | undefined;
   url?: string | undefined;
 }
 
@@ -44,6 +45,8 @@ export interface Card<Picture> {
   pictureAlt: string;
   /** The entry's loop as written, a path relative to its file; absent where there is none. */
   loop?: string;
+  /** The entry's hero loop as written, where it has one: what the day's feature plays. */
+  heroLoop?: string;
   label: string;
   href?: string;
   /** What the link says to a sighted reader, where there is a link. */
@@ -87,6 +90,7 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
     label: `${KIND_WORDS[entry.kind]} · ${playable ? 'Play now' : 'In the workshop'}`,
   };
   if (entry.loop !== undefined) card.loop = entry.loop;
+  if (entry.heroLoop !== undefined) card.heroLoop = entry.heroLoop;
   if (entry.url !== undefined) {
     card.href = entry.url;
     card.linkText = `Play ${entry.title}`;

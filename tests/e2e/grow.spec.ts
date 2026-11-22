@@ -33,13 +33,24 @@ test.use({ viewport: { width: 1440, height: 1000 } });
 /** One frame of the stepped clock, in ms: where Playwright's rAF falls. */
 const FRAME = 16;
 
-/** The loops the owner approved, counted from the folder they are kept in. */
+/**
+ * The cards' loops the owner approved, counted from the folder they are kept
+ * in. A hero loop (`<id>.hero.webm`) is the moving hero's and not a card's: it
+ * is asked for once the page has loaded, held by hero.spec.ts, and is no part
+ * of what a card fetches.
+ */
 const LOOP_FILES = readdirSync(
   join(import.meta.dirname, '../../src/content/loops'),
-).filter((name) => name.endsWith('.webm')).length;
+).filter(
+  (name) => name.endsWith('.webm') && !name.endsWith('.hero.webm'),
+).length;
 
-/** A request for a loop, whatever its hashed name. */
-const isLoop = (url: string): boolean => /\.webm(\?|$)/.test(url);
+/** A request for a card's loop, whatever its hashed name: not the hero's. */
+const isLoop = (url: string): boolean =>
+  /\.webm(\?|$)/.test(url) && !/\.hero\./.test(url);
+
+/** The videos a card's copy made: the hero's own loop is not one of them. */
+const VIDEO = 'video:not(.hero-loop)';
 
 const row = (page: Page, at = 0): Locator =>
   page.locator('section.row').nth(at);
@@ -209,7 +220,7 @@ test.describe('the markup', () => {
     for (const address of addresses)
       expect(address, 'a built address').toMatch(/^\/_astro\/.+\.webm$/);
     expect(seen.urls.filter(isLoop), 'loops asked for at load').toEqual([]);
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator(VIDEO)).toHaveCount(0);
     await expect(grown(page)).toHaveCount(0);
   });
 
@@ -378,7 +389,7 @@ test.describe('a mouse on a card with a loop', () => {
     await away(page);
     expect((await open(page)).count).toBe(0);
     // And the video is gone with it: nothing keeps playing out of sight.
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator(VIDEO)).toHaveCount(0);
   });
 
   test('a pointer that is let go before the pause ends starts nothing, and fetches nothing', async ({
@@ -928,7 +939,7 @@ test.describe('where it does nothing, and fetches nothing', () => {
     await step(page, 5000);
     expect((await open(page)).count, 'opened on focus').toBe(0);
     expect(seen.urls.filter(isLoop), 'loops asked for').toEqual([]);
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator(VIDEO)).toHaveCount(0);
   }
 
   test('with reduced motion nothing grows, nothing plays and nothing is fetched', async ({
@@ -967,7 +978,7 @@ test.describe('where it does nothing, and fetches nothing', () => {
     await expect(grown(page).locator('img')).toHaveCount(1);
     await step(page, 3000);
     expect(seen.urls.filter(isLoop), 'loops asked for').toEqual([]);
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator(VIDEO)).toHaveCount(0);
   });
 
   test('with Save-Data present and off, it plays the loop (so that the stand-in above is not what stops it)', async ({
@@ -1047,6 +1058,6 @@ test.describe('on a touch screen', () => {
     await step(page, 5000);
     expect((await open(page)).count).toBe(0);
     expect(seen.urls.filter(isLoop)).toEqual([]);
-    await expect(page.locator('video')).toHaveCount(0);
+    await expect(page.locator(VIDEO)).toHaveCount(0);
   });
 });

@@ -29,6 +29,13 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
       .string()
       .regex(/\.webm$/, { error: 'a loop is a path to a .webm file' })
       .optional(),
+    // The same recording at the size of the moving hero, 960 wide, for a site
+    // that may be the day's feature: a path to a .webm file, as `loop` is,
+    // and checked in the same two places. Absent, the hero shows its picture.
+    heroLoop: z
+      .string()
+      .regex(/\.webm$/, { error: 'a heroLoop is a path to a .webm file' })
+      .optional(),
     // Only a secure address: a card links straight to the game, and a page
     // served over https must not send a visitor to one that is not.
     url: z

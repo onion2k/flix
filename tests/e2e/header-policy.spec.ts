@@ -62,6 +62,17 @@ function headerFile(): { text: string; policy: string } {
   };
 }
 
+/** The Permissions-Policy netlify.toml sends to every path, as written there. */
+function permissionsPolicy(): string {
+  const toml = readFileSync(
+    join(import.meta.dirname, '../../netlify.toml'),
+    'utf8',
+  );
+  const found = /^\s*Permissions-Policy\s*=\s*"([^"]*)"/m.exec(toml)?.[1];
+  expect(found, 'netlify.toml sends a Permissions-Policy').toBeDefined();
+  return found ?? '';
+}
+
 /** A policy as directives: name to sources. */
 function directives(policy: string): Map<string, string[]> {
   const found = new Map<string, string[]>();
@@ -171,7 +182,11 @@ interface Watched {
  * listener is an init script, so that it is in place before any script of the
  * page and sees a refusal of the first style written.
  */
-async function enforce(page: Page, policy: string): Promise<Watched> {
+async function enforce(
+  page: Page,
+  policy: string,
+  extra: Record<string, string> = {},
+): Promise<Watched> {
   const watched: Watched = { violations: [], talk: [], served: [] };
   await page.exposeFunction('reportViolation', (what: string) => {
     watched.violations.push(what);
@@ -206,7 +221,11 @@ async function enforce(page: Page, policy: string): Promise<Watched> {
     watched.served.push(policy);
     return route.fulfill({
       response,
-      headers: { ...response.headers(), 'content-security-policy': policy },
+      headers: {
+        ...response.headers(),
+        'content-security-policy': policy,
+        ...extra,
+      },
     });
   });
   return watched;
@@ -368,6 +387,77 @@ test.describe('a card that grows, under the header', () => {
       .toBe(true);
     await clean(page, watched);
   });
+});
+
+test.describe('the Permissions-Policy netlify.toml sends', () => {
+  test('lets this site’s own pages autoplay, and refuses the rest it always refused', () => {
+    const found = permissionsPolicy()
+      .split(',')
+      .map((part) => part.trim());
+    expect(found).toContain('autoplay=(self)');
+    expect(found).not.toContain('autoplay=()');
+    // Every other feature is named and still refused to every origin, as it
+    // was: sixteen in all, autoplay the only one that changed.
+    expect(found).toHaveLength(16);
+    for (const refused of found.filter((each) => !each.startsWith('autoplay')))
+      expect(refused, refused).toMatch(/^[a-z-]+=\(\)$/);
+  });
+});
+
+test.describe('the moving hero, under both headers, as a browser enforces them', () => {
+  for (let place = 0; place < COUNT; place += 1) {
+    test(`on the day that is place ${place}, its loop plays under the content policy and the Permissions-Policy, and nothing is refused or said`, async ({
+      page,
+    }) => {
+      const { policy } = headerFile();
+      const permissions = permissionsPolicy();
+      const watched = await enforce(page, policy, {
+        'permissions-policy': permissions,
+      });
+      await page.clock.setFixedTime(noonOf(dayAt(place)));
+      const response = await page.goto('/');
+      expect(response?.headers()['permissions-policy']).toBe(permissions);
+      expect(response?.headers()['content-security-policy']).toBe(policy);
+      const shown = page.locator('section.feature:not([hidden])');
+      await expect(shown).toHaveAttribute(
+        'data-entry',
+        candidatesOf(catalogue)[place] ?? '',
+      );
+      // The loop is asked of the video: media time is the browser's.
+      await expect
+        .poll(() =>
+          shown
+            .locator('video')
+            .evaluate(
+              (video: HTMLVideoElement) =>
+                !video.paused && video.currentTime > 0.3,
+            ),
+        )
+        .toBe(true);
+      await expect(shown.locator('button[data-hero-button]')).toHaveText(
+        'Pause',
+      );
+      await clean(page, watched);
+    });
+  }
+
+  for (const [name, path] of [
+    ['the privacy page', '/privacy/'],
+    ['the 404', MISSING],
+  ] as const) {
+    test(`${name} is whole and clean under the Permissions-Policy as well`, async ({
+      page,
+    }) => {
+      const permissions = permissionsPolicy();
+      const watched = await enforce(page, headerFile().policy, {
+        'permissions-policy': permissions,
+      });
+      const response = await page.goto(path);
+      expect(response?.headers()['permissions-policy']).toBe(permissions);
+      await expect(page.locator('main, h1').first()).toBeVisible();
+      await clean(page, watched);
+    });
+  }
 });
 
 test.describe('the header is what is enforced: two controls', () => {

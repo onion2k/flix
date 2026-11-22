@@ -163,6 +163,42 @@ describe('entryShape, loop', () => {
   });
 });
 
+describe('entryShape, heroLoop', () => {
+  it('passes an entry with none named, and a path to a .webm file', () => {
+    expect(refusals(shape, goodEntry)).toEqual([]);
+    expect(
+      refusals(shape, {
+        ...goodEntry,
+        heroLoop: '../loops/nuclear-fishin.hero.webm',
+      }),
+    ).toEqual([]);
+  });
+
+  it('refuses a file of another kind, at heroLoop', () => {
+    for (const heroLoop of [
+      '../loops/x.mp4',
+      '../loops/x.gif',
+      '../loops/x.webp',
+      '../loops/x.webm.png',
+      '../loops/x.WEBM',
+    ]) {
+      const found = refusals(shape, { ...goodEntry, heroLoop });
+      expect(
+        found.map((f) => f.path),
+        heroLoop,
+      ).toEqual(['heroLoop']);
+      expect(found[0]?.message).toContain('.webm');
+    }
+  });
+
+  it('refuses an empty path and a thing that is not a path, at heroLoop', () => {
+    for (const heroLoop of ['', 3, null, ['../loops/x.webm']]) {
+      const found = refusals(shape, { ...goodEntry, heroLoop });
+      expect(new Set(found.map((f) => f.path))).toEqual(new Set(['heroLoop']));
+    }
+  });
+});
+
 describe('catalogueShape', () => {
   it('passes a good catalogue file', () => {
     expect(refusals(catalogueShape, goodCatalogue)).toEqual([]);

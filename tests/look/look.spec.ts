@@ -1,7 +1,7 @@
 // Takes the pictures the look is held to: the built home page at a desk's
 // width, a phone's and 320px, the 404 at a desk's, the privacy page at a desk's
-// width and a phone's, and the first row with its second card focused by a
-// real Tab. Reduced motion is emulated so that
+// width and a phone's, the first row with its second card focused by a real
+// Tab, and the moving hero with its loop held. Reduced motion is emulated so that
 // nothing is mid-glide, fonts are ready and every picture has decoded before
 // a shot, and nothing waits on a timeout. Without this a colour gone muddy, a
 // title that wraps, or a ring lost would pass every other check, since none of
@@ -303,6 +303,71 @@ test('the first row at 1440 with Chopdrop grown, its loop held at 2.0 seconds', 
     ),
   );
   await expect(page).toHaveScreenshot('first-row-chopdrop-grown-1440.png', {
+    ...TOLERANCE,
+  });
+});
+
+// The top of the home page at 1440 as a reader with no wish for less motion
+// sees it: the moving hero, its loop playing over the still, the day-0
+// feature's panel at the lower left and the button at the lower right. The
+// other pictures of the home page are taken with reduced motion, which shows
+// the still and a button that reads Play; this is the one that shows the loop.
+// A playing loop is a different frame every time, so it is held: the video is
+// paused by the reader's own control, set to 2.0 seconds and waited for to have
+// drawn that frame (`seeked`), and the button therefore reads Play, which is
+// what a held hero says. The window is the picture, so the first row's tops
+// are in it, drawn once their pictures have arrived.
+test('the top of the home page at 1440 with the hero’s loop held at 2.0 seconds', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const hero = page.locator('section.feature:not([hidden])');
+  const video = hero.locator('video');
+  await expect(video).toHaveCount(1);
+  await expect
+    .poll(() =>
+      video.evaluate(
+        (el: HTMLVideoElement) => !el.paused && el.currentTime > 0.3,
+      ),
+    )
+    .toBe(true);
+  await hero.locator('button[data-hero-button]').click();
+  await video.evaluate(async (el: HTMLVideoElement) => {
+    const seeked = new Promise((done) =>
+      el.addEventListener('seeked', done, { once: true }),
+    );
+    el.currentTime = 2;
+    await seeked;
+  });
+  expect(
+    await video.evaluate((el: HTMLVideoElement) => ({
+      paused: el.paused,
+      at: el.currentTime,
+    })),
+  ).toEqual({ paused: true, at: 2 });
+  await expect(hero.locator('button[data-hero-button]')).toHaveText('Play');
+  await page.evaluate(() => document.fonts.ready);
+  // Every picture that is in the window has arrived and is drawn.
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        [...document.images]
+          .filter((image) => {
+            const box = image.getBoundingClientRect();
+            return box.top < window.innerHeight && box.bottom > 0;
+          })
+          .every((image) => image.complete && image.naturalWidth > 0),
+      ),
+    )
+    .toBe(true);
+  await page.evaluate(() =>
+    Promise.all(
+      document.getAnimations().map((each) => each.finished.catch(() => null)),
+    ),
+  );
+  await expect(page).toHaveScreenshot('hero-loop-held-1440.png', {
     ...TOLERANCE,
   });
 });

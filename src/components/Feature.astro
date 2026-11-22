@@ -1,19 +1,25 @@
 ---
-// The featured entry: its picture beside a panel of words, stacked on a
-// phone. With no list of features it is one section whose picture loads at
-// once and at high priority, since it is the largest thing the first screen
-// draws. With a list (src/content/catalogue.json) it is one section for each
-// candidate, in order, all but the first hidden, and each picture written as
-// a late card's is: its addresses in data- attributes, which no browser
-// fetches, so that the markup alone fetches nothing, and the first also holds
-// the ordinary picture in a <noscript>, which is what shows with script off. A
-// small inline script straight after them (src/scripts/today-inline.js) picks
-// the day's, shows it and fills its picture before the page is first drawn.
-// Without this the home page would have no first thing to look at, or would
-// fetch the big picture of every candidate.
+// The featured entry, drawn as the moving hero: a band across the whole window
+// under the header, its picture filling it, its words on a solid panel at the
+// lower left and a Pause button at the lower right, and, once the page has
+// loaded, its loop playing over the picture (src/scripts/hero.ts). On a phone
+// the picture sits above the panel. With no list of features it is one section
+// whose picture loads at once and at high priority, since it is the largest
+// thing the first screen draws. With a list (src/content/catalogue.json) it is
+// one section for each candidate, in order, all but the first hidden, and each
+// picture written as a late card's is: its addresses in data- attributes, which
+// no browser fetches, so that the markup alone fetches nothing, and the first
+// also holds the ordinary picture in a <noscript>, which is what shows with
+// script off. A small inline script straight after them
+// (src/scripts/today-inline.js) picks the day's, shows it and fills its picture
+// before the page is first drawn. Each section carries the built address of its
+// hero loop as `data-hero-loop`, an attribute no browser fetches. Without this
+// the home page would have no first thing to look at, or would fetch the big
+// picture, or the loop, of every candidate.
 import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
-import OutsideLink from './OutsideLink.astro';
+import FeatureWords from './FeatureWords.astro';
+import { heroLoopFor } from '../build/loops';
 import inlineScript from '../scripts/today-inline.js?raw';
 
 interface Props {
@@ -24,15 +30,15 @@ interface Props {
 const { cards } = Astro.props;
 const listed = cards.length > 1;
 
-// The picture is seven twelfths of the window less the gutters, and the whole
-// of it less the gutters below 64rem, where the grid has one column (and the
-// gutters are the phone's below 40rem). These follow site.css's steps, so
-// that the browser fetches the width it will draw.
-const sizes =
-  '(max-width: 40rem) calc(100vw - 2rem), (max-width: 64rem) calc(100vw - 6rem), calc((100vw - 6rem) * 7 / 12)';
+// The picture is the band's whole width at every window size, so the browser
+// is told to fetch for the window's width, from the files below, the largest
+// of which is the sources' own 1280 and is never made larger than it.
+const sizes = '100vw';
 
 // The widths and formats of a picture, said once so that the ordinary picture
-// and a late one's sources cannot differ.
+// and a late one's sources cannot differ. 1280 is the width of the owner's
+// pictures, so a desk's window is drawn from the largest file there is and the
+// browser enlarges it; a file is never made from a picture wider than it.
 const widths = [640, 960, 1280];
 
 // The feature is the largest picture on the first screen, so it is drawn a
@@ -77,6 +83,11 @@ const files = listed
           aria-labelledby={`feature-title-${at}`}
           data-entry={card.id}
           data-place={at}
+          data-hero-loop={
+            card.heroLoop === undefined
+              ? undefined
+              : heroLoopFor(card.id, card.heroLoop)
+          }
           hidden={at > 0}
         >
           <div class="feature-frame">
@@ -119,18 +130,7 @@ const files = listed
               </noscript>
             ) : null}
           </div>
-          <div class="words">
-            <p class="label" data-label>
-              {card.label}
-            </p>
-            <h2 id={`feature-title-${at}`}>{card.title}</h2>
-            <p class="description">{card.description}</p>
-            {card.href ? (
-              <OutsideLink class="button" href={card.href}>
-                {card.linkText}
-              </OutsideLink>
-            ) : null}
-          </div>
+          <FeatureWords card={card} titleId={`feature-title-${at}`} />
         </section>
       );
     })}
@@ -142,32 +142,28 @@ const files = listed
       class="feature"
       aria-labelledby="feature-title"
       data-entry={card.id}
+      data-hero-loop={
+        card.heroLoop === undefined
+          ? undefined
+          : heroLoopFor(card.id, card.heroLoop)
+      }
     >
-      <Picture
-        src={card.picture}
-        alt={card.pictureAlt}
-        width={1280}
-        height={720}
-        widths={widths}
-        sizes={sizes}
-        quality={quality}
-        formats={['avif', 'webp']}
-        fallbackFormat="jpeg"
-        priority
-        pictureAttributes={{ class: 'feature-picture' }}
-      />
-      <div class="words">
-        <p class="label" data-label>
-          {card.label}
-        </p>
-        <h2 id="feature-title">{card.title}</h2>
-        <p class="description">{card.description}</p>
-        {card.href ? (
-          <OutsideLink class="button" href={card.href}>
-            {card.linkText}
-          </OutsideLink>
-        ) : null}
+      <div class="feature-frame">
+        <Picture
+          src={card.picture}
+          alt={card.pictureAlt}
+          width={1280}
+          height={720}
+          widths={widths}
+          sizes={sizes}
+          quality={quality}
+          formats={['avif', 'webp']}
+          fallbackFormat="jpeg"
+          priority
+          pictureAttributes={{ class: 'feature-picture' }}
+        />
       </div>
+      <FeatureWords card={card} titleId="feature-title" />
     </section>
   ))
 )}

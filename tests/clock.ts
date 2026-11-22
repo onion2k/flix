@@ -33,6 +33,16 @@ export function noonOf(day: number): number {
 }
 
 /**
+ * A day number, near 2024, that falls at a place in a list of `count`
+ * candidates, so that a spec can open the page on each feature in turn. Worked
+ * out here from the day number and never from the code under test.
+ */
+export function dayAt(place: number, count: number): number {
+  const base = 20_000;
+  return base - (base % count) + place;
+}
+
+/**
  * Holds a context's clock at a reading. Called by the fixture, and by a spec
  * that makes a context of its own (the weight gate does) or another day.
  */

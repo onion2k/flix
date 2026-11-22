@@ -133,6 +133,17 @@ for (const width of WIDTHS) {
             true,
           );
         } else expect(surprise).toBe(-1);
+        // The hero's Pause button is a stop of its own on the home page, the
+        // very next after the feature's Play link, and so is walked below.
+        if (path === '/') {
+          const pause = expected.findIndex((s) =>
+            /^Pause the .+ video$/.test(s.name),
+          );
+          expect(pause, 'the hero’s Pause button was read').toBeGreaterThan(0);
+          expect(expected[pause]?.tag).toBe('button');
+          expect(expected[pause - 1]?.tag).toBe('a');
+          expect(expected[pause - 1]?.name).toMatch(/^Play /);
+        }
         let reached = 0;
         for (const stop of expected) {
           await page.keyboard.press('Tab');

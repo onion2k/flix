@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   LOOPS_FOLDER,
+  heroLoopAddresses,
   loopAddress,
   loopAddresses,
 } from '../../src/build/loop-address';
@@ -84,5 +85,56 @@ describe('loopAddresses', () => {
         files,
       ),
     ).toThrow(/zed\.yaml/);
+  });
+});
+
+describe('heroLoopAddresses', () => {
+  const heroFiles = {
+    ...files,
+    '/src/content/loops/alpha.hero.webm': '/_astro/alpha.hero.abc123.webm',
+  };
+
+  it('answers each entry that has a hero loop, and none that has not', () => {
+    const found = heroLoopAddresses(
+      [
+        {
+          id: 'alpha',
+          loop: '../loops/alpha.webm',
+          heroLoop: '../loops/alpha.hero.webm',
+        },
+        { id: 'beta', loop: '../loops/beta.webm' },
+      ],
+      heroFiles,
+    );
+    expect([...found]).toEqual([['alpha', '/_astro/alpha.hero.abc123.webm']]);
+  });
+
+  it('refuses a hero loop that is not there, naming the entry and the field', () => {
+    expect(() =>
+      heroLoopAddresses(
+        [{ id: 'gamma', heroLoop: '../loops/gamma.hero.webm' }],
+        heroFiles,
+      ),
+    ).toThrow(
+      /src\/content\/entries\/gamma\.yaml.*heroLoop.*gamma\.hero\.webm.*no such file/,
+    );
+  });
+
+  it('refuses a hero loop that is not a .webm file', () => {
+    expect(() =>
+      heroLoopAddresses(
+        [{ id: 'alpha', heroLoop: '../loops/alpha.mp4' }],
+        heroFiles,
+      ),
+    ).toThrow(/alpha\.yaml.*heroLoop.*\.webm/);
+  });
+
+  it('does not read a card loop as a hero loop, nor the other way', () => {
+    expect([
+      ...loopAddresses(
+        [{ id: 'alpha', heroLoop: '../loops/alpha.hero.webm' }],
+        heroFiles,
+      ),
+    ]).toEqual([]);
   });
 });

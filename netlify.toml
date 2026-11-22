@@ -52,5 +52,11 @@
 
     # This site is pictures and text. It has no reason to ask for a camera, a
     # location or a payment sheet, so the answer is settled here rather than at
-    # the prompt.
-    Permissions-Policy = "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()"
+    # the prompt. The one exception is autoplay, allowed to the site's own pages
+    # (self) and to no other origin: the moving hero's loop is a muted video
+    # that starts by itself once the page has loaded, and a policy that refuses
+    # autoplay to every origin is one a browser may take as reason to refuse it
+    # (tests/e2e/header-policy.spec.ts holds that the hero plays under this
+    # value). The hero has a Pause button and is not started for a reader who
+    # asked for less motion or to spare data.
+    Permissions-Policy = "accelerometer=(), autoplay=(self), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()"

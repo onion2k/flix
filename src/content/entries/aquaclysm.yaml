@@ -5,3 +5,4 @@ picture: ../pictures/aquaclysm.webp
 pictureAlt: 'The Aquaclysm title in splashing letters over a refinery of tanks and pipes, a jetpack pilot flying toward a gushing valve.'
 url: https://aqua.ooer.com
 loop: ../loops/aquaclysm.webm
+heroLoop: ../loops/aquaclysm.hero.webm

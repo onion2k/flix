@@ -12,12 +12,12 @@
 // loop could only be made by hand, and an approved loop could not be built
 // again when a game changes: a loop is built again and never edited.
 import { createRequire } from 'node:module';
-import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { recipes } from './recipes.mjs';
 import { makeSheet } from './sheet.mjs';
+import { encode, CARD_WIDTH, HERO_WIDTH, SECONDS } from './encode.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
@@ -32,10 +32,6 @@ const { chromium } = createRequire(join(root, 'package.json'))(
 // without them they draw nothing headless.
 const BROWSER_ARGS = ['--enable-unsafe-webgpu', '--use-angle=metal'];
 const SIZE = { width: 1280, height: 720 };
-const SECONDS = 6;
-// The measured settings: about 200 KB at 640 wide and 355 KB at 960.
-const CARD_WIDTH = 640;
-const HERO_WIDTH = 960;
 
 const catalogue = JSON.parse(
   readFileSync(join(root, 'src/content/catalogue.json'), 'utf8'),
@@ -134,63 +130,6 @@ async function play(browser, id, recipe) {
     await ctx.close();
   }
   return { video: await page.video().path(), start };
-}
-
-// The most a loop may weigh: the hero's is the plan's own budget, the card's
-// is a ceiling a little above the measured 200-240 KB. A busy picture that
-// goes over is encoded again at a lower quality, so it is never trimmed by hand.
-const LIMITS = { [CARD_WIDTH]: 300000, [HERO_WIDTH]: 450000 };
-const CRFS = [46, 50, 54, 58, 62];
-
-function encode(src, start, width, crop, dest) {
-  for (const crf of CRFS) {
-    encodeAt(src, start, width, crop, dest, crf);
-    if (statSync(dest).size <= LIMITS[width]) return crf;
-  }
-  throw new Error(
-    `${dest} is over ${LIMITS[width]} bytes even at crf ${CRFS.at(-1)}`,
-  );
-}
-
-function encodeAt(src, start, width, crop, dest, crf) {
-  // A game that does not fill a 16:9 window is cut to the part worth seeing,
-  // never stretched: the crop keeps the shape.
-  let cut = '';
-  if (crop) {
-    const [x, y, w, h] = crop;
-    if (Math.abs(w * 9 - h * 16) > 16)
-      throw new Error(`crop ${crop} is not 16:9`);
-    cut = `crop=${w}:${h}:${x}:${y},`;
-  }
-  execFileSync(
-    FFMPEG,
-    [
-      '-loglevel',
-      'error',
-      '-y',
-      '-ss',
-      String(start),
-      '-t',
-      String(SECONDS),
-      '-i',
-      src,
-      '-an',
-      '-vf',
-      `${cut}scale=${width}:-2,fps=25`,
-      '-c:v',
-      'libvpx-vp9',
-      '-b:v',
-      '0',
-      '-crf',
-      String(crf),
-      '-row-mt',
-      '1',
-      '-deadline',
-      'good',
-      dest,
-    ],
-    { stdio: 'inherit' },
-  );
 }
 
 async function main() {

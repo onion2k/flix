@@ -58,6 +58,13 @@ async function open(page: Page): Promise<string[]> {
   );
   await page.goto('/');
   await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  // The hero fills most of the first screen, so the first row is brought into
+  // the window, where a mouse can reach it.
+  await page
+    .locator('section.row')
+    .first()
+    .getByRole('list')
+    .scrollIntoViewIfNeeded();
   return outside;
 }
 

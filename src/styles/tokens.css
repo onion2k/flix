@@ -66,6 +66,17 @@
   --space-words: 2.25rem;
   --space-words-phone: 1.25rem;
 
+  /*
+   * The moving hero: the feature's band is at least this tall (a share of the
+   * window's height, from the mock the owner chose) but never taller than the
+   * second figure, so that a very tall window does not make a band taller
+   * than a reader can see at once; and its panel of words, padding included,
+   * is at most this wide.
+   */
+  --height-hero: 72vh;
+  --height-hero-max: 42rem;
+  --width-hero-panel: 38.5rem;
+
   /* A card, and how far a hover zooms a picture in its frame. */
   --card-width: clamp(17rem, 27vw, 25rem);
   --card-width-phone: 78vw;

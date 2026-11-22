@@ -22,7 +22,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the ten pictures, tests/look, against baselines
+    npm run look         the eleven pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -67,7 +67,9 @@ commit of its own that says what it is for.
   where each goes. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
-  `moving.ts` says where an arrow-key or gamepad move lands among the
+  `hero.ts` says what the moving hero does at load (play its loop, offer
+  it on a button, or leave the still) from three facts, and the Pause
+  button's words. `moving.ts` says where an arrow-key or gamepad move lands among the
   links, which direction a pad holds, and when a held one fires (time
   handed in). `chance.ts` is the one source of chance: a seeded generator
   (mulberry32), `pick` (one id that is not excluded, with the random
@@ -85,11 +87,13 @@ commit of its own that says what it is for.
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
   late card's frame as `data-waiting`. `loops.ts` and `loop-address.ts` give
-  an entry's `loop` (a path to a `.webm` in `src/content/loops/`, relative to
-  its YAML) the hashed address the build made for it under `/_astro/`, as a
-  picture has, and refuse by entry a path that names no file or not a
-  `.webm` (`index.astro` checks every entry, listed or not). The address is
-  written on the card as `data-loop`, which no browser fetches.
+  an entry's `loop` or `heroLoop` (a path to a `.webm` in
+  `src/content/loops/`, relative to its YAML) the hashed address the build
+  made for it under `/_astro/`, as a picture has, and refuse by entry and
+  field a path that names no file or not a `.webm` (`index.astro` checks
+  every entry, listed or not). The address is written on the card as
+  `data-loop`, and on a feature's section as `data-hero-loop`, which no
+  browser fetches.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and `catalogue.json`, the one file that says which sites are
   listed (the `feature` and each row's `sites`), in which rows and in what
@@ -120,8 +124,8 @@ commit of its own that says what it is for.
   where two or more cards have a link): it picks with `chance.ts`, never
   the card focus came from nor the last pick, and focuses its link. It is
   the one place the generator is made and (with the next) the clock is
-  read. `src/scripts/grow.ts` grows a card (below). All six are imported
-  by the one script block in `index.astro`. **The grown card:** a mouse on
+  read. `src/scripts/grow.ts` grows a card (below). `src/scripts/hero.ts` plays the hero's loop
+  (below). All seven are imported by the one script block in `index.astro`. **The grown card:** a mouse on
   a linked card (`pointerType` mouse, `(hover: hover) and (pointer: fine)`)
   or `:focus-visible` on its link, held for the pause (counted on
   `requestAnimationFrame`, handed to `pauseOver`), opens a `div.grown`
@@ -143,7 +147,22 @@ commit of its own that says what it is for.
   window) and on resize. Reduced motion, touch, an unlinked card and a card
   whose picture has not arrived do not grow; Save-Data grows with the still.
   Only the grow's transition (`@starting-style`) is motion, in the
-  no-preference block. **The feature by the day:** with a list, `Feature.astro`
+  no-preference block. **The moving hero:** the feature is a band across the window
+  (`.feature`, at least `--height-hero` of its height and at most
+  `--height-hero-max`) with its picture filling it (`sizes` is `100vw`,
+  quality 40, said once in `Feature.astro`), its words on a solid panel at the
+  lower left and the Pause button at the lower right (`FeatureWords.astro`),
+  on one grid; below 64rem the picture is above the panel. Once the window's
+  `load` event has come, `hero.ts` makes one `<video>` (muted, looping,
+  `playsinline`, the still its poster) from the day's section's
+  `data-hero-loop` and plays it; a hidden candidate's is never read. Pause
+  holds and plays it, its words and `aria-label` (Pause/Play the title
+  video) following the video's own state, with no `aria-pressed`; a pause
+  holds for the visit and is kept nowhere. Reduced motion: no video, a button
+  that reads Play and fetches the loop only when pressed. Save-Data or no
+  `heroLoop`: the still alone and the button stays `hidden`. A loop that fails
+  to load or play is taken down with its button. With script off: the still,
+  the panel, no button. **The feature by the day:** with a list, `Feature.astro`
   writes a `section.feature` for each candidate (`data-place`, its own
   title id, all but the first `hidden`, pictures as a late card's, the
   first with a `<noscript>` picture), then one inline classic script,
@@ -182,7 +201,14 @@ new site also needs its `entries/<id>.yaml` and its picture in
 unchanged, to `src/content/loops/<id>.webm` and name it in the site's YAML
 as `loop: ../loops/<id>.webm`; a file that is missing or not `.webm` stops
 the build and names the entry. A site with none keeps its picture and grows
-with it. Run `npm run check`. The look and weight baselines move when
+with it. **A site that may be the day's feature needs a hero loop** (960
+wide) as well: `npm run loops -- <id>` makes both from one take; for one whose
+card loop is approved already, `node tools/loops/hero-from-take.mjs <id>
+<start second>` cuts it from the kept take in `tools/loops/out/work/<id>/`
+at the second its card loop starts (found by matching the card loop's first
+frame against the take's), so it is the approved loop at hero size; copy it,
+bytes unchanged, to `src/content/loops/<id>.hero.webm` and name it `heroLoop:
+../loops/<id>.hero.webm`. One more than 450,000 bytes fails `npm run weight`. Run `npm run check`. The look and weight baselines move when
 the page does, and are then written again on purpose (`look:update`,
 `weight:update`).
 
@@ -268,6 +294,9 @@ Every new thing is taken through each of these that it can reach.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
+- The hero, on each feature day: a loop never asked for before `load` nor a
+  hidden candidate's; Pause by click and by Enter; reduced motion, Save-Data,
+  script off, a loop that fails; at 390 the picture above the panel.
 - A card grown (hover or focus; reduced motion, Save-Data, touch, no loop,
   not a link, script off): one open at a time, closed by leaving, Escape,
   its strip scrolling and resize, followed by the page's scroll; one picture
@@ -299,6 +328,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/growing.test.ts`        | the pause rule: 600ms to the millisecond             |
+| `tests/unit/hero.test.ts`           | the hero's start rule, every case, and Pause's words |
 | `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry     |
 | `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
@@ -321,7 +351,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
-| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it        |
+| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it, and   |
+|                                     | the hero plays under the Permissions-Policy          |
 | `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched, |
 |                                     | no module, UTC, script off, arrows, clean console    |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
@@ -329,11 +360,13 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
 | `tests/e2e/grow.spec.ts`            | the grown card, stepped; where it must not happen    |
+| `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off  |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | ten pictures of the built site, as written           |
-| `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
+| `tests/look/look.spec.ts`           | eleven pictures of the built site, as written        |
+| `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;  |
+|                                     | the hero's loop apart, against its own budget        |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the whole policy (not in check) |
 
@@ -375,6 +408,14 @@ The nine points of the definition of done, as this project has them.
   remembered between visits (nothing is stored). Focus moved by script
   after a mouse press is ringed through `focus({ focusVisible: true })`,
   which Chromium honours and Safari and Firefox are not seen to.
+- **The hero is seen in Chromium alone.** Safari's autoplay and a real phone
+  are not tried. `autoplay=()` was found not to stop a muted video in this
+  Chromium (a test page played under it, with and without the user-activation
+  flag), so the `Permissions-Policy` change to `autoplay=(self)` is held by
+  its text and by the hero playing under it, and by no browser that refuses
+  it. The weight gate measures three days at a desk's width and one at a
+  phone's, once the network is quiet; it times no start and counts nothing
+  after (a reader pausing, reduced motion, Save-Data, scrolling).
 - **A real touch device and Safari's video are not tried.** The loops are
   WebM (VP9): Chromium plays them here, and Safari 16+ and Firefox are only
   read of (caniuse), not seen. The loops are recordings of other sites made on

@@ -11,6 +11,7 @@ export const KINDS = [
   'stylesheet',
   'font',
   'image',
+  'media',
   'other',
 ] as const;
 export type Kind = (typeof KINDS)[number];
@@ -32,13 +33,18 @@ export interface Budgets {
   pageWithFontsNoPicturesBytes: number;
   /** Every picture the first screen at a desk's width asks for. */
   firstScreenPicturesDeskBytes: number;
+  /**
+   * The moving hero's loop, which arrives after the page has loaded and is a
+   * budget of its own: it is neither a picture nor part of the page's text.
+   */
+  heroLoopBytes: number;
 }
 
 /** Compressed bytes of the page without its pictures. */
 export function pageWithoutPictures(weight: Weight): number {
   let total = 0;
   for (const kind of KINDS) {
-    if (kind === 'image') continue;
+    if (kind === 'image' || kind === 'media') continue;
     total += weight[kind].gzip ?? weight[kind].bytes;
   }
   return total;
@@ -81,17 +87,31 @@ export function judge(
   return found;
 }
 
-/** Each budget a measurement is over, said plainly. */
-export function overBudget(desk: Weight, budgets: Budgets): string[] {
+/**
+ * Each budget a measurement is over, said plainly. A desk's width is held to
+ * all three; a phone's is held to the loop's alone, since the page and picture
+ * budgets are the owner's figures for a desk's first screen.
+ */
+export function overBudget(
+  weight: Weight,
+  budgets: Budgets,
+  scope: 'desk' | 'phone' = 'desk',
+): string[] {
   const found: string[] = [];
-  const page = pageWithoutPictures(desk);
-  if (page > budgets.pageWithFontsNoPicturesBytes)
+  if (scope === 'desk') {
+    const page = pageWithoutPictures(weight);
+    if (page > budgets.pageWithFontsNoPicturesBytes)
+      found.push(
+        `page with fonts and no pictures is ${page} bytes compressed, over its ${budgets.pageWithFontsNoPicturesBytes}`,
+      );
+    if (weight.image.bytes > budgets.firstScreenPicturesDeskBytes)
+      found.push(
+        `first-screen pictures at a desk's width are ${weight.image.bytes} bytes, over their ${budgets.firstScreenPicturesDeskBytes}`,
+      );
+  }
+  if (weight.media.bytes > budgets.heroLoopBytes)
     found.push(
-      `page with fonts and no pictures is ${page} bytes compressed, over its ${budgets.pageWithFontsNoPicturesBytes}`,
-    );
-  if (desk.image.bytes > budgets.firstScreenPicturesDeskBytes)
-    found.push(
-      `first-screen pictures at a desk's width are ${desk.image.bytes} bytes, over their ${budgets.firstScreenPicturesDeskBytes}`,
+      `the hero loop is ${weight.media.bytes} bytes, over its ${budgets.heroLoopBytes}`,
     );
   return found;
 }

@@ -16,6 +16,7 @@ const base: Weight = {
   stylesheet: { count: 0, bytes: 0, gzip: 0 },
   font: { count: 3, bytes: 36000 },
   image: { count: 5, bytes: 100000 },
+  media: { count: 1, bytes: 300000 },
   other: { count: 0, bytes: 0 },
 };
 
@@ -58,7 +59,7 @@ describe('judge', () => {
 });
 
 describe('budgets', () => {
-  it('adds the text kinds gzipped to the fonts, and leaves the pictures out', () => {
+  it('adds the text kinds gzipped to the fonts, and leaves the pictures and the hero loop out', () => {
     expect(pageWithoutPictures(base)).toBe(400 + 200 + 0 + 36000);
   });
 
@@ -66,6 +67,7 @@ describe('budgets', () => {
     const budgets = {
       pageWithFontsNoPicturesBytes: 36600,
       firstScreenPicturesDeskBytes: 100000,
+      heroLoopBytes: 300000,
     };
     expect(overBudget(base, budgets)).toEqual([]);
     expect(
@@ -74,5 +76,28 @@ describe('budgets', () => {
     expect(
       overBudget(base, { ...budgets, firstScreenPicturesDeskBytes: 99999 }),
     ).toHaveLength(1);
+  });
+
+  it('holds the hero loop to its own budget, apart from the pictures', () => {
+    const budgets = {
+      pageWithFontsNoPicturesBytes: 36600,
+      firstScreenPicturesDeskBytes: 100000,
+      heroLoopBytes: 300000,
+    };
+    expect(overBudget(base, { ...budgets, heroLoopBytes: 300000 })).toEqual([]);
+    const over = overBudget(base, { ...budgets, heroLoopBytes: 299999 });
+    expect(over).toHaveLength(1);
+    expect(over[0]).toContain('hero loop');
+    // A loop that fits in the pictures' budget does not count against it, and
+    // a loop over the pictures' budget is not a picture over budget.
+    expect(
+      overBudget(base, { ...budgets, firstScreenPicturesDeskBytes: 299999 }),
+    ).toHaveLength(0);
+  });
+
+  it('counts the hero loop out of the page without pictures', () => {
+    expect(
+      pageWithoutPictures({ ...base, media: { count: 1, bytes: 900000 } }),
+    ).toBe(400 + 200 + 36000);
   });
 });
