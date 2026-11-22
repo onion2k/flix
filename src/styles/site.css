@@ -414,10 +414,13 @@ main {
   margin: 0;
 }
 
+/* A footer link is at least a 44px target. A short one, as "MIT" is, sits at
+   the start of that room and not in the middle of it, so that the words of
+   the licence line keep an ordinary space between them. */
 .site-footer a {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: var(--size-target);
   min-height: var(--size-target);
   text-underline-offset: 0.3em;
