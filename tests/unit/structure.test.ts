@@ -5,7 +5,8 @@
 // test and tie the thing to the page. It counts the files it read, so that a
 // moved folder is a failure and not a pass over nothing, and it tries its own
 // reading on sources that do import wrongly, so that a pattern that matched
-// nothing would be seen.
+// nothing would be seen. It also holds that the language's own global random
+// is named nowhere in src/, since all chance comes from catalogue/chance.ts.
 import { describe, expect, it } from 'vitest';
 
 // Vite reads every file in the folder as text, as the build would find them,
@@ -66,6 +67,46 @@ describe('src/catalogue', () => {
   for (const [file, source] of read) {
     it(`${file.replace('../../src/catalogue/', '')} imports nothing from outside the folder but astro/zod`, () => {
       expect(outsiders(source)).toEqual([]);
+    });
+  }
+});
+
+// Chance has one source, the seeded one in catalogue/chance.ts, so that a
+// seed handed in by a test gives the same page every time. A call to the
+// language's global random anywhere in the page, a script or a component
+// would pass every other unit test and make the end-to-end ones differ from
+// run to run. The files are read as text, .astro and .ts alike.
+const everything = import.meta.glob<string>('../../src/**/*.{ts,astro}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+
+const globalRandom = /\bMath\s*\.\s*random\b|\bcrypto\s*\.\s*getRandomValues\b/;
+
+describe('the global random (the reading itself)', () => {
+  it('finds each way of reaching for it, and nothing else', () => {
+    expect(globalRandom.test('const a = Math.random();')).toBe(true);
+    expect(globalRandom.test('const a = Math . random;')).toBe(true);
+    expect(globalRandom.test('crypto.getRandomValues(x)')).toBe(true);
+    expect(globalRandom.test('const a = seeded(1)();')).toBe(false);
+    expect(globalRandom.test('Math.floor(random() * 2)')).toBe(false);
+  });
+});
+
+describe('src', () => {
+  const read = Object.entries(everything);
+
+  it('has files to read, so that a moved folder is not a pass', () => {
+    expect(read.length).toBeGreaterThan(20);
+    expect(read.some(([file]) => file.endsWith('/catalogue/chance.ts'))).toBe(
+      true,
+    );
+  });
+
+  for (const [file, source] of read) {
+    it(`${file.replace('../../src/', '')} does not use the global random`, () => {
+      expect(globalRandom.test(source)).toBe(false);
     });
   }
 });

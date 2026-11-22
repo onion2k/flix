@@ -65,7 +65,10 @@ commit of its own that says what it is for.
   colour a picture waits in from the pixels of a small copy of it.
   `moving.ts` says where an arrow-key or gamepad move lands among the
   links, which direction a pad holds, and when a held one fires (time
-  handed in).
+  handed in). `chance.ts` is the one source of chance: a seeded generator
+  (mulberry32), `pick` (one id that is not excluded, with the random
+  handed in), and `seedFrom` (a seed from outside, or the clock's reading
+  handed in). Nothing in `src/` calls the language's global random.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -192,7 +195,9 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name   |
 | `tests/unit/rows.test.ts`           | the page's model, refusals, the not listed           |
 | `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files           |
-| `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
+| `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no global  |
+|                                     | random anywhere in `src/`                            |
+| `tests/unit/chance.test.ts`         | the seeded run, pick's exclusions and fairness       |
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
