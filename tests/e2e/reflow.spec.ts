@@ -43,6 +43,10 @@ async function problems(page: Page): Promise<string[]> {
           (node.textContent ?? '').trim() !== '',
       );
       if (box.width === 0 && box.height === 0) continue;
+      // The words a link says to a screen reader are one pixel square and
+      // clipped on purpose, and are not drawn: they are not a box that cuts
+      // its text.
+      if (el.closest('.visually-hidden') !== null) continue;
       const tag = `${el.tagName.toLowerCase()} "${(el.textContent ?? '').trim().slice(0, 30)}"`;
       if (el !== inStrip) {
         if (

@@ -13,6 +13,7 @@
 // fetch the big picture of every candidate.
 import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
+import OutsideLink from './OutsideLink.astro';
 import inlineScript from '../scripts/today-inline.js?raw';
 
 interface Props {
@@ -116,9 +117,9 @@ const files = listed
             <h2 id={`feature-title-${at}`}>{card.title}</h2>
             <p class="description">{card.description}</p>
             {card.href ? (
-              <a class="button" href={card.href}>
-                {card.linkName}
-              </a>
+              <OutsideLink class="button" href={card.href}>
+                {card.linkText}
+              </OutsideLink>
             ) : null}
           </div>
         </section>
@@ -152,9 +153,9 @@ const files = listed
         <h2 id="feature-title">{card.title}</h2>
         <p class="description">{card.description}</p>
         {card.href ? (
-          <a class="button" href={card.href}>
-            {card.linkName}
-          </a>
+          <OutsideLink class="button" href={card.href}>
+            {card.linkText}
+          </OutsideLink>
         ) : null}
       </div>
     </section>

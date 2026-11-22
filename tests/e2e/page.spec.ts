@@ -67,7 +67,9 @@ test('the feature has its label, title, words and Play link', async ({
   await expect(feature.locator('p:not([data-label])')).not.toBeEmpty();
   const play = feature.getByRole('link');
   await expect(play).toHaveCount(1);
-  await expect(play).toHaveAccessibleName(`Play ${name}`);
+  await expect(play).toHaveAccessibleName(
+    `Play ${name} (opens in a new window)`,
+  );
   expect(await play.getAttribute('href')).toMatch(/^https:\/\//);
   // No words are laid over the picture: nothing but the picture is in its box.
   await expect(feature.locator('picture')).toHaveCount(1);
@@ -160,7 +162,9 @@ test('each card says one of the four labels, and is a link only where it can be 
     if (label.endsWith('Play now')) {
       playable += 1;
       await expect(links).toHaveCount(1);
-      await expect(links).toHaveAccessibleName(`Play ${title}`);
+      await expect(links).toHaveAccessibleName(
+        `Play ${title} (opens in a new window)`,
+      );
       expect(await links.getAttribute('href')).toMatch(/^https:\/\//);
     } else {
       workshop += 1;
@@ -286,20 +290,30 @@ for (const { name, path } of [
       footer.getByRole('link', { name: 'Privacy', exact: true }),
     ).toHaveAttribute('href', '/privacy/');
     await expect(
-      footer.getByRole('link', { name: 'Source', exact: true }),
+      footer.getByRole('link', {
+        name: 'Source (opens in a new window)',
+        exact: true,
+      }),
     ).toHaveAttribute('href', 'https://github.com/onion2k/flix');
     // The words are one line, and each licence in it is a link that says so.
     const line = footer.locator('p');
     await expect(line).toHaveCount(1);
-    await expect(line).toHaveText('Words and pictures CC BY 4.0, code MIT');
+    // Each licence's name ends with the words a link that leaves says.
+    await expect(line).toHaveText(
+      'Words and pictures CC BY 4.0 (opens in a new window), code MIT (opens in a new window)',
+    );
     for (const [label, address] of [
       ['CC BY 4.0', 'https://creativecommons.org/licenses/by/4.0/'],
       ['MIT', 'https://opensource.org/license/mit'],
     ] as const) {
-      const link = line.getByRole('link', { name: label, exact: true });
+      const link = line.getByRole('link', {
+        name: `${label} (opens in a new window)`,
+        exact: true,
+      });
       await expect(link).toHaveCount(1);
       await expect(link).toHaveAttribute('href', address);
-      await expect(link).toHaveAttribute('rel', 'license');
+      // The licence keeps its rel and gains noopener (held in windows.spec.ts).
+      await expect(link).toHaveAttribute('rel', /(^|\s)license(\s|$)/);
     }
     // It ends the page: after main, and not inside it.
     const after = await page.evaluate(() => {

@@ -1,0 +1,27 @@
+---
+// The small icon, an arrow leaving a box, that tells a sighted reader a link
+// opens in a new window. It is the sight half of the warning (WCAG 3.2.5): the
+// words, in the link's name, are the other, so the icon is hidden from the
+// accessibility tree and a screen reader hears them once. It is drawn inline in
+// currentColor, so it takes the colour of whatever it sits in, including where
+// colours are forced, and its few lines are this site's own. Keeping it with
+// the word before it is the link's to do (see OutsideLink.astro). Without it a
+// link that leaves the site would look like one that does not, and each place
+// that has one would draw its own.
+---
+
+<svg
+  class="new-window-icon"
+  viewBox="0 0 16 16"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.75"
+  stroke-linecap="square"
+  stroke-linejoin="miter"
+  focusable="false"
+  aria-hidden="true"
+>
+  <path d="M7 2.5H2.5v11h11V9" />
+  <path d="M9.5 2.5h4v4" />
+  <path d="M13.5 2.5 7 9" />
+</svg>

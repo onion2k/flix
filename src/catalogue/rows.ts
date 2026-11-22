@@ -34,7 +34,7 @@ export interface Entry<Picture> {
   url?: string | undefined;
 }
 
-/** What one card draws. `href` and `linkName` exist only where there is a link. */
+/** What one card draws. `href`, `linkText` and `linkName` exist only where there is a link. */
 export interface Card<Picture> {
   id: string;
   title: string;
@@ -46,6 +46,9 @@ export interface Card<Picture> {
   previews?: Picture[];
   label: string;
   href?: string;
+  /** What the link says to a sighted reader, where there is a link. */
+  linkText?: string;
+  /** What it is named to a screen reader: its text and the new window's words. */
   linkName?: string;
 }
 
@@ -61,6 +64,14 @@ export interface Page<Picture> {
   /** Ids that have an entry file and are neither the feature nor in a row. */
   notListed: string[];
 }
+
+/**
+ * What every link that leaves the site says before it is followed, in brackets
+ * at the end of its name (WCAG 3.2.5, technique G201). A card's name is made
+ * with it here, and the page's other links read it from here, so that the
+ * words are said once and cannot differ from link to link.
+ */
+export const NEW_WINDOW = '(opens in a new window)';
 
 const KIND_WORDS = { game: 'Game', toy: 'Toy' } as const;
 
@@ -78,7 +89,8 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
   if (entry.previews !== undefined) card.previews = entry.previews;
   if (entry.url !== undefined) {
     card.href = entry.url;
-    card.linkName = `Play ${entry.title}`;
+    card.linkText = `Play ${entry.title}`;
+    card.linkName = `${card.linkText} ${NEW_WINDOW}`;
   }
   return card;
 }

@@ -6,8 +6,9 @@
 // held, the key is the browser's. A gamepad is read only while one is
 // connected: gamepadconnected starts one read a frame, which turns the d-pad
 // or the left stick into a held direction, fires it as repeating() says, and
-// follows the focused link on the first button; gamepaddisconnected stops the
-// loop when no pad is left. The stops are read from the page as it is at the
+// follows the focused link on the first button (see follow()), which opens a
+// new window where the link does; gamepaddisconnected stops the loop when no
+// pad is left. The stops are read from the page as it is at the
 // moment of a move (a row scrolls, so centres change). It builds no markup,
 // sets no style, and keeps only the loop's handle and the last frame's small
 // record, so nothing it keeps grows. Without it the links can be reached only
@@ -99,6 +100,24 @@ function standardPad(): Gamepad | undefined {
   ) as Gamepad | undefined;
 }
 
+/**
+ * Follows a link as a press of the pad's first button, which is not a click,
+ * key or touch and may not be taken as one. A link that opens a new window is
+ * opened here, and the new window is cut from this one as noopener would cut
+ * it. A browser that refuses a window nothing it counts as the reader's asked
+ * for gives back null, and then this window goes to the address, so that the
+ * press is never lost. A link that does not open a window is clicked.
+ */
+function follow(link: HTMLAnchorElement): void {
+  if (link.target !== '_blank') {
+    link.click();
+    return;
+  }
+  const opened = window.open(link.href, '_blank');
+  if (opened === null) window.location.assign(link.href);
+  else opened.opener = null;
+}
+
 let frame: number | null = null;
 let repeat: Repeat | null = null;
 let wasDown = false;
@@ -121,10 +140,10 @@ function read(now: number): void {
   if (pressedNow(wasDown, down)) {
     const here = document.activeElement;
     if (
-      here instanceof HTMLElement &&
+      here instanceof HTMLAnchorElement &&
       here.matches(`${FEATURE_LINK}, ${CARD_LINK}`)
     )
-      here.click();
+      follow(here);
   }
   wasDown = down;
 }

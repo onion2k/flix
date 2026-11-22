@@ -65,7 +65,10 @@ test('the outside links are where the words say, and the review date is shown', 
   await page.goto('/privacy/');
   const main = page.locator('main');
   for (const [name, address] of LINKS) {
-    const link = main.getByRole('link', { name, exact: true });
+    const link = main.getByRole('link', {
+      name: `${name} (opens in a new window)`,
+      exact: true,
+    });
     await expect(link, `${name} is linked once`).toHaveCount(1);
     await expect(link).toHaveAttribute('href', address);
   }
@@ -105,6 +108,9 @@ test('at 1440 wide no paragraph runs to more than 80 characters a line', async (
       let top = Number.NaN;
       let line = { text: '', characters: 0 };
       for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        // The words a link says to a screen reader are not drawn as text, so
+        // they are not a line's characters.
+        if (node.parentElement?.closest('.visually-hidden')) continue;
         const text = node.textContent ?? '';
         for (let at = 0; at < text.length; at += 1) {
           range.setStart(node, at);

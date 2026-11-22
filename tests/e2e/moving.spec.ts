@@ -657,31 +657,42 @@ test.describe('a gamepad', () => {
     expect((await where(page)).row).toBe(0);
   });
 
-  test('the first button follows the focused link, once a press and not again while held', async ({
+  test('the first button opens the focused link in a new window, once a press and not again while held', async ({
     page,
   }) => {
-    // Clicks are counted and stopped, so that the page stays to be read; the
-    // next test sees the request itself.
+    // window.open is stood in for, so that the page stays to be read and each
+    // call is seen: what it was asked for, and that the window it gave back
+    // was cut from this one. The next tests see a real window, and the refusal.
     await connected(page);
     await page.evaluate(() => {
-      const clicks: string[] = [];
-      Reflect.set(window, '__clicks', clicks);
+      const opened: string[][] = [];
+      const given: { opener: unknown }[] = [];
+      Reflect.set(window, '__opened', opened);
+      Reflect.set(window, '__given', given);
+      window.open = (address, target) => {
+        opened.push([String(address), String(target)]);
+        const window = { opener: 'this page' };
+        given.push(window);
+        return window as unknown as Window;
+      };
+      // A click must not be the way it goes: that is the browser's own, for
+      // a key and a mouse, and the pad does not borrow it.
+      Reflect.set(window, '__clicks', 0);
       document.addEventListener(
         'click',
         (event) => {
-          const link = (event.target as Element).closest('a');
-          if (link !== null) clicks.push(link.href);
+          Reflect.set(window, '__clicks', Reflect.get(window, '__clicks') + 1);
           event.preventDefault();
         },
         true,
       );
     });
-    const clicked = () =>
-      page.evaluate(() => Reflect.get(window, '__clicks') as string[]);
+    const opened = () =>
+      page.evaluate(() => Reflect.get(window, '__opened') as string[][]);
     // Outside the grid nothing is focused, so the button does nothing.
     await hold(page, { buttons: [0] });
     await step(page, FRAME);
-    expect(await clicked()).toEqual([]);
+    expect(await opened()).toEqual([]);
     await hold(page, {});
     await step(page, FRAME);
 
@@ -691,28 +702,75 @@ test.describe('a gamepad', () => {
     );
     await hold(page, { buttons: [0] });
     await step(page, FRAME);
-    expect(await clicked()).toEqual([href]);
+    expect(await opened()).toEqual([[href, '_blank']]);
     // Held for a long time: still once.
     await step(page, 1000);
-    expect(await clicked()).toEqual([href]);
+    expect(await opened()).toEqual([[href, '_blank']]);
     // Let go and press again: a second press.
     await hold(page, {});
     await step(page, FRAME);
     await hold(page, { buttons: [0] });
     await step(page, FRAME);
-    expect(await clicked()).toEqual([href, href]);
+    expect(await opened()).toEqual([
+      [href, '_blank'],
+      [href, '_blank'],
+    ]);
+    // The window it was given is cut from this one, each time.
+    expect(
+      await page.evaluate(() =>
+        (Reflect.get(window, '__given') as { opener: unknown }[]).map(
+          (each) => each.opener,
+        ),
+      ),
+    ).toEqual([null, null]);
+    expect(
+      await page.evaluate(() => Reflect.get(window, '__clicks') as number),
+    ).toBe(0);
   });
 
-  test('the first button asks for the card’s address, and the page asks for it once', async ({
+  test('the first button opens a new window at the card’s address, and this page stays where it was', async ({
     page,
+    context,
   }) => {
     await connected(page);
     await tabToCardByKeys(page);
     const href = await page.evaluate(
       () => (document.activeElement as HTMLAnchorElement).href,
     );
+    const before = page.url();
     const asked: string[] = [];
-    await page.route(href, (route) => {
+    await context.route(href, (route) => {
+      asked.push(route.request().url());
+      return route.abort();
+    });
+    const opened = context.waitForEvent('page');
+    await hold(page, { buttons: [0] });
+    await step(page, FRAME);
+    const popup = await opened;
+    await expect.poll(() => asked.length).toBe(1);
+    expect(asked[0]).toBe(href);
+    expect(context.pages().length).toBe(2);
+    expect(page.url()).toBe(before);
+    // Cut from this page, as a link with noopener is.
+    expect(await popup.evaluate(() => window.opener === null)).toBe(true);
+    await popup.close();
+  });
+
+  test('where the browser refuses the window the first button goes to the address in this window, and the press is not lost', async ({
+    page,
+    context,
+  }) => {
+    await connected(page);
+    await tabToCardByKeys(page);
+    const href = await page.evaluate(
+      () => (document.activeElement as HTMLAnchorElement).href,
+    );
+    // A browser that refuses a window nothing asked for gives back null.
+    await page.evaluate(() => {
+      window.open = () => null;
+    });
+    const asked: string[] = [];
+    await context.route(href, (route) => {
       asked.push(route.request().url());
       return route.abort();
     });
@@ -720,6 +778,7 @@ test.describe('a gamepad', () => {
     await step(page, FRAME);
     await expect.poll(() => asked.length).toBe(1);
     expect(asked[0]).toBe(href);
+    expect(context.pages().length).toBe(1);
   });
 
   test('after the pad is disconnected no frame reads it, and a new one is read again', async ({

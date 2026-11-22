@@ -1,0 +1,45 @@
+---
+// A link to an address outside the site, as the footer, the feature's button
+// and the privacy page's prose draw it: it opens in a new window, cut from this
+// one (target and noopener), and says so before it is followed, in words
+// hidden visually inside it, which are the end of its name, and by the icon
+// (WCAG 3.2.5). A card's link is not drawn here, since its name is made in the
+// catalogue and its icon sits in its label line, but it reads the same words
+// from there. Without it each of those places would write the target, the rel,
+// the words and the icon again, and one that forgot any would be the odd one
+// out.
+import { NEW_WINDOW } from '../catalogue/rows';
+import NewWindowIcon from './NewWindowIcon.astro';
+
+interface Props {
+  href: string;
+  /** What the link is besides one that leaves: a licence, say. */
+  rel?: string;
+  class?: string;
+}
+
+const { href, rel, class: className } = Astro.props;
+// The words as written, without the space a multi-line tag leaves around them:
+// a space before the icon would be a place for the line to break.
+const written = (await Astro.slots.render('default')).trim();
+// The last word goes in a span of its own with the icon, which may not break,
+// so that the icon is never alone at the start of a line: a break may fall
+// anywhere before the last word and nowhere between it and the icon. Both
+// sit in one span, since a link that is a flex box (a button, a footer link)
+// would otherwise drop the space at the end of its first piece of text.
+const at = written.lastIndexOf(' ');
+const head = written.slice(0, at + 1);
+const tail = written.slice(at + 1);
+const relation = [rel, 'noopener'].filter(Boolean).join(' ');
+---
+
+<a href={href} target="_blank" rel={relation} class={className}>
+  <span>
+    <Fragment set:html={head} />
+    <span class="keep-together">
+      <Fragment set:html={tail} />
+      <NewWindowIcon />
+    </span>
+  </span>
+  <span class="visually-hidden">{` ${NEW_WINDOW}`}</span>
+</a>

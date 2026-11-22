@@ -42,12 +42,14 @@ async function settled(page: Page): Promise<void> {
 /**
  * Opens the page with script run, and routes every address outside the site:
  * each is recorded and aborted, so that following a link is seen and goes
- * nowhere. The list it returns is filled as requests are made.
+ * nowhere. The route is on the whole context, since a link that leaves the
+ * site opens a new window, which a route on this page alone would not see.
+ * The list it returns is filled as requests are made.
  */
 async function open(page: Page): Promise<string[]> {
   const outside: string[] = [];
   const own = new URL('http://localhost:4390').origin;
-  await page.route(
+  await page.context().route(
     (url) => url.origin !== own,
     (route) => {
       outside.push(route.request().url());
@@ -165,6 +167,7 @@ function drag(reduced: 'no-preference' | 'reduce') {
         'clicks that reached the document after a drag',
       ).toBe(0);
       expect(outside).toEqual([]);
+      expect(page.context().pages().length, 'windows after a drag').toBe(1);
 
       // The next press and release, with no movement, is an ordinary click.
       const now = await linkedCard(list, 1);
@@ -172,9 +175,10 @@ function drag(reduced: 'no-preference' | 'reduce') {
         now.box.x + now.box.width / 2,
         now.box.y + now.box.height / 3,
       );
-      // The page is gone once the link is followed, so the request is what
-      // is read.
+      // The link opens a new window, so the request is what is read, and this
+      // page stays where it was.
       await expect.poll(() => outside).toContain(href);
+      expect(page.context().pages().length).toBe(2);
     });
 
     test('dragging right from a scrolled strip goes back and stops at 0', async ({

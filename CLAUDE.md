@@ -92,7 +92,8 @@ commit of its own that says what it is for.
   **the page**. They draw what the catalogue returns and work nothing
   out. `Base.astro` is the head, skip link and header;
   `Footer.astro` (drawn by `Base` on every page: Privacy, the licences,
-  Source); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
+  Source); `OutsideLink.astro` and `NewWindowIcon.astro` draw a link that
+  leaves the site (words: `NEW_WINDOW`, `rows.ts`); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
   `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
   `src/scripts/rows.ts` works the row buttons from `paging.ts`, and
   `src/scripts/pictures.ts` brings in the pictures of the **late rows**
@@ -104,7 +105,8 @@ commit of its own that says what it is for.
   `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
   `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). `src/scripts/moving.ts` reads the links' places at each
   move and the gamepad (only while one is connected), and focuses, from
-  `moving.ts`. `src/scripts/surprise.ts` works the header's Surprise me
+  `moving.ts`; its first button opens a link's new window with
+  `window.open`, and goes there in this one if the browser refuses. `src/scripts/surprise.ts` works the header's Surprise me
   button (in `Base.astro`, `hidden` until script shows it, and only
   where two or more cards have a link): it picks with `chance.ts`, never
   the card focus came from nor the last pick, and focuses its link. It is
@@ -246,7 +248,8 @@ Every new thing is taken through each of these that it can reach.
   or its own picture not yet arrived it does nothing and fetches nothing.
 - A card hovered (mouse) and focused (Tab), and a tap on touch: the others
   in its row dim, nothing else does, text stays 7:1.
-- An entry with an address and one without. A row that overflows and one
+- An entry with an address and one without. A link inside the site and
+  one that leaves it (new window). A row that overflows and one
   that fits. A long title, a long description.
 - A picture slow to arrive or missing: the words still stand.
 - The 404 page and the privacy page.
@@ -299,6 +302,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/preview.spec.ts`         | a preview pass, stepped; where it must not run       |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
+| `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
 | `tests/look/look.spec.ts`           | ten pictures of the built site, as written           |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
@@ -396,6 +400,9 @@ The nine points of the definition of done, as this project has them.
 - **Drag by a real mouse and a real touch screen.** The drag is tried
   with Playwright's mouse, and touch and pen with dispatched pointer
   events, which scroll nothing. How it feels is a person's to try.
+- **Whether a real browser lets a gamepad's button open a window is not
+  known.** `moving.ts` falls back to this window; a test stands in a
+  refusal. Nothing here tries a real pop-up blocker.
 - **One browser, Chromium, on one machine.** Firefox, Safari and a real
   phone are not looked at. A screen reader is a person's to try.
 - **Node.** This machine runs 23.4.0, which vitest 5.1.1 does not list

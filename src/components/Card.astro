@@ -1,7 +1,8 @@
 ---
 // One card in a row's strip: the picture, a plain label line, the title and
 // the description. Where the entry has an address the title is a link named
-// "Play <title>" and its stretched ::after makes the whole card its hit area,
+// "Play <title> (opens in a new window)", which opens in a new window, and
+// the icon that says so by sight sits in the label line; its stretched ::after makes the whole card its hit area,
 // so there is one link per card and none nested; where it has none, there is
 // no link and the card is not a control, so it has no hover or focus
 // treatment. Without it each row would repeat this markup and one that
@@ -20,6 +21,7 @@
 import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
 import { pictureColour } from '../build/picture-colour';
+import NewWindowIcon from './NewWindowIcon.astro';
 import Previews from './Previews.astro';
 
 interface Props {
@@ -160,10 +162,17 @@ const previews = await Promise.all(
   )}
   <p class="label" data-label>
     {card.label}
+    {card.href ? <NewWindowIcon /> : null}
   </p>
   <h3>
     {card.href ? (
-      <a class="card-link" href={card.href} aria-label={card.linkName}>
+      <a
+        class="card-link"
+        href={card.href}
+        target="_blank"
+        rel="noopener"
+        aria-label={card.linkName}
+      >
         {card.title}
       </a>
     ) : (

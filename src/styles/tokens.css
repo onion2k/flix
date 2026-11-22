@@ -48,6 +48,9 @@
   --size-edge: 1px;
   --size-edge-hover: 3px;
   --size-outline-button: 2px;
+  /* The icon on a link that opens a new window: a little under the capitals,
+     taller than the x-height, so that it reads as a mark and not a dot. */
+  --size-new-window-icon: 0.9em;
   --size-bar-width: 0.5rem;
   --size-bar-height: 1.6rem;
   --radius: 2px;

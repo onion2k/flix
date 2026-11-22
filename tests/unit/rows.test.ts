@@ -6,7 +6,11 @@
 // says so. Each refusal is read for the file and the id in its message, since
 // the build prints that message and it is all the person has to go on.
 import { describe, expect, it } from 'vitest';
-import { buildPage, CatalogueError } from '../../src/catalogue/rows';
+import {
+  buildPage,
+  CatalogueError,
+  NEW_WINDOW,
+} from '../../src/catalogue/rows';
 import type { Entry } from '../../src/catalogue/rows';
 import type { CatalogueFile } from '../../src/catalogue/schema';
 
@@ -85,8 +89,15 @@ describe('buildPage', () => {
       pictureAlt: 'A picture of alpha.',
       label: 'Game · Play now',
       href: 'https://alpha.example.com',
-      linkName: 'Play Title of alpha',
+      linkText: 'Play Title of alpha',
+      linkName: 'Play Title of alpha (opens in a new window)',
     });
+  });
+
+  it('says in one constant that a link opens in a new window, and ends a card’s name with it', () => {
+    expect(NEW_WINDOW).toBe('(opens in a new window)');
+    const card = buildPage(entries, config).rows[0]?.cards[1];
+    expect(card?.linkName?.endsWith(` ${NEW_WINDOW}`)).toBe(true);
   });
 
   it('gives a card without an address no link and "In the workshop"', () => {
@@ -94,6 +105,7 @@ describe('buildPage', () => {
     expect(card?.label).toBe('Toy · In the workshop');
     expect(card).not.toHaveProperty('href');
     expect(card).not.toHaveProperty('linkName');
+    expect(card).not.toHaveProperty('linkText');
   });
 
   it("passes an entry's previews through, in order, and gives a card none where it has none", () => {

@@ -197,7 +197,8 @@ for (const size of SIZES) {
       }) => {
         const own = new URL(baseURL ?? '').origin;
         const asked: string[] = [];
-        page.on('request', (request) => asked.push(request.url()));
+        // On the context, so that a window a link opened would be heard.
+        page.context().on('request', (request) => asked.push(request.url()));
         await open(page, 7);
         const before = page.url();
         let reached = 0;
@@ -212,6 +213,7 @@ for (const size of SIZES) {
         }
         expect(reached).toBe(4);
         expect(page.url()).toBe(before);
+        expect(page.context().pages().length).toBe(1);
         expect(asked.length).toBeGreaterThan(3);
         expect(asked.filter((url) => new URL(url).origin !== own)).toEqual([]);
       });
@@ -268,7 +270,7 @@ test('Enter held down on the button follows no link, and a fresh Enter on the ca
 }) => {
   const own = new URL(baseURL ?? '').origin;
   const left: string[] = [];
-  await page.route(
+  await page.context().route(
     (url) => url.origin !== own,
     async (route) => {
       left.push(route.request().url());
@@ -287,10 +289,13 @@ test('Enter held down on the button follows no link, and a fresh Enter on the ca
   }
   await page.keyboard.up('Enter');
   expect(left).toEqual([]);
+  expect(page.context().pages().length).toBe(1);
   expect((await landed(page)).onLink).toBe(true);
   // Let go and pressed again, Enter on the card is the reader's own choice.
   await page.keyboard.press('Enter');
+  // The link opens a new window, so the request is what is read.
   await expect.poll(() => left.length).toBeGreaterThan(0);
+  expect(page.context().pages().length).toBe(2);
 });
 
 test.describe('what it leaves out', () => {
