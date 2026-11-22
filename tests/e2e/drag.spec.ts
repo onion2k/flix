@@ -15,6 +15,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
+import { atRest, untilScrolled } from './scrolling';
 
 test.use({ viewport: { width: 1440, height: 1000 } });
 
@@ -27,23 +28,6 @@ function strip(page: Page, id: string): Locator {
 }
 
 const left = (list: Locator) => list.evaluate((el) => el.scrollLeft);
-
-/** The strip has stopped: its position is the same across two frames. */
-async function atRest(list: Locator): Promise<void> {
-  await expect
-    .poll(() =>
-      list.evaluate(
-        (el) =>
-          new Promise<boolean>((done) => {
-            const was = el.scrollLeft;
-            requestAnimationFrame(() =>
-              requestAnimationFrame(() => done(el.scrollLeft === was)),
-            );
-          }),
-      ),
-    )
-    .toBe(true);
-}
 
 /** Two frames drawn: a state to wait on where nothing is meant to happen. */
 async function settled(page: Page): Promise<void> {
@@ -198,13 +182,18 @@ function drag(reduced: 'no-preference' | 'reduce') {
     }) => {
       await open(page);
       const list = strip(page, FIRST);
-      await page
-        .locator(`section[id="${FIRST}"]`)
-        .getByRole('button', { name: /^Next/ })
-        .click();
-      await expect.poll(() => left(list)).toBeGreaterThan(0);
+      // The strip is read only once the browser says the scroll the button
+      // began has ended: read while it glides, the drag below began from a
+      // place the strip was only passing through.
+      await untilScrolled(list, () =>
+        page
+          .locator(`section[id="${FIRST}"]`)
+          .getByRole('button', { name: /^Next/ })
+          .click(),
+      );
       await atRest(list);
       const from = await left(list);
+      expect(from).toBeGreaterThan(0);
       const { box } = await visibleCard(list);
       const x = box.x + box.width / 2;
       const y = box.y + box.height / 3;

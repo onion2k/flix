@@ -6,6 +6,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
+import { atRest } from './scrolling';
 
 const catalogue = readRows();
 
@@ -29,23 +30,6 @@ const left = (list: Locator) => list.evaluate((el) => el.scrollLeft);
 
 async function overflows(list: Locator): Promise<boolean> {
   return list.evaluate((el) => el.scrollWidth - el.clientWidth > 1);
-}
-
-/** The strip has stopped: its position is the same across two frames. */
-async function atRest(list: Locator): Promise<void> {
-  await expect
-    .poll(() =>
-      list.evaluate(
-        (el) =>
-          new Promise<boolean>((done) => {
-            const was = el.scrollLeft;
-            requestAnimationFrame(() =>
-              requestAnimationFrame(() => done(el.scrollLeft === was)),
-            );
-          }),
-      ),
-    )
-    .toBe(true);
 }
 
 /** Two frames drawn: a state to wait on where nothing is meant to happen. */
