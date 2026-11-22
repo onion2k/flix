@@ -38,7 +38,11 @@ commit of its own that says what it is for.
 ## Layout
 
 - `src/catalogue/` is **the thing**: plain TypeScript with no Astro in
-  it, importing nothing of the page. _Not built yet: part 3._
+  it, importing nothing of the page and nothing outside the folder but
+  `astro/zod`. `schema.ts` holds the shape of an entry and of the rows
+  file, and `rows.ts` builds the page's model from them and refuses a
+  catalogue that does not hold together, naming file and id. _`paging.ts`
+  is not built yet: part 4._
 - `src/content/` is where the content lives: an entry a file, its
   picture, and the rows in their order. _Not built yet: part 3._
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
@@ -62,6 +66,9 @@ name a thing by what it is.
 
 - **Something the user sees:** none yet. Part 4's `Card.astro`, with its
   test in `tests/e2e/`, is to be the one to copy.
+- **The thing's logic:** `tests/unit/rows.test.ts`. It builds a small
+  catalogue in the test, reads each refusal's message for the file and
+  the id, and was mutation-checked by hand for each rule.
 - **A tool that measures:** `tests/unit/tokens.test.ts`. It reads the
   file as the build does, counts what it reached so that reading nothing
   is a failure, and was seen to fail with a token removed and with one
@@ -94,13 +101,16 @@ Every new thing is taken through each of these that it can reach.
 
 ## Gates
 
-| Gate                        | What it holds today                              |
-| --------------------------- | ------------------------------------------------ |
-| `npm run secrets`           | nothing staged looks like a key                  |
-| `prettier --check .`        | one formatter decides every file it should       |
-| `npm run types`             | no type error in `.astro` or `.ts`               |
-| `npm run lint`              | type-aware mistakes in `.ts`                     |
-| `tests/unit/tokens.test.ts` | each colour token defined once, as the plan says |
+| Gate                           | What it holds today                                |
+| ------------------------------ | -------------------------------------------------- |
+| `npm run secrets`              | nothing staged looks like a key                    |
+| `prettier --check .`           | one formatter decides every file it should         |
+| `npm run types`                | no type error in `.astro` or `.ts`                 |
+| `npm run lint`                 | type-aware mistakes in `.ts`                       |
+| `tests/unit/tokens.test.ts`    | each colour token defined once, as the plan says   |
+| `tests/unit/schema.test.ts`    | an entry and the rows file refused by path or name |
+| `tests/unit/rows.test.ts`      | the page's model, and the cross-file refusals      |
+| `tests/unit/structure.test.ts` | `src/catalogue` imports nothing but `astro/zod`    |
 
 No gate has a baseline or a tolerance yet. Contrast, motion, the audit,
 the pictures and page weight arrive in part 5, each with its figures in
