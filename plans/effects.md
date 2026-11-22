@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 4 of 7.
+State: building, part 5 of 7.
 
 ## Context
 
@@ -73,7 +73,7 @@ and this plan is copied to `plans/effects.md`.
       `site.css` (the grab cursor). **Tests:** a real mouse drag moves the
       strip and follows no link; a plain click still does; the row
       buttons and the keyboard are as they were.
-- [ ] **4. Arrow keys and a gamepad.** With focus on a card's link or
+- [x] **4. Arrow keys and a gamepad.** With focus on a card's link or
       the feature's button: Left and Right move to the next linked card
       in the row, Up and Down to the nearest in the row above or below,
       Home and End to the row's ends. Tab is unchanged, and arrows on the
