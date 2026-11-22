@@ -1,6 +1,6 @@
 # Ooerflix: the first site
 
-State: building, part 4 of 6.
+State: building, part 5 of 6.
 
 ## Context
 
@@ -175,7 +175,7 @@ session. Each part is checked here against its files before the next.
       Chess and coinpusher at 1280x800. **Out:** any markup. **Proved
       by:** unit tests seen red then green; each refusal of spec 8 seen
       by breaking a real entry and building.
-- [ ] **4. The page.** The specs `page`, `rows`, `keyboard`, `reflow`,
+- [x] **4. The page.** The specs `page`, `rows`, `keyboard`, `reflow`,
       `nojs` and `origin` in `tests/e2e/` first (spec 1 to 4, 6, 9 to 11), then
       `paging.ts` with its unit test, the components, `site.css`,
       `rows.ts`, the 404, `robots.txt`, sitemap, head tags and a plain
