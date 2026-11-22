@@ -3,7 +3,8 @@
 // is built by the catalogue, which refuses a catalogue that does not hold
 // together, naming the file and the id, so that a broken one stops the build;
 // this page only draws what comes back. The page's script, which pages the
-// rows, brings in the late rows' pictures and lets a mouse drag a strip, is added here and nowhere else.
+// rows, brings in the late rows' pictures, lets a mouse drag a strip and moves
+// focus by arrow key and gamepad, is added here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Feature from '../components/Feature.astro';
@@ -50,4 +51,5 @@ if (page.notListed.length > 0) {
   import '../scripts/rows';
   import '../scripts/pictures';
   import '../scripts/drag';
+  import '../scripts/moving';
 </script>

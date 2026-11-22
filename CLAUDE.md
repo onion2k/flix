@@ -63,6 +63,9 @@ commit of its own that says what it is for.
   where each goes. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
+  `moving.ts` says where an arrow-key or gamepad move lands among the
+  links, which direction a pad holds, and when a held one fires (time
+  handed in).
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -88,7 +91,9 @@ commit of its own that says what it is for.
   IntersectionObserver on each late row (`MARGIN`, 300px) moves them into
   `srcset` and `src`; it also checks each frame's `data-waiting` with
   `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
-  `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). All three are imported by the one script block in
+  `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). `src/scripts/moving.ts` reads the links' places at each
+  move and the gamepad (only while one is connected), and focuses, from
+  `moving.ts`. All four are imported by the one script block in
   `index.astro`. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
@@ -138,8 +143,13 @@ An end-to-end test opens the built site through Playwright's `baseURL`
 --ignore-lock`, since Astro 7 otherwise backgrounds the server and
 Playwright reads that as it dying), which is this project's own so
 that a test never meets a dev server on 4321. It never reuses a server
-it finds there. There is no scene to set and no time to step: the page is
-the same on every load.
+it finds there. There is no scene to set: the page is
+the same on every load. `moving.spec.ts` stands a gamepad in with
+`addInitScript` (`navigator.getGamepads` returns what the test sets on
+`window.__pad`: standard mapping, 17 buttons, 4 axes, and a count of
+calls) and holds the clock with `page.clock.install` then `pauseAt`. Each
+`runFor(16)` is one frame, since Playwright steps `requestAnimationFrame`,
+`performance.now` and `Date` together, so the 400ms and 150ms are stepped.
 
 ## Edge cases
 
@@ -150,7 +160,12 @@ Every new thing is taken through each of these that it can reach.
   has exactly one picture in the accessibility tree either way.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
   press that does not move is a click.
-- By keyboard alone: order, a visible focus ring, nothing trapped.
+- By keyboard alone: order, a visible focus ring, nothing trapped. With
+  focus on a link in the grid, arrows move it and are the grid's even at
+  an end; on a strip, a nav link, a button or with a modifier, they are
+  the browser's.
+- A gamepad: none connected reads nothing; connected, one read a frame;
+  disconnected, none.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
   zoom, and each side of every step in `site.css`: a fault can sit
   between two widths that both pass. WCAG 1.4.12 text spacing.
@@ -180,6 +195,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
+| `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
@@ -190,6 +206,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll, link,  |
 |                                     | Tab, print, no observer; markup holds no address     |
 | `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
+| `tests/e2e/moving.spec.ts`          | arrow keys through the grid; a stood-in pad, stepped |
 | `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
@@ -233,8 +250,8 @@ The nine points of the definition of done, as this project has them.
 
 ## What is not held
 
-- **No seed, stepped time, fuzzer, determinism or saved shape.** A static
-  page has none of them. The catalogue's refusals at build are to stand
+- **No seed, fuzzer, determinism or saved shape,** and time is stepped only
+  for the gamepad. A static page has no use for them. The catalogue's refusals at build are to stand
   in for "what comes from outside is checked".
 - **Headers as served.** `netlify.toml` is not read by anything here. The
   headers are read from the live address once it exists.
@@ -283,6 +300,10 @@ The nine points of the definition of done, as this project has them.
 - **The fonts have no metric-matched fallback** (`optimizedFallbacks` is
   off, since the build fails with it on), so text may shift as they
   arrive.
+- **No real controller has been tried.** The stand-in proves the reading
+  and the timing, not a device. The standard mapping is assumed (d-pad
+  buttons 12 to 15, left stick axes 0 and 1, first button 0); a pad with
+  another mapping is ignored. The owner is to try one.
 - **No mutation gate.** Mutations are by hand, and reported.
 
 ## Keeps
