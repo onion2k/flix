@@ -14,7 +14,21 @@ if (address === undefined) {
   process.exit(2);
 }
 
-const response = await fetch(address, { redirect: 'follow' });
+// An address that cannot be reached at all is said in one line, with the
+// reason the connection gave, and not as a stack: the commonest case is a
+// name whose certificate has not been issued yet, and its message says so.
+let response;
+try {
+  response = await fetch(address, { redirect: 'follow' });
+} catch (error) {
+  const cause = error instanceof Error ? error.cause : undefined;
+  const why =
+    cause instanceof Error
+      ? `${'code' in cause ? `${String(cause.code)}: ` : ''}${cause.message}`
+      : String(error);
+  console.error(`COULD NOT REACH ${address}: ${why}`);
+  process.exit(1);
+}
 await response.body?.cancel();
 const header = (name) => response.headers.get(name) ?? '';
 
@@ -48,6 +62,14 @@ const checks = [
 ];
 
 let failed = 0;
+// Headers on a page that is not the site prove nothing about the site: a
+// host's own "not found" page can carry every one of them.
+if (!response.ok) {
+  failed += 1;
+  console.error(
+    `NOT THE SITE: ${response.url} answered ${response.status}, so its headers are some other page's`,
+  );
+}
 for (const [name, ok, why] of checks) {
   if (!ok) {
     failed += 1;
@@ -55,6 +77,6 @@ for (const [name, ok, why] of checks) {
   }
 }
 console.log(
-  `${response.url} answered ${response.status}: ${checks.length - failed} of ${checks.length} headers held`,
+  `${response.url} answered ${response.status}: ${checks.filter(([, ok]) => ok).length} of ${checks.length} headers held`,
 );
 process.exit(failed === 0 ? 0 : 1);
