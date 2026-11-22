@@ -76,11 +76,12 @@ describe('src/content/catalogue.json', () => {
   });
 
   it('has a list of features, so that reading none is not a pass', () => {
-    // Part 6 of plans/effects.md sets three. If the owner empties the list
-    // this is the one test to change, on purpose.
+    // Which sites they are is the owner's to choose and change, so it is not
+    // held here (it was, to three named sites, until the owner's reorder of
+    // 2026-11-22); that there are some, each with a file, is.
     expect(catalogueJson.features.length).toBeGreaterThanOrEqual(1);
-    expect(catalogueJson.features).toEqual(
-      expect.arrayContaining(['aquaclysm', 'ooergolf', 'chopdrop']),
+    expect(catalogueJson.features.filter((id) => !ids.includes(id))).toEqual(
+      [],
     );
   });
 

@@ -1,41 +1,40 @@
 {
-  "feature": "nuclear-fishin",
-  "features": ["aquaclysm", "ooergolf", "chopdrop"],
+  "feature": "aquaclysm",
+  "features": ["ooergolf", "pushminer"],
   "rows": [
     {
       "id": "play-now",
       "title": "Play now",
       "sites": [
-        "nuclear-fishin",
         "aquaclysm",
-        "coinpush",
+        "tiny-slots",
         "chess",
         "ooergolf",
         "pushminer",
         "chopdrop",
-        "propshop"
+        "petz-9000"
       ]
     },
     {
       "id": "more-to-play",
       "title": "More to play",
-      "sites": ["book-worm", "codex-squadron", "fruit-machine", "tiny-slots"]
+      "sites": [
+        "book-worm",
+        "codex-squadron",
+        "propshop",
+        "coinpush",
+        "fruit-machine"
+      ]
     },
     {
       "id": "toys",
       "title": "Toys",
-      "sites": [
-        "petz-9000",
-        "heist",
-        "spiro",
-        "release-flow-model",
-        "coinpusher"
-      ]
+      "sites": ["heist", "spiro", "release-flow-model", "coinpusher"]
     },
     {
       "id": "in-the-workshop",
       "title": "In the workshop",
-      "sites": ["snappy", "ooerrace"]
+      "sites": ["nuclear-fishin", "snappy", "ooerrace"]
     }
   ]
 }
