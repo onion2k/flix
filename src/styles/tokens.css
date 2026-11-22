@@ -68,4 +68,14 @@
   --card-width-phone: 78vw;
   --zoom-hover: 1.04;
   --duration-hover: 250ms;
+
+  /*
+   * House lights: how bright the pictures of a row's other cards are while one
+   * card is pointed at, and how long the ease to it takes. 0.55 leaves the
+   * pictures plainly there, only darker, so that it reads as a light turned
+   * down on them and not as an image that has failed to load, which a much
+   * lower figure begins to look like.
+   */
+  --brightness-dim: 0.55;
+  --duration-dim: 300ms;
 }

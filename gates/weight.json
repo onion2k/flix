@@ -9,8 +9,8 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 55689,
-        "gzip": 10167
+        "bytes": 56026,
+        "gzip": 10248
       },
       "script": {
         "count": 0,
@@ -38,8 +38,8 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 55689,
-        "gzip": 10167
+        "bytes": 56026,
+        "gzip": 10248
       },
       "script": {
         "count": 0,

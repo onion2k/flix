@@ -147,6 +147,8 @@ Every new thing is taken through each of these that it can reach.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
+- A card hovered (mouse) and focused (Tab), and a tap on touch: the others
+  in its row dim, nothing else does, text stays 7:1.
 - An entry with an address and one without. A row that overflows and one
   that fits. A long title, a long description.
 - A picture slow to arrive or missing: the words still stand.
@@ -181,6 +183,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
+| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/look/look.spec.ts`           | seven pictures of the built site, as written         |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
@@ -244,6 +247,11 @@ The nine points of the definition of done, as this project has them.
   and were looked at by one person, once. Another GPU or font stack would
   draw them a little differently. Nothing holds the 640 or forced-colors
   pictures.
+- **House lights need `:has()`.** A browser without it shows no dimming,
+  which is the page as it was, and has no fallback. Nothing holds a real
+  touch device: the tap test is Chromium's mobile emulation, and no row of
+  the catalogue mixes linked and unlinked cards, so that test makes one in
+  the page.
 - **Contrast of a hovered card's edge** (accent over a picture) is held
   by no gate, since no token says what is under it.
 - **axe's incompletes** are attached to its report, counted and not

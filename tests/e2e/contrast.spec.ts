@@ -121,6 +121,53 @@ for (const width of WIDTHS) {
       });
     }
 
+    test('with a card hovered, so that the others are dimmed, every piece of text is still 7:1 or better', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await page.evaluate(() => document.fonts.ready);
+      const second = page
+        .locator('section.row')
+        .first()
+        .locator('.card')
+        .nth(1);
+      await second.scrollIntoViewIfNeeded();
+      const box = await second.boundingBox();
+      expect(box, 'the card is drawn').not.toBeNull();
+      await page.mouse.move(
+        (box?.x ?? 0) + (box?.width ?? 0) / 2,
+        (box?.y ?? 0) + (box?.height ?? 0) / 2,
+      );
+      // The state is the one measured only if the neighbours have dimmed and
+      // the ease has finished: wait for both, never a time.
+      await expect(
+        page
+          .locator('section.row')
+          .first()
+          .locator('.card')
+          .first()
+          .locator('.frame img')
+          .first(),
+      ).not.toHaveCSS('filter', 'none');
+      await page.waitForFunction(() => document.getAnimations().length === 0);
+      const pieces = await textPieces(page);
+      expect(pieces.length, 'text nodes measured').toBeGreaterThan(3);
+      const short = pieces.filter(
+        (piece) => piece.ratio < (piece.large ? 4.5 : 7),
+      );
+      expect(
+        short.map(
+          (piece) =>
+            `${piece.ratio.toFixed(2)}:1 "${piece.text}" ${piece.colour} on ${piece.background}`,
+        ),
+      ).toEqual([]);
+      test.info().annotations.push({
+        type: 'measured',
+        description: `${pieces.length} text nodes, with a card hovered`,
+      });
+    });
+
     test('the ring of every control Tab reaches is 3:1 or better against what is behind it', async ({
       page,
     }) => {

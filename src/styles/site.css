@@ -372,6 +372,31 @@ p {
   border-width: var(--size-edge-hover);
 }
 
+/* House lights. While a linked card is pointed at, the pictures of the other
+   cards in its row are dimmed, and the words, the edges, the other rows and
+   the feature are not, so that no text changes its contrast. Only the img is
+   filtered: a filter on the card would dim its words. A late frame is dimmed
+   the same way, whether its picture has arrived or not: the flat panel colour
+   it holds meanwhile is the frame's own background, is not a picture, and is
+   left as it is. The dim is a state and so is here and not in the motion
+   block at the foot; only its ease is there. A browser without :has() draws
+   none of this, which is the page as it was. */
+.strip:has(.card-link:focus-visible)
+  .card:not(:has(.card-link:focus-visible))
+  .frame
+  img {
+  filter: brightness(var(--brightness-dim));
+}
+
+/* Hover only where there is a mouse: a tap on a touch screen leaves its hover
+   stuck, and would leave a row dimmed with nothing to undo it. A card with no
+   link is not a control, so hovering it starts nothing. */
+@media (hover: hover) {
+  .strip:has(.card[data-linked]:hover) .card:not(:hover) .frame img {
+    filter: brightness(var(--brightness-dim));
+  }
+}
+
 .lost {
   padding: var(--space-xl) var(--gutter);
 }
@@ -523,15 +548,18 @@ main {
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
-   the strip glides when a button or a key moves it, and the picture of a
-   linked card eases to a slight zoom inside its own frame. */
+   the strip glides when a button or a key moves it, the picture of a linked
+   card eases to a slight zoom inside its own frame, and the pictures of its
+   row's other cards ease to their dim (the dim itself is above). */
 @media (prefers-reduced-motion: no-preference) {
   .strip {
     scroll-behavior: smooth;
   }
 
   .frame img {
-    transition: transform var(--duration-hover) ease-out;
+    transition:
+      transform var(--duration-hover) ease-out,
+      filter var(--duration-dim) ease-out;
   }
 
   .card[data-linked]:hover .frame img {
