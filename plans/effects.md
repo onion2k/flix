@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 3 of 7.
+State: building, part 4 of 7.
 
 ## Context
 
@@ -65,7 +65,7 @@ and this plan is copied to `plans/effects.md`.
       late frame draws its own colour and they differ; after arrival the
       picture is fully shown; no ease under reduced motion. A look
       picture of the waiting row.
-- [ ] **3. Drag to scroll.** With a mouse, pressing on a row and moving
+- [x] **3. Drag to scroll.** With a mouse, pressing on a row and moving
       more than a few pixels drags it; letting go lets it settle on a
       card. A drag does not follow the link under it, and a press without
       movement is a click as now. Touch and pen are left to the browser.
