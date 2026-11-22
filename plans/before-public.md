@@ -1,6 +1,6 @@
 # Before it goes public
 
-State: building, part 4 of 4.
+State: landed on main at af1bef6, 2026-11-22.
 
 ## Context
 
@@ -121,7 +121,7 @@ Each outside address above answered 200 on 2026-11-22.
 - [x] **3. The budgets.** `gates/weight.json` holds 60 000 and 150 000 as
       agreed figures. **Proved by:** the gate seen failing with a budget
       set under the measurement, then green.
-- [ ] **4. The pass.** Full check, preflight against the built site, the
+- [x] **4. The pass.** Full check, preflight against the built site, the
       links, pictures looked at, and the report.
 
 ## Out of scope
