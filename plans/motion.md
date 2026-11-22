@@ -1,6 +1,6 @@
 # Motion: loops, a card that grows, a moving hero
 
-State: building, part 1 of 4.
+State: building, part 2 of 4.
 
 ## Context
 
@@ -87,7 +87,12 @@ held. After each I run the full check, look at the pictures, put a fault
 of my own in, and commit locally. The look baselines move on purpose and
 each is looked at. Pushing is asked for each time.
 
-- [ ] 1. The loops, recorded and shown to you for approval.
+- [x] 1. The loops, recorded and shown to you for approval. Approved on
+      2026-11-22, twelve of seventeen: Chopdrop, Nuclear Fishin',
+      Aquaclysm, Ooergolf, Fruit Machine, Codex Squadron, Heist, Chess,
+      Book Worm, Pushminer, PETZ-9000 and Tiny Slots. Coinpush,
+      coinpusher, Spiro, Propshop and Release Flow Model keep their still
+      and grow with it.
 - [ ] 2. A: the card grows.
 - [ ] 3. C: the moving hero, with its own budget in `gates/weight.json`.
 - [ ] 4. The pass: full check, polish, preflight against the live site
