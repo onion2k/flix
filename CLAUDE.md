@@ -19,9 +19,24 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run build        the site, as files in dist/
     npm run preview      the built site, at http://localhost:4390
     npm run check:quick  the pre-commit hook: see below
-    npm run test:e2e     Playwright, tests/e2e, against the built site
-    npm run check        the quick check, a build, then the e2e specs
+    npm run test:e2e     Playwright, tests/e2e, against the built site:
+                         the page, contrast as drawn, motion, axe, policy
+    npm run look         the five pictures, tests/look, against baselines
+    npm run look:update  writes them again, for a change meant to move them
+    npm run weight       page weight, tests/gates, against gates/weight.json
+    npm run weight:update  writes that baseline again, on purpose
+    npm run check        the quick check, a build, e2e, look, weight (~20s)
     npm run format       the formatter, writing
+
+Two gates need the network and so are not in `check`; run them before a
+publish, with a build made:
+
+    npm run links        every https address a card links to is alive (a
+                         gone one fails; others are listed as unverified)
+    npm run headers -- <address>   the live address sends a CSP with
+                         frame-ancestors, HSTS, nosniff, a referrer policy
+                         and X-Frame-Options (the local preview sends none)
+    npm run audit        npm audit at high
 
 `npm install` points git at `.githooks/`, and `pre-commit` there runs the
 quick check, which is, cheapest first:
@@ -61,8 +76,10 @@ commit of its own that says what it is for.
 - `astro.config.mjs` holds the site's address, the fonts and the content
   policy. `netlify.toml` holds the build and the headers a file cannot
   carry, `frame-ancestors` among them.
-- `tests/unit/` is vitest. `tests/e2e/` and `tests/look/` are Playwright,
-  against the built site under `npm run preview`.
+- `tests/unit/` is vitest. `tests/e2e/`, `tests/look/` and `tests/gates/`
+  are Playwright (three projects), against the built site under
+  `npm run preview`. `gates/` holds the weight baseline and its budgets,
+  `scripts/` the two gates that need the network.
 - `plans/` holds each plan, with its state line and its boxes.
 
 There is no persisted shape. What has been given out is an address: the
@@ -77,6 +94,11 @@ name a thing by what it is.
 - **The thing's logic:** `tests/unit/rows.test.ts`. It builds a small
   catalogue in the test, reads each refusal's message for the file and
   the id, and was mutation-checked by hand for each rule.
+- **A gate to copy the shape of:** `tests/gates/weight.spec.ts`. The
+  judging is a pure function in `judging.ts` with its own unit tests, the
+  measuring is the spec, the baseline is a file written on purpose by a
+  `:update` script, the wobble was measured and is written beside the
+  tolerance, and it was seen failing on two faults put in on purpose.
 - **A tool that measures:** `tests/unit/tokens.test.ts`. It reads the
   file as the build does, counts what it reached so that reading nothing
   is a failure, and was seen to fail with a token removed and with one
@@ -111,28 +133,43 @@ Every new thing is taken through each of these that it can reach.
 
 ## Gates
 
-| Gate                           | What it holds today                                |
-| ------------------------------ | -------------------------------------------------- |
-| `npm run secrets`              | nothing staged looks like a key                    |
-| `prettier --check .`           | one formatter decides every file it should         |
-| `npm run types`                | no type error in `.astro` or `.ts`                 |
-| `npm run lint`                 | type-aware mistakes in `.ts`                       |
-| `tests/unit/tokens.test.ts`    | each colour token defined once, as the plan says   |
-| `tests/unit/schema.test.ts`    | an entry and the rows file refused by path or name |
-| `tests/unit/rows.test.ts`      | the page's model, and the cross-file refusals      |
-| `tests/unit/structure.test.ts` | `src/catalogue` imports nothing but `astro/zod`    |
-| `tests/unit/paging.test.ts`    | the paging rule, with a pixel of tolerance         |
-| `tests/unit/favicon.test.ts`   | the icon's colours equal the tokens'               |
-| `tests/e2e/page.spec.ts`       | the model drawn, pictures, links, head, 404        |
-| `tests/e2e/rows.spec.ts`       | the row buttons, at both ends, and a fitting row   |
-| `tests/e2e/keyboard.spec.ts`   | real Tab: order, ring, uncovered; 44px targets     |
-| `tests/e2e/reflow.spec.ts`     | 320 and 640, text spacing, stacked rows            |
-| `tests/e2e/nojs.spec.ts`       | the page whole with script off                     |
-| `tests/e2e/origin.spec.ts`     | own origin only, clean console under the policy    |
+| Gate                                | What it holds today                                  |
+| ----------------------------------- | ---------------------------------------------------- |
+| `npm run secrets`                   | nothing staged looks like a key                      |
+| `prettier --check .`                | one formatter decides every file it should           |
+| `npm run types`                     | no type error in `.astro` or `.ts`                   |
+| `npm run lint`                      | type-aware mistakes in `.ts`                         |
+| `tests/unit/tokens.test.ts`         | each colour token defined once, as the plan says     |
+| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1          |
+| `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name   |
+| `tests/unit/rows.test.ts`           | the page's model, and the cross-file refusals        |
+| `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
+| `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
+| `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
+| `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
+| `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404          |
+| `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
+| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
+| `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
+| `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
+| `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
+| `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
+| `tests/e2e/reflow.spec.ts`          | 320 and 640, text spacing, stacked rows              |
+| `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
+| `tests/e2e/origin.spec.ts`          | own origin only, clean console under the policy      |
+| `tests/look/look.spec.ts`           | five pictures of the built site, as written          |
+| `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
+| `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
+| `scripts/headers.mjs`               | a live address sends the five headers (not in check) |
 
-No gate has a baseline or a tolerance yet. Contrast, motion, the audit,
-the pictures and page weight arrive in part 5, each with its figures in
-`gates/` or beside its test.
+Where the figures are kept, never here. The look's baselines are the
+pictures in `tests/look/baselines/` and its tolerance and the wobble
+measured for it are `TOLERANCE` in `tests/look/look.spec.ts`. The weight's
+baseline and its budgets are `gates/weight.json`; its tolerance (0, bytes
+held exactly, with the evidence) is `TOLERANCE` in
+`tests/gates/weight.spec.ts`. The budgets there are the plan's estimates,
+marked as awaiting the owner. The contrast pairs are `TEXT` and `EDGES` in
+`tests/unit/contrast.test.ts`.
 
 ## Done, here
 
@@ -145,7 +182,7 @@ The nine points of the definition of done, as this project has them.
 4. End to end is Playwright against the built site, working each control
    as a user does: a real Tab, a real click.
 5. There is no fuzzer. See below.
-6. Performance is page weight, once its gate exists.
+6. Performance is page weight: `npm run weight`.
 7. Looked at headless, at a desk's width, a phone's and 320px.
 8. A new test is seen to fail with its fault put back.
 9. What was not verified is said.
@@ -166,7 +203,20 @@ The nine points of the definition of done, as this project has them.
   `src/content/`: it is YAML, and parsing it here would need a
   dependency the project does not have. A refusal there is seen as a
   failed `npm run build`, not as a failed test.
-- **No audit, licence or unused-dependency check.**
+- **No licence or unused-dependency check.** `npm run audit` is by hand.
+- **The weight budgets are the plan's estimates, not agreed figures,**
+  and are marked so in `gates/weight.json`. Making a card picture eager
+  does not move the weight, since Chromium already loads the near lazy
+  ones: only the document's few bytes show it. Nothing here times a load
+  or an interaction.
+- **The look is one machine's.** Its baselines are this Mac's Chromium
+  and were looked at by one person, once. Another GPU or font stack would
+  draw them a little differently. Nothing holds the 640 or forced-colors
+  pictures.
+- **Contrast of a hovered card's edge** (accent over a picture) is held
+  by no gate, since no token says what is under it.
+- **axe's incompletes** are attached to its report, counted and not
+  failed; they are not read by anything.
 - **One browser, Chromium, on one machine.** Firefox, Safari and a real
   phone are not looked at. A screen reader is a person's to try.
 - **Node.** This machine runs 23.4.0, which vitest 5.1.1 does not list
