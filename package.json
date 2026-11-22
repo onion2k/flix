@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "postbuild": "node src/build/write-headers.mjs",
     "preview": "astro preview --port 4390",
     "format": "prettier --write .",
     "types": "astro check",

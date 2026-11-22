@@ -16,7 +16,8 @@ guardrails kit's: this project carries no copy of it, and is held to
 ## Commands
 
     npm run dev          the dev server, at http://localhost:4321
-    npm run build        the site, as files in dist/
+    npm run build        the site, as files in dist/, and last (postbuild)
+                         dist/_headers, the whole content policy
     npm run preview      the built site, at http://localhost:4390
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
@@ -33,9 +34,9 @@ publish, with a build made:
 
     npm run links        every https address a card links to is alive (a
                          gone one fails; others are listed as unverified)
-    npm run headers -- <address>   the live address sends a CSP with
-                         frame-ancestors, HSTS, nosniff, a referrer policy
-                         and X-Frame-Options (the local preview sends none)
+    npm run headers -- <address>   the live address sends the whole CSP (not
+                         frame-ancestors alone), HSTS, nosniff, a referrer
+                         policy and X-Frame-Options (the preview sends none)
     npm run audit        npm audit at high
 
 `npm install` points git at `.githooks/`, and `pre-commit` there runs the
@@ -141,8 +142,10 @@ commit of its own that says what it is for.
 - `src/styles/tokens.css` says every colour, size and font once.
   `src/styles/site.css` reads them and holds no value of its own.
 - `astro.config.mjs` holds the site's address, the fonts and the content
-  policy. `netlify.toml` holds the build and the headers a file cannot
-  carry, `frame-ancestors` among them.
+  policy's directives. `src/build/write-headers.mjs`, run as `postbuild`,
+  hashes every inline script and style of every built page and writes
+  `dist/_headers`: the one place the policy is sent from, `frame-ancestors`
+  among it. `netlify.toml` holds the build and the other headers.
 - `tests/unit/` is vitest. `tests/e2e/`, `tests/look/` and `tests/gates/`
   are Playwright (three projects), against the built site under
   `npm run preview`. `gates/` holds the weight baseline and its budgets,
@@ -285,6 +288,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed    |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
+| `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it    |
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
 | `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
@@ -297,6 +301,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
+| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it        |
 | `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched, |
 |                                     | no module, UTC, script off, arrows, clean console    |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
@@ -310,7 +315,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/look/look.spec.ts`           | eleven pictures of the built site, as written        |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
-| `scripts/headers.mjs`               | a live address sends the five headers (not in check) |
+| `scripts/headers.mjs`               | a live address sends the whole policy (not in check) |
 
 Where the figures are kept, never here. The look's baselines are the
 pictures in `tests/look/baselines/` and its tolerance and the wobble
@@ -363,8 +368,11 @@ The nine points of the definition of done, as this project has them.
   and in its frame a broken-image mark with the picture's alt words in the
   panel colour, for good. The day changes at midnight UTC and only on a
   load: a page left open does not change.
-- **Headers as served.** `netlify.toml` is not read by anything here. The
-  headers are read from the live address once it exists.
+- **Headers as served.** Nothing here meets Netlify. `dist/_headers` is
+  read as text and, in `header-policy.spec.ts`, added to each document by
+  the test itself, since the preview sends none. That Netlify sends it, and
+  that `netlify.toml` leaves it alone, is read only by `npm run headers`
+  against the live address, after a deploy.
 - **A card half cut off at a strip's edge is brought into view by
   script only.** With script off, Tab leaves it part hidden (the arrow
   keys scroll the strip).

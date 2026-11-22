@@ -16,15 +16,18 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    # The page's own policy is a <meta> tag the build writes, holding the hash
-    # of every inline style, and a meta tag cannot carry frame-ancestors. So
-    # this header holds that one directive and nothing else; the rest of the
-    # policy is in the page. Two policies are intersected by the browser, so
-    # neither loosens the other.
-    Content-Security-Policy = "frame-ancestors 'none'"
+    # There is no Content-Security-Policy here, on purpose. The whole policy is
+    # sent from dist/_headers, which the build writes (src/build/write-headers.mjs)
+    # because it holds the hash of every inline script and style of every page,
+    # and only the build knows those. It is named in that one place: Netlify's
+    # documentation does not say whether a header named in both this file and
+    # _headers is merged, joined or overridden, so none is named twice, and a
+    # change to the policy is made in one file and read in one. frame-ancestors,
+    # which a meta tag cannot carry, is in that policy too.
 
-    # X-Frame-Options is the older spelling of frame-ancestors, for the
-    # browsers that only ever learned this one.
+    # X-Frame-Options is the older spelling of frame-ancestors, which the
+    # policy in _headers carries, for the browsers that only ever learned this
+    # one.
     X-Frame-Options = "DENY"
 
     # Two years, subdomains included, and eligible for the preload list. Only

@@ -39,8 +39,9 @@ export default defineConfig({
      * 'unsafe-inline'. The rest of the directives are set here.
      *
      * frame-ancestors is deliberately absent: a policy in a meta tag ignores
-     * it, and a directive that silently does nothing is worse than none. It is
-     * a real header in netlify.toml.
+     * it, and a directive that silently does nothing is worse than none. The
+     * whole policy, it included, is also sent as a header, from dist/_headers,
+     * which src/build/write-headers.mjs writes after the build.
      */
     csp: {
       ...(todayHash.length > 0

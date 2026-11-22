@@ -1,6 +1,9 @@
 // Reads the headers a live address sends and fails unless the ones that stop
 // framing, downgrades, guessed content types and a leaking referrer are all
-// there. They are set in netlify.toml, which nothing in the build reads, so
+// there, and the content policy is the whole one: frame-ancestors, object-src,
+// base-uri, a default-src, and a script-src that lets no inline code or eval
+// in. The policy comes from dist/_headers (written by the build) and the rest
+// from netlify.toml, and nothing in the build reads either as Netlify does, so
 // the only proof they are sent is a response from where the site is served.
 //   npm run headers -- https://flix.ooer.com/
 //
@@ -33,11 +36,62 @@ await response.body?.cancel();
 const header = (name) => response.headers.get(name) ?? '';
 
 const policy = header('content-security-policy');
+// The policy is read as a browser reads it: a directive is its first mention,
+// and its sources are what follows. Said once here, so that each piece below
+// is a question of this map and not of a pattern over the whole text.
+const directives = new Map();
+for (const part of policy.split(';')) {
+  const [name, ...sources] = part.trim().split(/\s+/);
+  if (name !== undefined && name !== '' && !directives.has(name.toLowerCase()))
+    directives.set(name.toLowerCase(), sources);
+}
+const sourcesOf = (name) => directives.get(name) ?? [];
+const scriptSources = sourcesOf('script-src').map((source) =>
+  source.toLowerCase(),
+);
+// What was found of one directive, short, since a script-src holds a hash for
+// every inline script and a line of them says nothing the first words do not.
+const found = (name) => {
+  if (policy === '') return 'no Content-Security-Policy sent';
+  if (!directives.has(name)) return `no ${name} in the policy`;
+  const text = `${name} ${sourcesOf(name).join(' ')}`;
+  return `got: ${text.length > 100 ? `${text.slice(0, 100)}...` : text}`;
+};
 const checks = [
   [
     'Content-Security-Policy with frame-ancestors',
-    /(^|;)\s*frame-ancestors\s+\S/i.test(policy),
-    policy === '' ? 'no Content-Security-Policy sent' : `got: ${policy}`,
+    sourcesOf('frame-ancestors').length > 0,
+    found('frame-ancestors'),
+  ],
+  [
+    "Content-Security-Policy with object-src 'none'",
+    sourcesOf('object-src').join(' ') === "'none'",
+    found('object-src'),
+  ],
+  [
+    'Content-Security-Policy with base-uri',
+    sourcesOf('base-uri').length > 0,
+    found('base-uri'),
+  ],
+  [
+    'Content-Security-Policy with default-src',
+    sourcesOf('default-src').length > 0,
+    found('default-src'),
+  ],
+  [
+    'Content-Security-Policy with a script-src',
+    directives.has('script-src'),
+    found('script-src'),
+  ],
+  [
+    "Content-Security-Policy with no 'unsafe-inline' in script-src",
+    directives.has('script-src') && !scriptSources.includes("'unsafe-inline'"),
+    found('script-src'),
+  ],
+  [
+    "Content-Security-Policy with no 'unsafe-eval' in script-src",
+    directives.has('script-src') && !scriptSources.includes("'unsafe-eval'"),
+    found('script-src'),
   ],
   [
     'Strict-Transport-Security',
