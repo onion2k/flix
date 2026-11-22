@@ -249,6 +249,13 @@ test.describe('the markup', () => {
         srcsets: [...each.querySelectorAll('.previews img')].map(
           (image) => image.getAttribute('data-preview-srcset') ?? '',
         ),
+        // A picture says its size, so that a browser knows its shape before
+        // it has any of it; preflight asks the same of every picture.
+        shapes: [...each.querySelectorAll('.previews img')].map(
+          (image) =>
+            Number(image.getAttribute('width')) /
+            Number(image.getAttribute('height')),
+        ),
       })),
     );
     const previewed = counts.filter((each) => each.layers > 0);
@@ -268,6 +275,9 @@ test.describe('the markup', () => {
       expect(each.insideFrame, `${each.id} in its frame`).toBe(1);
       expect(each.hidden, `${each.id} aria-hidden`).toBe(true);
       expect(each.alts, `${each.id} alt`).toBe(true);
+      expect(each.shapes.length, `${each.id} has previews`).toBeGreaterThan(0);
+      for (const shape of each.shapes)
+        expect(shape, `${each.id} says a 16 by 9 size`).toBeCloseTo(16 / 9, 2);
       for (const srcset of each.srcsets) {
         const parts = srcset.split(',').map((part) => part.trim());
         expect(parts.map((part) => part.split(/\s+/)[1])).toEqual([

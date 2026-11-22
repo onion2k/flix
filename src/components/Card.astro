@@ -90,6 +90,9 @@ const previews = await Promise.all(
     return {
       src: small.src,
       srcset: `${small.src} ${previewWidths[0]}w, ${large.src} ${previewWidths[1]}w`,
+      // The larger file's size, for the width and height the picture states.
+      width: large.attributes['width'] as number,
+      height: large.attributes['height'] as number,
     };
   }),
 );

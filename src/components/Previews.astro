@@ -9,7 +9,7 @@
 // the row is near). The card's sizes are written once on the layer. Without this
 // the layer would be written in each of the card's two ways of drawing its frame.
 interface Props {
-  previews: { src: string; srcset: string }[];
+  previews: { src: string; srcset: string; width: number; height: number }[];
   /** What the card's width is at each window width: the card's own `sizes`. */
   sizes: string;
 }
@@ -23,6 +23,8 @@ const { previews, sizes } = Astro.props;
       alt=""
       data-preview-src={preview.src}
       data-preview-srcset={preview.srcset}
+      width={preview.width}
+      height={preview.height}
       decoding="async"
     />
   ))}
