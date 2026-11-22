@@ -1,6 +1,6 @@
 # Motion: loops, a card that grows, a moving hero
 
-State: building, part 2 of 4.
+State: building, part 3 of 4.
 
 ## Context
 
@@ -93,7 +93,9 @@ each is looked at. Pushing is asked for each time.
       Book Worm, Pushminer, PETZ-9000 and Tiny Slots. Coinpush,
       coinpusher, Spiro, Propshop and Release Flow Model keep their still
       and grow with it.
-- [ ] 2. A: the card grows.
+- [x] 2. A: the card grows. The owner's new order put the picture budget
+      over; the feature is now drawn at AVIF quality 40 and the picture
+      budget is 200,000, both the owner's choice on 2026-11-22.
 - [ ] 3. C: the moving hero, with its own budget in `gates/weight.json`.
 - [ ] 4. The pass: full check, polish, preflight against the live site
       after a push you approve, and the report.
