@@ -299,11 +299,13 @@ The nine points of the definition of done, as this project has them.
   rows 2000px down), so the weight gate is what holds the waiting, by
   count and by the budget. It measures the home page alone and times no
   load or interaction.
-- **The look is one machine's.** Its baselines are this Mac's Chromium,
-  drawn in software (`--disable-gpu`: the GPU path drew a picture two ways)
+- **The look is one machine's.** Its baselines are this Mac's Chromium
   and were looked at by one person, once. Another GPU or font stack would
   draw them a little differently. Nothing holds the 640 or forced-colors
-  pictures.
+  pictures. A whole page is pictured in a window as tall as the page, never
+  with Playwright's full-page shot, which collapses the window's width as
+  it captures and made one card draw from a different file by chance
+  (`openWhole` in `tests/look/look.spec.ts` has the measurements).
 - **House lights need `:has()`.** A browser without it shows no dimming,
   which is the page as it was, and has no fallback. Nothing holds a real
   touch device: the tap test is Chromium's mobile emulation, and no row of

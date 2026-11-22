@@ -3,19 +3,15 @@
 // width and a phone's, and the first row with its second card focused by a
 // real Tab. Reduced motion is emulated so that
 // nothing is mid-glide, fonts are ready and every picture has decoded before
-// a shot, and nothing waits on a timeout. Pictures below the first screen are
-// lazy and a full-page shot does not scroll to them, so each is made eager
-// first, which changes when it loads and not what it draws. Without this a
-// colour gone muddy, a title that wraps, or a ring lost would pass every
-// other check, since none of them looks.
+// a shot, and nothing waits on a timeout. Without this a colour gone muddy, a
+// title that wraps, or a ring lost would pass every other check, since none of
+// them looks.
 //
-// The baselines are in tests/look/baselines/ and are one machine's (a Mac,
-// Chromium 1.65.1's own). Another GPU or font stack draws them a little
-// differently, and is not argued with from there. The look project draws in
-// software (--disable-gpu, in playwright.config.ts): with the footer in, the
-// first card's picture came out one of two ways, about one run in two, on a
-// cold browser, and 5929 pixels separate them; drawn in software it was the
-// same in 22 runs in a row.
+// A picture of a whole page is taken in a window made as tall as the page,
+// and never with Playwright's full-page shot (see openWhole, below, for the
+// fault that was found in it). The baselines are in tests/look/baselines/ and
+// are one machine's (a Mac, Chromium 1.65.1's own). Another font stack draws
+// them a little differently, and is not argued with from there.
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, test, type Page } from '@playwright/test';
@@ -29,8 +25,11 @@ const LATE_IDS = readRows()
 /**
  * Over 8 runs of the unchanged page, each on a page just started, against a
  * baseline written with no allowance at all (threshold 0, 0 pixels), the
- * largest difference in any of the five pictures was 0 pixels, on this
- * Mac with Chromium from Playwright 1.65.1, 2026-11-22. So the allowance is
+ * largest difference in any of the five pictures there then were was 0
+ * pixels, on this Mac with Chromium from Playwright 1.65.1, 2026-11-22. That
+ * was before a fault in how whole pages were pictured was found (see
+ * openWhole); with it put right, the eight pictures passed 48 runs of 48
+ * inside this allowance, six at once, on the same day. So the allowance is
  * only a sliver: 20 pixels, and a colour distance of 0.02 (of 1, in YIQ) for
  * a pixel to count at all, which is under what anti-aliasing of a re-drawn
  * glyph would move. A real change (a title's size, a token's colour) moves
@@ -69,6 +68,42 @@ async function settle(page: Page): Promise<void> {
   });
 }
 
+/**
+ * Opens a page in a window as tall as the page itself, loaded afresh at that
+ * size, so that an ordinary screenshot holds the whole of it and nothing about
+ * the window changes after the page has drawn.
+ *
+ * Playwright's full-page shot was used first and gave the home page two
+ * drawings, by chance, 5929 pixels apart. While it captures, the window's
+ * width collapses for a moment, and every picture fetches the smallest file in
+ * its srcset. The feature's smallest, 640 wide, is also one of its own card's
+ * candidates, and when the width comes back Chromium may draw that card from
+ * the 640 file it now has cached and not from its own 480, depending on which
+ * request finished first. Only the card that shares a picture with the feature
+ * was ever touched. This was first put down to the GPU and then to a coarse
+ * first resample, and each of those workarounds only made it rarer. Measured
+ * on 2026-11-22: with the full-page shot, 8 runs of 18 drew the 640 file; in a
+ * window as tall as the page, 30 runs of 30 drew the 480 and fetched nothing
+ * else.
+ */
+async function openWhole(
+  page: Page,
+  path: string,
+  width: number,
+  height: number,
+  ready: (page: Page) => Promise<void> = () => Promise.resolve(),
+): Promise<void> {
+  await page.setViewportSize({ width, height });
+  await page.goto(path);
+  await ready(page);
+  await settle(page);
+  const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.setViewportSize({ width, height: tall });
+  await page.reload();
+  await ready(page);
+  await settle(page);
+}
+
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
 });
@@ -79,48 +114,39 @@ for (const [width, height] of [
   [320, 700],
 ] as const) {
   test(`the home page at ${width}`, async ({ page }) => {
-    await page.setViewportSize({ width, height });
-    await page.goto('/');
-    // Script has run once the row buttons have taken their state, except at
-    // 320, where a row is stacked and has none; and the header's Surprise me
-    // button is shown by the same script, at every width.
-    if (width >= 340)
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
-    await expect(
-      page.getByRole('button', { name: 'Surprise me' }),
-    ).toBeVisible();
-    await settle(page);
-    // A throwaway full-page shot first: the first one made after the pictures
-    // decode can be drawn with a coarser resample than the later ones, and
-    // which one the held shot met changed from run to run.
-    await page.screenshot({ fullPage: true });
-    await expect(page).toHaveScreenshot(`home-${width}.png`, {
-      fullPage: true,
-      ...TOLERANCE,
+    await openWhole(page, '/', width, height, async (opened) => {
+      // Script has run once the row buttons have taken their state, except
+      // at 320, where a row is stacked and has none; and the header's
+      // Surprise me button is shown by the same script, at every width.
+      if (width >= 340)
+        await expect(opened.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        opened.getByRole('button', { name: 'Surprise me' }),
+      ).toBeVisible();
     });
+    await expect(page).toHaveScreenshot(`home-${width}.png`, TOLERANCE);
   });
 }
 
 test('the 404 at 1440', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/nowhere-here/');
-  await settle(page);
-  await expect(page).toHaveScreenshot('404-1440.png', {
-    fullPage: true,
-    ...TOLERANCE,
-  });
+  await openWhole(page, '/nowhere-here/', 1440, 1000);
+  await expect(page).toHaveScreenshot('404-1440.png', TOLERANCE);
 });
 
 for (const width of [1440, 390]) {
   test(`the privacy page at ${width}`, async ({ page }) => {
-    await page.setViewportSize({ width, height: width > 800 ? 1000 : 844 });
-    await page.goto('/privacy/');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Privacy');
-    await settle(page);
-    await expect(page).toHaveScreenshot(`privacy-${width}.png`, {
-      fullPage: true,
-      ...TOLERANCE,
-    });
+    await openWhole(
+      page,
+      '/privacy/',
+      width,
+      width > 800 ? 1000 : 844,
+      async (opened) => {
+        await expect(opened.getByRole('heading', { level: 1 })).toHaveText(
+          'Privacy',
+        );
+      },
+    );
+    await expect(page).toHaveScreenshot(`privacy-${width}.png`, TOLERANCE);
   });
 }
 

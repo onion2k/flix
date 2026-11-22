@@ -253,6 +253,45 @@ for (const size of SIZES) {
   });
 }
 
+// A key held down repeats. Enter on the button moves focus to a card's link at
+// once, so every repeat after that lands on the link, and if a repeat of Enter
+// followed a link, holding the key a moment too long would leave the site for
+// a game the reader did not choose. Chromium was found not to follow a link on
+// a repeat, so the script has no guard for it, and this holds that it stays
+// so: it was green when written, and its last line is what shows that the
+// route would have caught a link being followed. Requests off the site are
+// recorded at that route and stopped there, so the test never leaves.
+test('Enter held down on the button follows no link, and a fresh Enter on the card still does', async ({
+  page,
+  baseURL,
+}) => {
+  const own = new URL(baseURL ?? '').origin;
+  const left: string[] = [];
+  await page.route(
+    (url) => url.origin !== own,
+    async (route) => {
+      left.push(route.request().url());
+      await route.abort();
+    },
+  );
+  await open(page, 7);
+  await button(page).focus();
+  // The first down is the press; each down after it, with the key not let
+  // go, is what the keyboard sends as a repeat.
+  await page.keyboard.down('Enter');
+  const first = await landed(page);
+  expect(first.onLink).toBe(true);
+  for (let repeat = 0; repeat < 5; repeat += 1) {
+    await page.keyboard.down('Enter');
+  }
+  await page.keyboard.up('Enter');
+  expect(left).toEqual([]);
+  expect((await landed(page)).onLink).toBe(true);
+  // Let go and pressed again, Enter on the card is the reader's own choice.
+  await page.keyboard.press('Enter');
+  await expect.poll(() => left.length).toBeGreaterThan(0);
+});
+
 test.describe('what it leaves out', () => {
   test.use({ viewport: SIZES[0] });
 
