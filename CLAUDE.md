@@ -60,7 +60,7 @@ commit of its own that says what it is for.
   a catalogue that does not hold together (naming file and id) and returns
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next buttons are live and
-  where each goes. `colour.ts` says whether text is a colour the page may
+  where each goes. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
@@ -88,7 +88,7 @@ commit of its own that says what it is for.
   IntersectionObserver on each late row (`MARGIN`, 300px) moves them into
   `srcset` and `src`; it also checks each frame's `data-waiting` with
   `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
-  `data-arrived` when it loads or fails. Both are imported by the one script block in
+  `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). All three are imported by the one script block in
   `index.astro`. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
@@ -148,6 +148,8 @@ Every new thing is taken through each of these that it can reach.
 - With script and without it. Late pictures arrive by script when it is on
   and from the `<noscript>` when it is off; each must be whole, and a card
   has exactly one picture in the accessibility tree either way.
+- A mouse, a touch screen and a pen: only a mouse drags a strip, and a
+  press that does not move is a click.
 - By keyboard alone: order, a visible focus ring, nothing trapped.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
   zoom, and each side of every step in `site.css`: a fault can sit
@@ -178,11 +180,13 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
+| `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
 | `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
+| `tests/e2e/drag.spec.ts`            | a mouse drag, no link followed; touch left alone     |
 | `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll, link,  |
 |                                     | Tab, print, no observer; markup holds no address     |
 | `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
@@ -268,6 +272,9 @@ The nine points of the definition of done, as this project has them.
   by no gate, since no token says what is under it.
 - **axe's incompletes** are attached to its report, counted and not
   failed; they are not read by anything.
+- **Drag by a real mouse and a real touch screen.** The drag is tried
+  with Playwright's mouse, and touch and pen with dispatched pointer
+  events, which scroll nothing. How it feels is a person's to try.
 - **One browser, Chromium, on one machine.** Firefox, Safari and a real
   phone are not looked at. A screen reader is a person's to try.
 - **Node.** This machine runs 23.4.0, which vitest 5.1.1 does not list

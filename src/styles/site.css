@@ -266,6 +266,23 @@ p {
   outline-offset: calc(var(--size-ring) * -1);
 }
 
+/* While a mouse is dragging a strip (script marks it), the strip must follow
+   the pointer and nothing else: smooth scrolling would lag behind it and the
+   snap would pull against it, so both are off until the button comes up, when
+   the snap settles the strip on a card. Words are not selected by the drag,
+   and the grabbing hand shows over the strip and all that is in it, the card
+   links included. None of this is motion: the strip moves under the hand. */
+.strip[data-dragging],
+.strip[data-dragging] * {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.strip[data-dragging] {
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+}
+
 .card {
   position: relative;
   flex: 0 0 var(--card-width);
