@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 5 of 7.
+State: building, part 6 of 7.
 
 ## Context
 
@@ -86,7 +86,7 @@ and this plan is copied to `plans/effects.md`.
       row, ring shown and card in view; a stubbed gamepad with the clock
       stepped. **Not verified by me:** a real controller, which is yours
       to try, and is said so in `CLAUDE.md`.
-- [ ] **5. Surprise me.** A button with those words at the end of the
+- [x] **5. Surprise me.** A button with those words at the end of the
       header's row links, hidden in the markup and shown by script. It
       picks a playable card, never the one focused and never the same
       twice running, scrolls to it and focuses it. It follows no link.
