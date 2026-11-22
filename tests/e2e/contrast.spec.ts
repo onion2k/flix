@@ -7,7 +7,8 @@
 // always a flat token colour. Without it a rule that recoloured a link, or a
 // ring lost to a later declaration, would pass the token check, which never
 // sees the page. Each test counts what it measured, so reading nothing fails.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 
 const WIDTHS = [1440, 390];
 const PAGES = [

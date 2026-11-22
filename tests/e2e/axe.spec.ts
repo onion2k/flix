@@ -11,7 +11,8 @@
 // alone would need a context with `bypassCSP: true`; it did not, since axe
 // is run through the page's own evaluate, so none is used.
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 
 const TAGS = [
   'wcag2a',

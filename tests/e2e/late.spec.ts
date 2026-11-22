@@ -10,7 +10,8 @@
 // 1000px window) would pass every other test, and the page's weight would only
 // be seen over its budget. Each test counts what it reached and waits on a
 // state, never on a time.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

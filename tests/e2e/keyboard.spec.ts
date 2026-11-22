@@ -8,7 +8,8 @@
 // the footer included. Without it a ring
 // lost in a stylesheet, a control under another, or a target too small would
 // pass every other check, since none of them presses Tab.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 
 const WIDTHS = [1440, 390];
 const PAGES = [

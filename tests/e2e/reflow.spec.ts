@@ -7,7 +7,8 @@
 // columns could not hold its title between 641 and about 780 wide, and a test of
 // 320 and 640 alone passed it. Without this a long title or a strip wider
 // than the window would show only to someone zoomed in, or on a tablet.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

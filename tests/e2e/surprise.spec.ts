@@ -11,7 +11,8 @@
 // runs before the page's own. Runs are compared with each other and never with
 // ids copied out of the code under test, and each test counts what it reached
 // so that picking nothing is a failure. Script off is in nojs.spec.ts.
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, type Browser, type Page } from '@playwright/test';
+import { holdClock, test } from '../clock';
 
 const SIZES = [
   { width: 1440, height: 1000 },
@@ -450,6 +451,7 @@ async function onlyPlayable(
     baseURL,
     viewport: SIZES[0],
   });
+  await holdClock(context);
   const page = await context.newPage();
   await page.route(
     (url) => url.pathname === '/',

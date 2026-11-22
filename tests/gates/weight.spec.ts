@@ -14,7 +14,8 @@
 // This is a Playwright spec and not a script that starts its own server, so
 // that it shares the test server and the project's one way of opening the
 // built site. It waits on the network going quiet, a state, never a timeout.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { holdClock, test } from '../clock';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -95,6 +96,7 @@ test('the page weight is the baseline, within the budgets', async ({
   const measured: Record<string, Weight> = {};
   for (const { name, width, height } of VIEWPORTS) {
     const context = await browser.newContext();
+    await holdClock(context);
     measured[name] = await measure(await context.newPage(), width, height);
     await context.close();
     expect(measured[name]?.document.count, `${name} documents`).toBe(1);

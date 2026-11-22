@@ -12,7 +12,8 @@
 // none of them hovers a card and looks at its neighbours. Each test counts
 // what it reached and waits on a state, never on a time: an ease is waited
 // out by asking the document for its running animations.
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { test } from '../clock';
 
 test.use({ viewport: { width: 1440, height: 1000 } });
 

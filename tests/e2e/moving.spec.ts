@@ -14,7 +14,8 @@
 // one frame to each 16ms run. Nothing waits on a time: the test says how far
 // the clock moves and reads where focus is. That proves the reading and the
 // timing, and not a device. Each test counts what it reached.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

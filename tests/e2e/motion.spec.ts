@@ -9,7 +9,8 @@
 // of rules read and of rules that set motion is attached to the report.
 // Without it a transition added outside the block would move for a visitor
 // who asked for stillness, and no other test would notice.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../clock';
 
 const PAGES = [
   { name: 'the home page', path: '/' },

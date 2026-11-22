@@ -14,7 +14,8 @@
 // them a little differently, and is not argued with from there.
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from '../e2e/catalogue';
 
 /** The entries of the rows after the second, which wait for script. */

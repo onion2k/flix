@@ -5,7 +5,8 @@
 // test that the policy and the script agree. It also holds what the privacy
 // page claims of the browser: after the same visit, and again after the
 // privacy page, there is no cookie and nothing in either store.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

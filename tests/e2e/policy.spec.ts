@@ -4,7 +4,8 @@
 // script, so a change that stops that (an inline handler, a script the build
 // cannot hash) would leave the page either broken or with the policy loosened
 // to cover it. Without this nothing reads the policy the page actually ships.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../clock';
 
 for (const { name, path } of [
   { name: 'the home page', path: '/' },

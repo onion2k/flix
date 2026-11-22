@@ -8,7 +8,8 @@
 // characters on each line. Each test counts what it reached. Without it a
 // reworded heading, a dropped link or a measure widened for looks would pass
 // every other spec, since none of them reads this page's words.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../clock';
 
 const SITE = 'https://flix.ooer.com';
 const SECTIONS = [

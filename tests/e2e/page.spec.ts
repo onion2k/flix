@@ -4,7 +4,8 @@
 // says, the lazy-loading rule, and the head, robots.txt, sitemap and 404 all
 // made from the one site address. Each test counts what it reached, so a page
 // that drew nothing fails and does not pass over nothing.
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
+import { test } from '../clock';
 import { LABELS, readRows } from './catalogue';
 
 const SITE = 'https://flix.ooer.com';

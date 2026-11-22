@@ -3,7 +3,8 @@
 // the start and Next at the end, a click moving the strip about a page, a
 // disabled button keeping focus and doing nothing, and the arrow key scrolling
 // a focused strip. Waits are on a scroll position reached, never on a time.
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

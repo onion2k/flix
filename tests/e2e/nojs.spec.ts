@@ -3,7 +3,8 @@
 // would do nothing), and a focused strip scrolls by the arrow key. Without it
 // a change that drew cards or showed the buttons from script would pass every
 // spec that runs with it.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();

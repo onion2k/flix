@@ -12,7 +12,8 @@
 // sideways. Every address outside the site is routed, recorded and aborted, so
 // a test that follows a link never leaves the site. Each test counts what it
 // reached and waits on a state, never on a time.
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 
 test.use({ viewport: { width: 1440, height: 1000 } });

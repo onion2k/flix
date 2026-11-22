@@ -14,7 +14,8 @@
 // frame, a mark never made, a failed picture left invisible, an ease outside
 // the no-preference block or a transparent rule that reached the <noscript>
 // picture would each pass every other test. Each test counts what it reached.
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import { test } from '../clock';
 import { readRows } from './catalogue';
 import { asColour } from '../../src/catalogue/colour';
 
