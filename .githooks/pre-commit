@@ -1,0 +1,7 @@
+#!/bin/sh
+# Everything quick before a commit: the secret scan over what is staged, the
+# formatter as a check, the types, lint and the unit tests. The hook checks and
+# never writes: one that fixed files as it committed would change what was
+# reviewed after it was reviewed. The build and the slower gates are in
+# `npm run check`.
+exec npm run --silent check:quick

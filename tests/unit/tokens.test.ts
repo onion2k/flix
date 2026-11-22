@@ -1,0 +1,35 @@
+// Holds that tokens.css says each of the plan's five colours exactly once, and
+// says the colour the plan agreed. Everything else reads these as custom
+// properties, so a colour missing here draws as nothing and one said twice
+// can drift apart. The file is read as text, as the build reads it, and not
+// through a browser: this is the quick check's hold on the tokens.
+import { describe, expect, it } from 'vitest';
+import tokens from '../../src/styles/tokens.css?raw';
+
+// From the plan's Layout section, "Tokens, from the mock you chose".
+const colours: Record<string, string> = {
+  '--color-ground': '#0c1311',
+  '--color-panel': '#18251f',
+  '--color-text': '#f4f1e8',
+  '--color-accent': '#ffb81c',
+  '--color-picture-edge': '#2c3d35',
+};
+
+// A declaration is the name at the start of a line, then a colon: a mention
+// in a comment or inside var() is not one.
+function declarations(name: string): string[] {
+  const pattern = new RegExp(`^\\s*${name}\\s*:\\s*([^;]+);`, 'gim');
+  return [...tokens.matchAll(pattern)].map((match) => (match[1] ?? '').trim());
+}
+
+describe('tokens.css colours', () => {
+  it('reads the file, so that a missing one is not mistaken for a pass', () => {
+    expect(tokens.length).toBeGreaterThan(0);
+  });
+
+  for (const [name, value] of Object.entries(colours)) {
+    it(`defines ${name} exactly once, as ${value}`, () => {
+      expect(declarations(name)).toEqual([value]);
+    });
+  }
+});

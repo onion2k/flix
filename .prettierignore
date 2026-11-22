@@ -1,0 +1,16 @@
+# Files the formatter is not for: what a build writes, what npm writes, and
+# the mock the plan was agreed from, which is a picture of a decision and is
+# not edited. Without this each build would fail the format check.
+dist
+.astro
+node_modules
+package-lock.json
+test-results
+playwright-report
+plans/first-site-look
+
+# The plan is the owner's to edit and it is checked against its own box
+# ticks, so the formatter is not run over it: two list continuations in it
+# are indented differently from how Prettier writes them. Take this line out
+# when the plan has been formatted once.
+plans/first-site.md

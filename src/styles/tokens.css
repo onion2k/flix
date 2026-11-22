@@ -1,0 +1,32 @@
+/*
+ * Every colour, size and font the site uses, each said once. Everything else
+ * reads these with var() and holds no value of its own: without this file a
+ * colour is typed in several places and they drift, and a contrast check has
+ * nowhere single to read the pairs from. The site has one theme, dark, kept
+ * on purpose: the pictures are the colour.
+ */
+:root {
+  /* From the Marquee mock. The ground is dark green-black, not black. */
+  --color-ground: #0c1311;
+  --color-panel: #18251f;
+  --color-text: #f4f1e8;
+  --color-accent: #ffb81c;
+  --color-picture-edge: #2c3d35;
+
+  /*
+   * Faces. The two names on the right are the variables Astro writes for the
+   * fonts it hosts itself (see astro.config.mjs), each already ending in a
+   * fallback, so a face that is slow to load shows a system one meanwhile.
+   */
+  --font-display: var(--face-display);
+  --font-body: var(--face-body);
+
+  --size-body: 1.0625rem;
+  --line-body: 1.5;
+  --size-feature-title: 4.5rem;
+  --size-feature-title-phone: 3rem;
+  --size-row-title: 2.25rem;
+  --size-card-title: 1.75rem;
+  --gutter: 3rem;
+  --gutter-phone: 1rem;
+}

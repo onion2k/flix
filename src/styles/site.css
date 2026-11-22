@@ -1,0 +1,48 @@
+/*
+ * The wordmark page and nothing more. Every colour, size and face comes from
+ * tokens.css, so that this file can be read for layout alone and a change of
+ * look is a change of tokens. Without it the page is the browser's default
+ * white. There is no animation or transition here: motion is added only
+ * inside a prefers-reduced-motion: no-preference block, when the site has
+ * some.
+ */
+html {
+  /* One theme, dark: tells the browser to draw its own scrollbars to match. */
+  color-scheme: dark;
+  background: var(--color-ground);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: var(--line-body);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: var(--gutter);
+}
+
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-feature-title);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/*
+ * A media query cannot read a custom property, so the phone's width is said
+ * here and only here: 640px, which is also the window that stands in for 200%
+ * zoom of a 1280px one.
+ */
+@media (max-width: 40rem) {
+  body {
+    padding: var(--gutter-phone);
+  }
+
+  h1 {
+    font-size: var(--size-feature-title-phone);
+  }
+}

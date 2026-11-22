@@ -1,0 +1,31 @@
+---
+// The document every page is drawn in: the head, the self-hosted fonts and
+// the two stylesheets. Without it each page would repeat the head, and one
+// that forgot the viewport tag or the fonts would be the odd one out.
+import { Font } from 'astro:assets';
+import '../styles/tokens.css';
+import '../styles/site.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {/* Only the display face is preloaded: it is the one the first screen
+        draws. The body face loads when text in it is drawn, and a preload of
+        a face nothing uses yet is a console warning. */}
+    <Font cssVariable="--face-display" preload />
+    <Font cssVariable="--face-body" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

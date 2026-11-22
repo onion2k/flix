@@ -1,0 +1,53 @@
+# How Netlify builds and serves the site: the command, the folder it publishes,
+# and the headers a static file cannot carry. Without it Netlify would guess a
+# build and serve every page with no security headers.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # The page's own policy is a <meta> tag the build writes, holding the hash
+    # of every inline style, and a meta tag cannot carry frame-ancestors. So
+    # this header holds that one directive and nothing else; the rest of the
+    # policy is in the page. Two policies are intersected by the browser, so
+    # neither loosens the other.
+    Content-Security-Policy = "frame-ancestors 'none'"
+
+    # X-Frame-Options is the older spelling of frame-ancestors, for the
+    # browsers that only ever learned this one.
+    X-Frame-Options = "DENY"
+
+    # Two years, subdomains included, and eligible for the preload list. Only
+    # meaningful over HTTPS, which is the only way Netlify serves this.
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+
+    # Severs the window.opener relationship, so a page this one opens, or one
+    # that opens this one, cannot reach into it.
+    Cross-Origin-Opener-Policy = "same-origin"
+
+    # Nobody else's page gets to embed these bytes. The site loads every asset
+    # it needs from its own origin, so nothing legitimate is refused.
+    Cross-Origin-Resource-Policy = "same-origin"
+
+    # Content-Type is authoritative. Without this a browser may decide a file
+    # is a script because it looks like one.
+    X-Content-Type-Options = "nosniff"
+
+    # Same-origin navigations get the full URL, cross-origin ones get the bare
+    # origin, and an HTTPS-to-HTTP downgrade gets nothing.
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # This site is pictures and text. It has no reason to ask for a camera, a
+    # location or a payment sheet, so the answer is settled here rather than at
+    # the prompt.
+    Permissions-Policy = "accelerometer=(), autoplay=(), camera=(), display-capture=(), encrypted-media=(), fullscreen=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), usb=(), xr-spatial-tracking=()"
