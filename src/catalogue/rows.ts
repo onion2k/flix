@@ -1,12 +1,14 @@
-// Turns the entries and the rows file into the page's model: the feature, then
-// each row with its cards, in the order written. It also checks what no single
-// file can check alone (a row naming an entry that is not there, an entry in
-// no row), and refuses by file and id. Without it the page would hold that
-// logic, a broken catalogue would draw a gap or a blank card, and the build
-// would not stop.
-import type { RowsFile } from './schema';
+// Turns the entries and the catalogue file into the page's model: the feature,
+// then each row with its cards, in the order written. It also checks what no
+// single file can check alone (a row naming a site that has no file, an id said
+// twice), and refuses by file and id, and it says which sites have a file and
+// are listed nowhere, which is allowed and is how a site is left out. Without
+// it the page would hold that logic, a broken catalogue would draw a gap or a
+// blank card, the build would not stop, and a site left out by mistake would
+// not be seen.
+import type { CatalogueFile } from './schema';
 
-const ROWS_FILE = 'src/content/rows.yaml';
+const CATALOGUE_FILE = 'src/content/catalogue.json';
 
 function entryFile(id: string): string {
   return `src/content/entries/${id}.yaml`;
@@ -47,6 +49,8 @@ export interface Card<Picture> {
 export interface Page<Picture> {
   feature: Card<Picture>;
   rows: { id: string; title: string; cards: Card<Picture>[] }[];
+  /** Ids that have an entry file and are neither the feature nor in a row. */
+  notListed: string[];
 }
 
 const KIND_WORDS = { game: 'Game', toy: 'Toy' } as const;
@@ -70,37 +74,37 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
 }
 
 /**
- * The page's model. Throws a CatalogueError, the first it finds, for a
- * catalogue that does not hold together. Rows are checked in the order
+ * The page's model, and the sites left out of it. Throws a CatalogueError,
+ * the first it finds, for a catalogue that does not hold together. Rows are checked in the order
  * written, so the first fault named is the first a person would reach.
  */
 export function buildPage<Picture>(
   entries: Entry<Picture>[],
-  rowsFile: RowsFile,
+  config: CatalogueFile,
 ): Page<Picture> {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const used = new Set<string>();
   const rowIds = new Set<string>();
 
-  const rows = rowsFile.rows.map((row) => {
+  const rows = config.rows.map((row) => {
     if (rowIds.has(row.id)) {
       throw new CatalogueError(
-        `${ROWS_FILE}: the row id "${row.id}" is said twice, and a row id is an anchor that must be one place.`,
+        `${CATALOGUE_FILE}: the row id "${row.id}" is said twice, and a row id is an anchor that must be one place.`,
       );
     }
     rowIds.add(row.id);
 
     const inThisRow = new Set<string>();
-    const cards = row.entries.map((id) => {
+    const cards = row.sites.map((id) => {
       const entry = byId.get(id);
       if (entry === undefined) {
         throw new CatalogueError(
-          `${ROWS_FILE}: the row "${row.id}" names the entry "${id}", and there is no ${entryFile(id)}.`,
+          `${CATALOGUE_FILE}: the row "${row.id}" names the site "${id}", and there is no ${entryFile(id)}.`,
         );
       }
       if (inThisRow.has(id)) {
         throw new CatalogueError(
-          `${ROWS_FILE}: the row "${row.id}" names the entry "${id}" twice.`,
+          `${CATALOGUE_FILE}: the row "${row.id}" names the site "${id}" twice.`,
         );
       }
       inThisRow.add(id);
@@ -110,20 +114,22 @@ export function buildPage<Picture>(
     return { id: row.id, title: row.title, cards };
   });
 
-  const feature = byId.get(rowsFile.feature);
+  const feature = byId.get(config.feature);
   if (feature === undefined) {
     throw new CatalogueError(
-      `${ROWS_FILE}: the field "feature" names the entry "${rowsFile.feature}", and there is no ${entryFile(rowsFile.feature)}.`,
+      `${CATALOGUE_FILE}: the field "feature" names the site "${config.feature}", and there is no ${entryFile(config.feature)}.`,
     );
   }
 
-  for (const entry of entries) {
-    if (!used.has(entry.id)) {
-      throw new CatalogueError(
-        `${entryFile(entry.id)}: the entry "${entry.id}" is in no row of ${ROWS_FILE}.`,
-      );
-    }
-  }
+  // A site with a file that no row names is left out on purpose or by
+  // mistake, and the catalogue cannot tell which, so it reports and does not
+  // refuse. The order is the ids', not the files', so that it is the same on
+  // every machine.
+  used.add(config.feature);
+  const notListed = entries
+    .map((entry) => entry.id)
+    .filter((id) => !used.has(id))
+    .sort();
 
-  return { feature: cardOf(feature), rows };
+  return { feature: cardOf(feature), rows, notListed };
 }

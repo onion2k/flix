@@ -55,13 +55,18 @@ commit of its own that says what it is for.
 
 - `src/catalogue/` is **the thing**: plain TypeScript with no Astro in
   it, importing nothing of the page and nothing outside the folder but
-  `astro/zod`. `schema.ts` holds the shape of an entry and of the rows
-  file, and `rows.ts` builds the page's model from them and refuses a
-  catalogue that does not hold together, naming file and id. `paging.ts` says, from a strip's
+  `astro/zod`. `schema.ts` holds the shape of an entry and of the
+  catalogue file, and `rows.ts` builds the page's model from them, refuses
+  a catalogue that does not hold together (naming file and id) and returns
+  the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next buttons are live and
   where each goes.
 - `src/content/` is where the content lives: an entry a file, its
-  picture, and the rows in their order. `src/content.config.ts` tells
+  picture, and `catalogue.json`, the one file that says which sites are
+  listed (the `feature` and each row's `sites`), in which rows and in what
+  order. A site with a file that it does not name is not listed, and the
+  build says so on its output ("Not listed in src/content/catalogue.json:
+  ..."); nothing is deleted. `src/content.config.ts` tells
   Astro where each is and which of the catalogue's schemas it must meet.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
@@ -88,6 +93,12 @@ commit of its own that says what it is for.
   `npm run preview`. `gates/` holds the weight baseline and its budgets,
   `scripts/` the two gates that need the network.
 - `plans/` holds each plan, with its state line and its boxes.
+
+**To list, unlist or move a site:** edit `src/content/catalogue.json`. A
+new site also needs its `entries/<id>.yaml` and its picture in
+`pictures/`. Run `npm run check`. The look and weight baselines move when
+the page does, and are then written again on purpose (`look:update`,
+`weight:update`).
 
 There is no persisted shape. What has been given out is an address: the
 site's own, each row's anchor and each entry's id. They are kept, and
@@ -152,7 +163,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/tokens.test.ts`         | each colour token defined once, as the plan says     |
 | `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1          |
 | `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name   |
-| `tests/unit/rows.test.ts`           | the page's model, and the cross-file refusals        |
+| `tests/unit/rows.test.ts`           | the page's model, refusals, the not listed           |
+| `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files           |
 | `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
@@ -214,10 +226,11 @@ The nine points of the definition of done, as this project has them.
   keys scroll the strip).
 - **The secret scan reaches only what is staged,** so run by hand outside
   a commit it scans nothing and passes. The history is not scanned.
-- **The real content is held by the build alone.** No unit test loads
-  `src/content/`: it is YAML, and parsing it here would need a
-  dependency the project does not have. A refusal there is seen as a
-  failed `npm run build`, not as a failed test.
+- **The entries' YAML is held by the build alone.** No unit test parses
+  it, since that would need a dependency the project does not have; a
+  refusal there is a failed `npm run build`. `catalogue.json` is held by
+  `catalogue-file.test.ts`. A site left out of it by accident is only
+  said on the build's output, and nothing fails.
 - **No licence or unused-dependency check.** `npm run audit` is by hand.
 - **Late rows' pictures depend on script when it is on.** If
   `pictures.ts` fails to run (an error, a blocked file) the late rows

@@ -1,12 +1,14 @@
-// Holds the catalogue's two schemas to what spec 8 says the build refuses: an
-// unknown field, a missing one, a url that is not https, and an empty row.
+// Holds the catalogue's two schemas (an entry, and the one JSON file that says
+// which sites are listed, in which rows) to what spec 8 says the build
+// refuses: an unknown field, a missing one, a url that is not https, and an
+// empty row.
 // Each case reads the issue's path or the name it carries, not just that
 // parsing failed, because a refusal that does not say where is no use to the
 // person reading the build's output. The picture field is a plain string here:
 // the schema is given its picture, and never learns what one is.
 import { describe, expect, it } from 'vitest';
 import { z } from 'astro/zod';
-import { entryShape, rowsShape } from '../../src/catalogue/schema';
+import { entryShape, catalogueShape } from '../../src/catalogue/schema';
 
 const shape = entryShape(z.string().min(1));
 
@@ -19,11 +21,11 @@ const goodEntry = {
   url: 'https://fish.ooer.com',
 };
 
-const goodRows = {
+const goodCatalogue = {
   feature: 'nuclear-fishin',
   rows: [
-    { id: 'play-now', title: 'Play now', entries: ['nuclear-fishin'] },
-    { id: 'in-the-workshop', title: 'In the workshop', entries: ['ooergolf'] },
+    { id: 'play-now', title: 'Play now', sites: ['nuclear-fishin'] },
+    { id: 'in-the-workshop', title: 'In the workshop', sites: ['ooergolf'] },
   ],
 };
 
@@ -115,67 +117,86 @@ describe('entryShape', () => {
   });
 });
 
-describe('rowsShape', () => {
-  it('passes a good rows file', () => {
-    expect(refusals(rowsShape, goodRows)).toEqual([]);
+describe('catalogueShape', () => {
+  it('passes a good catalogue file', () => {
+    expect(refusals(catalogueShape, goodCatalogue)).toEqual([]);
   });
 
   it('refuses an unknown field in the file, naming it', () => {
-    const found = refusals(rowsShape, { ...goodRows, banner: 'x' });
+    const found = refusals(catalogueShape, { ...goodCatalogue, banner: 'x' });
     expect(found[0]?.keys).toEqual(['banner']);
   });
 
   it('refuses an unknown field in a row, naming it and the row', () => {
-    const rows = [{ ...goodRows.rows[0], colour: 'red' }];
-    const found = refusals(rowsShape, { ...goodRows, rows });
+    const rows = [{ ...goodCatalogue.rows[0], colour: 'red' }];
+    const found = refusals(catalogueShape, { ...goodCatalogue, rows });
     expect(found[0]?.path).toBe('rows.0');
     expect(found[0]?.keys).toEqual(['colour']);
   });
 
+  it('refuses a row that still says "entries" for its sites, naming both', () => {
+    const { sites, ...rest } = goodCatalogue.rows[0] ?? { sites: [] };
+    const row = { ...rest, entries: sites };
+    const found = refusals(catalogueShape, { ...goodCatalogue, rows: [row] });
+    expect(found.map((f) => f.path).sort()).toEqual(['rows.0', 'rows.0.sites']);
+    expect(found.find((f) => f.path === 'rows.0')?.keys).toEqual(['entries']);
+  });
+
+  it('refuses a file that carries a $schema key, since none is allowed', () => {
+    const found = refusals(catalogueShape, { ...goodCatalogue, $schema: 'x' });
+    expect(found[0]?.keys).toEqual(['$schema']);
+  });
+
   it('refuses a file with no feature, at feature', () => {
-    const found = refusals(rowsShape, without(goodRows, 'feature'));
+    const found = refusals(catalogueShape, without(goodCatalogue, 'feature'));
     expect(found.map((f) => f.path)).toEqual(['feature']);
   });
 
   it('refuses a file with no rows, and one with an empty list of rows', () => {
     expect(
-      refusals(rowsShape, without(goodRows, 'rows')).map((f) => f.path),
+      refusals(catalogueShape, without(goodCatalogue, 'rows')).map(
+        (f) => f.path,
+      ),
     ).toEqual(['rows']);
     expect(
-      refusals(rowsShape, { ...goodRows, rows: [] }).map((f) => f.path),
+      refusals(catalogueShape, { ...goodCatalogue, rows: [] }).map(
+        (f) => f.path,
+      ),
     ).toEqual(['rows']);
   });
 
-  for (const field of ['id', 'title', 'entries']) {
+  for (const field of ['id', 'title', 'sites']) {
     it(`refuses a row with no ${field}, at rows.0.${field}`, () => {
-      const row = without(goodRows.rows[0], field);
-      const found = refusals(rowsShape, { ...goodRows, rows: [row] });
+      const row = without(goodCatalogue.rows[0], field);
+      const found = refusals(catalogueShape, { ...goodCatalogue, rows: [row] });
       expect(found.map((f) => f.path)).toEqual([`rows.0.${field}`]);
     });
   }
 
-  it('refuses an empty row, at its entries', () => {
-    const row = { ...goodRows.rows[0], entries: [] };
-    const found = refusals(rowsShape, { ...goodRows, rows: [row] });
-    expect(found.map((f) => f.path)).toEqual(['rows.0.entries']);
+  it('refuses an empty row, at its sites', () => {
+    const row = { ...goodCatalogue.rows[0], sites: [] };
+    const found = refusals(catalogueShape, { ...goodCatalogue, rows: [row] });
+    expect(found.map((f) => f.path)).toEqual(['rows.0.sites']);
   });
 
-  it('refuses an empty entry id in a row, at its place in the row', () => {
-    const row = { ...goodRows.rows[0], entries: [''] };
-    const found = refusals(rowsShape, { ...goodRows, rows: [row] });
-    expect(found.map((f) => f.path)).toEqual(['rows.0.entries.0']);
+  it('refuses an empty site id in a row, at its place in the row', () => {
+    const row = { ...goodCatalogue.rows[0], sites: [''] };
+    const found = refusals(catalogueShape, { ...goodCatalogue, rows: [row] });
+    expect(found.map((f) => f.path)).toEqual(['rows.0.sites.0']);
   });
 
   for (const id of ['Play-now', 'play now', 'play_now', '', 'café']) {
     it(`refuses the row id ${JSON.stringify(id)}, at rows.0.id`, () => {
-      const row = { ...goodRows.rows[0], id };
-      const found = refusals(rowsShape, { ...goodRows, rows: [row] });
+      const row = { ...goodCatalogue.rows[0], id };
+      const found = refusals(catalogueShape, { ...goodCatalogue, rows: [row] });
       expect(found.map((f) => f.path)).toEqual(['rows.0.id']);
     });
   }
 
   it('accepts a row id of lower-case letters, digits and hyphens', () => {
-    const row = { ...goodRows.rows[0], id: 'top-10-games' };
-    expect(refusals(rowsShape, { ...goodRows, rows: [row] })).toEqual([]);
+    const row = { ...goodCatalogue.rows[0], id: 'top-10-games' };
+    expect(refusals(catalogueShape, { ...goodCatalogue, rows: [row] })).toEqual(
+      [],
+    );
   });
 });

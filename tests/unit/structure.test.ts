@@ -50,7 +50,9 @@ describe('outsiders (the reading itself)', () => {
 
   it('lets through a sibling and astro/zod', () => {
     expect(outsiders(`import { z } from 'astro/zod';`)).toEqual([]);
-    expect(outsiders(`import type { RowsFile } from './schema';`)).toEqual([]);
+    expect(outsiders(`import type { CatalogueFile } from './schema';`)).toEqual(
+      [],
+    );
   });
 });
 

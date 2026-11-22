@@ -11,17 +11,27 @@ import Row from '../components/Row.astro';
 import { buildPage } from '../catalogue/rows';
 
 const entries = await getCollection('entries');
-const [rowsFile] = await getCollection('rows');
-if (rowsFile === undefined) {
+const [config] = await getCollection('catalogue');
+if (config === undefined) {
   throw new Error(
-    'src/content/rows.yaml is missing, and the page has no rows.',
+    'src/content/catalogue.json is missing, and the page has no rows.',
   );
 }
 
 const page = buildPage(
   entries.map((entry) => ({ id: entry.id, ...entry.data })),
-  rowsFile.data,
+  config.data,
 );
+
+// A site left out is not an error, but it is said once, so that one left out
+// by accident is seen. Nothing is said when every site is listed. The line
+// starts on a new line because Astro's own build output has an unfinished one
+// open while a page is made.
+if (page.notListed.length > 0) {
+  console.log(
+    `\nNot listed in src/content/catalogue.json: ${page.notListed.join(', ')}`,
+  );
+}
 ---
 
 <Base

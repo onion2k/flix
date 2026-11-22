@@ -1,5 +1,6 @@
-// What an entry and the rows file may say, and nothing more. Each is parsed
-// from unknown and refused by name, so that a mistyped field or a bad address
+// What an entry and the catalogue file (src/content/catalogue.json, which says
+// which sites are listed, in which rows and in what order) may say, and
+// nothing more. Each is parsed from unknown and refused by name, so that a mistyped field or a bad address
 // stops the build at the file that has it. Without it a catalogue with a typo
 // would build, and the page would draw a card with a hole in it.
 //
@@ -31,11 +32,11 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
 }
 
 /**
- * The strict shape of the rows file. A row's id is its anchor in the page's
+ * The strict shape of the catalogue file. A row's id is its anchor in the page's
  * address, so it is held to what is safe in one, and, once published, is
  * given out and kept.
  */
-export const rowsShape = z.strictObject({
+export const catalogueShape = z.strictObject({
   feature: z.string().min(1),
   rows: z
     .array(
@@ -44,10 +45,10 @@ export const rowsShape = z.strictObject({
           error: 'a row id is lower-case letters, digits and hyphens',
         }),
         title: z.string().min(1),
-        entries: z.array(z.string().min(1)).min(1),
+        sites: z.array(z.string().min(1)).min(1),
       }),
     )
     .min(1),
 });
 
-export type RowsFile = z.infer<typeof rowsShape>;
+export type CatalogueFile = z.infer<typeof catalogueShape>;

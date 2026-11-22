@@ -1,0 +1,40 @@
+{
+  "feature": "nuclear-fishin",
+  "rows": [
+    {
+      "id": "play-now",
+      "title": "Play now",
+      "sites": [
+        "nuclear-fishin",
+        "aquaclysm",
+        "coinpush",
+        "chess",
+        "ooergolf",
+        "pushminer",
+        "chopdrop",
+        "propshop"
+      ]
+    },
+    {
+      "id": "more-to-play",
+      "title": "More to play",
+      "sites": ["book-worm", "codex-squadron", "fruit-machine", "tiny-slots"]
+    },
+    {
+      "id": "toys",
+      "title": "Toys",
+      "sites": [
+        "petz-9000",
+        "heist",
+        "spiro",
+        "release-flow-model",
+        "coinpusher"
+      ]
+    },
+    {
+      "id": "in-the-workshop",
+      "title": "In the workshop",
+      "sites": ["snappy", "ooerrace"]
+    }
+  ]
+}
