@@ -88,4 +88,11 @@
    */
   --share-waiting: 50%;
   --duration-arrive: 400ms;
+
+  /*
+   * A card's previews: how long one takes to fade into the next, or back to
+   * the card's own picture. Under a third of the second each is shown, so that
+   * a still is plainly there for most of its turn and a leave is quick.
+   */
+  --duration-preview: 300ms;
 }

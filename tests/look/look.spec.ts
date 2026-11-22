@@ -15,7 +15,7 @@
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, type Page } from '@playwright/test';
-import { noonOf, test } from '../clock';
+import { DAY_ZERO, noonOf, test } from '../clock';
 import { candidatesOf, readRows } from '../e2e/catalogue';
 
 /** The entries of the rows after the second, which wait for script. */
@@ -225,6 +225,63 @@ test('the top of the home page at 1440 on a day that shows another feature', asy
     candidatesOf(readRows())[2] ?? '',
   );
   await expect(page).toHaveScreenshot('home-top-another-day-1440.png', {
+    ...TOLERANCE,
+  });
+});
+
+// Aquaclysm's card in the middle of its pass, with the clock held on its
+// second preview: a mouse on the card, the clock stepped a frame at a time
+// past the pause and the first preview's turn, every fade finished (asked of
+// the document's animations, never waited out), and the card shot alone. The
+// card is in the row, so what is held is the preview in its frame with the
+// accent edge, the zoom of a hover and the words under it. Motion is asked
+// for here, since the pass does not play without it; the clock stands still
+// so that the picture is the same every run.
+test('Aquaclysm card at 1440 mid-pass, on its second preview', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.clock.install({ time: DAY_ZERO });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  // Settled before the clock is held, since settling asks the page for frames.
+  await settle(page);
+  await page.clock.pauseAt(DAY_ZERO + 1000);
+  const aqua = page.locator('li.card[data-entry="aquaclysm"]');
+  await aqua.hover();
+  // The pause, then into the first turn, until its pictures have arrived.
+  const run = async (ms: number) => {
+    for (let done = 0; done < ms; done += 16) await page.clock.runFor(16);
+  };
+  await run(700);
+  await expect
+    .poll(() =>
+      aqua
+        .locator('.previews img')
+        .evaluateAll((images) =>
+          images.every(
+            (image) =>
+              (image as HTMLImageElement).complete &&
+              (image as HTMLImageElement).naturalWidth > 0,
+          ),
+        ),
+    )
+    .toBe(true);
+  // 700 + 1200: the middle of the second preview's turn (1600 to 2600).
+  await run(1200);
+  await expect(aqua.locator('.previews img[data-showing]')).toHaveCount(1);
+  expect(
+    await aqua
+      .locator('.previews img')
+      .evaluateAll((images) =>
+        images.findIndex((image) => image.hasAttribute('data-showing')),
+      ),
+  ).toBe(1);
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((each) => each.finished)),
+  );
+  await expect(aqua).toHaveScreenshot('aquaclysm-card-mid-pass.png', {
     ...TOLERANCE,
   });
 });

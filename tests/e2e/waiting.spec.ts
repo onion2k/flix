@@ -350,7 +350,9 @@ test.describe('with script off', () => {
     expect(ids.length).toBeGreaterThan(0);
     for (const id of ids) {
       const img = page
-        .locator(`[data-entry="${id}"] noscript img, [data-entry="${id}"] img`)
+        .locator(
+          `[data-entry="${id}"] noscript img, [data-entry="${id}"] img:not(.previews img)`,
+        )
         .last();
       await img.scrollIntoViewIfNeeded();
       await expect(img).toHaveCSS('opacity', '1');

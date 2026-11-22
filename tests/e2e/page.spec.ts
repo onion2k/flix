@@ -122,7 +122,8 @@ test('every picture has loaded, with size, alt words and a modern source', async
   expect(total).toBeGreaterThan(catalogue.rows.length);
   for (let at = 0; at < total; at += 1) {
     const card = cards.nth(at);
-    const img = card.locator('img');
+    // A card's previews are another layer, held by preview.spec.ts.
+    const img = card.locator('img:not(.previews img)');
     await img.scrollIntoViewIfNeeded();
     await expect
       .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
@@ -194,7 +195,7 @@ test('only the first screenful of pictures is loaded at once', async ({
 }) => {
   let reached = 0;
   for (const [rowAt, each] of catalogue.rows.entries()) {
-    const imgs = row(page, each.id).locator('img');
+    const imgs = row(page, each.id).locator('img:not(.previews img)');
     const count = await imgs.count();
     expect(count).toBe(each.entries.length);
     // A late row's pictures wait for script, not for the browser's lazy rule:

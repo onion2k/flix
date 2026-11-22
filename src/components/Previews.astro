@@ -1,0 +1,29 @@
+---
+// A card's previews: a layer over its picture, inside its frame, holding one
+// <img> a preview. It is decoration, so it is hidden from the accessibility
+// tree and each picture has empty alt words, which leaves the card's own
+// picture and its words as the one picture the card has. No picture has a src
+// or srcset: the addresses are in data- attributes, which no browser fetches,
+// and src/scripts/preview.ts moves them on a first hover or focus (the names
+// are not data-src and data-srcset, which pictures.ts would bring in as soon as
+// the row is near). The card's sizes are written once on the layer. Without this
+// the layer would be written in each of the card's two ways of drawing its frame.
+interface Props {
+  previews: { src: string; srcset: string }[];
+  /** What the card's width is at each window width: the card's own `sizes`. */
+  sizes: string;
+}
+
+const { previews, sizes } = Astro.props;
+---
+
+<div class="previews" aria-hidden="true" data-sizes={sizes}>
+  {previews.map((preview) => (
+    <img
+      alt=""
+      data-preview-src={preview.src}
+      data-preview-srcset={preview.srcset}
+      decoding="async"
+    />
+  ))}
+</div>
