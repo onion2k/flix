@@ -4,3 +4,7 @@ description: 'Golf in 3D, played like a physics game.'
 picture: ../pictures/ooergolf.png
 pictureAlt: 'An L-shaped minigolf hole from above, a white ball at one end and the flag at the other, in a flowery meadow.'
 url: https://golf.ooer.com
+previews:
+  - ../pictures/previews/ooergolf-1.webp
+  - ../pictures/previews/ooergolf-2.webp
+  - ../pictures/previews/ooergolf-3.webp

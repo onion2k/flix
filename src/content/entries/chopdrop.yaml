@@ -4,3 +4,7 @@ description: 'An arcade helicopter game for the browser: fly about, pick deliver
 picture: ../pictures/chopdrop.png
 pictureAlt: 'A small helicopter on a helipad on an island of palms and pines, the sea beyond.'
 url: https://copter.ooer.com
+previews:
+  - ../pictures/previews/chopdrop-1.webp
+  - ../pictures/previews/chopdrop-2.webp
+  - ../pictures/previews/chopdrop-3.webp
