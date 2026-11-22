@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 2 of 7.
+State: building, part 3 of 7.
 
 ## Context
 
@@ -50,7 +50,7 @@ and this plan is copied to `plans/effects.md`.
       any other row; the drawn-contrast walk run in that state; a touch
       context does nothing on tap. The focused-card look picture is
       written again.
-- [ ] **2. Coloured waiting frames.** A late row's frame waits in its
+- [x] **2. Coloured waiting frames.** A late row's frame waits in its
       picture's own colour, not the flat panel, and the picture eases in
       when it lands. The colour is worked out at build from the picture
       and mixed toward the panel token so it stays in the look. It rides

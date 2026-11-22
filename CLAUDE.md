@@ -61,11 +61,12 @@ commit of its own that says what it is for.
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next buttons are live and
   where each goes. `colour.ts` says whether text is a colour the page may
-  use (`#` and six lower-case hex digits, nothing else).
-- `src/build/` is build-time code that is not the thing: `dominant-colour.ts`
-  reads a picture file's dominant colour with `sharp` (Node, so not in
-  `src/catalogue/`). `Card.astro` writes it on a late card's frame as
-  `data-waiting`.
+  use (`#` and six lower-case hex digits, nothing else), and works out the
+  colour a picture waits in from the pixels of a small copy of it.
+- `src/build/` is build-time code that is not the thing: `picture-colour.ts`
+  makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
+  and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
+  late card's frame as `data-waiting`.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and `catalogue.json`, the one file that says which sites are
   listed (the `feature` and each row's `sites`), in which rows and in what
@@ -247,9 +248,9 @@ The nine points of the definition of done, as this project has them.
 - **Late rows' pictures depend on script when it is on.** If
   `pictures.ts` fails to run (an error, a blocked file) the late rows
   keep their panel colour and no picture; the words stand and nothing
-  holds that case. The waiting colour is `sharp`'s coarse dominant
-  (a few dozen values a channel, often a picture's background), and no
-  test reads it against the picture, only the look picture shows it. `loading="lazy"` alone does not wait (Chromium fetched
+  holds that case. The waiting colour's rule is held by unit tests on
+  made-up pixels; against the real pictures only the look picture shows
+  it. `loading="lazy"` alone does not wait (Chromium fetched
   rows 2000px down), so the weight gate is what holds the waiting, by
   count and by the budget. It measures the home page alone and times no
   load or interaction.
