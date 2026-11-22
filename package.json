@@ -23,7 +23,8 @@
     "weight": "playwright test --project=weight",
     "weight:update": "WEIGHT_UPDATE=1 playwright test --project=weight",
     "links": "node scripts/links.mjs",
-    "audit": "npm audit --audit-level=high"
+    "audit": "npm audit --audit-level=high",
+    "loops": "node tools/loops/record.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",

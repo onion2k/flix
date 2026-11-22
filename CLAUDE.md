@@ -38,6 +38,9 @@ publish, with a build made:
                          frame-ancestors alone), HSTS, nosniff, a referrer
                          policy and X-Frame-Options (the preview sends none)
     npm run audit        npm audit at high
+    npm run loops [-- <site id>]   records each game's loop from its public
+                         address, for approval (reaches the network; never in
+                         check; writes tools/loops/out, not committed)
 
 `npm install` points git at `.githooks/`, and `pre-commit` there runs the
 quick check, which is, cheapest first:

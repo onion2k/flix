@@ -8,3 +8,6 @@ test-results
 playwright-report
 .netlify
 .DS_Store
+
+# The loops tools/loops makes, for the owner to approve before any is used.
+tools/loops/out
