@@ -93,8 +93,12 @@ for (const width of WIDTHS) {
         await page.goto(path);
         // Script has run once the row buttons have taken their state; the
         // privacy page has no script and no row buttons.
-        if (path === '/')
+        if (path === '/') {
           await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+          await expect(
+            page.getByRole('button', { name: 'Surprise me' }),
+          ).toBeVisible();
+        }
       });
 
       test('the skip link is first, is seen, and takes focus into main', async ({
@@ -118,6 +122,16 @@ for (const width of WIDTHS) {
         const expected = await tabbable(page);
         expect(expected.length).toBeGreaterThan(3);
         expect(expected[0]?.name).toBe(skip);
+        // The home page's header ends with the Surprise me button, after the
+        // row links, so the walk below reaches it and checks its ring.
+        const surprise = expected.findIndex((s) => s.name === 'Surprise me');
+        if (path === '/') {
+          expect(surprise).toBeGreaterThan(1);
+          expect(expected[surprise]?.tag).toBe('button');
+          expect(expected.slice(1, surprise).every((s) => s.tag === 'a')).toBe(
+            true,
+          );
+        } else expect(surprise).toBe(-1);
         let reached = 0;
         for (const stop of expected) {
           await page.keyboard.press('Tab');

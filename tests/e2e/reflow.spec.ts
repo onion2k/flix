@@ -83,6 +83,11 @@ for (const width of WIDTHS) {
     }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto('/');
+      // The header's button is shown by script, so it is waited for and its
+      // wrapping with the row links is among what is measured.
+      await expect(
+        page.getByRole('button', { name: 'Surprise me' }),
+      ).toBeVisible();
       if (spaced) await page.addStyleTag({ content: SPACING });
       await expect(page.locator('[data-entry]').first()).toBeVisible();
       expect(await page.locator('[data-entry]').count()).toBeGreaterThan(0);

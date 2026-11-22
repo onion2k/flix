@@ -96,7 +96,12 @@ commit of its own that says what it is for.
   `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
   `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). `src/scripts/moving.ts` reads the links' places at each
   move and the gamepad (only while one is connected), and focuses, from
-  `moving.ts`. All four are imported by the one script block in
+  `moving.ts`. `src/scripts/surprise.ts` works the header's Surprise me
+  button (in `Base.astro`, `hidden` until script shows it, and only
+  where two or more cards have a link): it picks with `chance.ts`, never
+  the card focus came from nor the last pick, and focuses its link. It is
+  the one place the generator is made and the clock is read. All five are
+  imported by the one script block in
   `index.astro`. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
@@ -146,8 +151,12 @@ An end-to-end test opens the built site through Playwright's `baseURL`
 --ignore-lock`, since Astro 7 otherwise backgrounds the server and
 Playwright reads that as it dying), which is this project's own so
 that a test never meets a dev server on 4321. It never reuses a server
-it finds there. There is no scene to set: the page is
-the same on every load. `moving.spec.ts` stands a gamepad in with
+it finds there. The page is the same on
+every load except for chance: `window.ooerflixSeed`, a number set by
+`addInitScript` before the page's scripts run, seeds Surprise me
+(`surprise.spec.ts`); anything but a safe integer is ignored and the
+clock's reading is used (`page.clock.setFixedTime` holds that). It is the
+only way chance is handed in. `moving.spec.ts` stands a gamepad in with
 `addInitScript` (`navigator.getGamepads` returns what the test sets on
 `window.__pad`: standard mapping, 17 buttons, 4 axes, and a count of
 calls) and holds the clock with `page.clock.install` then `pauseAt`. Each
@@ -167,6 +176,9 @@ Every new thing is taken through each of these that it can reach.
   focus on a link in the grid, arrows move it and are the grid's even at
   an end; on a strip, a nav link, a button or with a modifier, they are
   the browser's.
+- Surprise me: shown only with script and two or more linked cards; never
+  the card focus came from, the last pick or an unlinked card; a pick in a
+  late row loads that row.
 - A gamepad: none connected reads nothing; connected, one read a frame;
   disconnected, none.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
@@ -219,6 +231,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
+| `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/look/look.spec.ts`           | eight pictures of the built site, as written         |
@@ -255,9 +268,15 @@ The nine points of the definition of done, as this project has them.
 
 ## What is not held
 
-- **No seed, fuzzer, determinism or saved shape,** and time is stepped only
-  for the gamepad. A static page has no use for them. The catalogue's refusals at build are to stand
-  in for "what comes from outside is checked".
+- **No fuzzer or saved shape,** and time is stepped only for the gamepad.
+  A static page has no use for them. The catalogue's refusals at build are
+  to stand in for "what comes from outside is checked". **Chance is seeded
+  in one place**: Surprise me, from `window.ooerflixSeed` or the clock, and
+  held by the same seed giving the same picks. Nothing else on the page is
+  random. A fresh visit with no seed is different each time, and no pick is
+  remembered between visits (nothing is stored). Focus moved by script
+  after a mouse press is ringed through `focus({ focusVisible: true })`,
+  which Chromium honours and Safari and Firefox are not seen to.
 - **Headers as served.** `netlify.toml` is not read by anything here. The
   headers are read from the live address once it exists.
 - **A card half cut off at a strip's edge is brought into view by

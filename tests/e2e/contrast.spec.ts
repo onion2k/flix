@@ -102,9 +102,17 @@ for (const width of WIDTHS) {
         page,
       }) => {
         await page.goto(path);
+        // The home page's button is shown by script, so it is waited for and
+        // its words are among those measured.
+        if (path === '/')
+          await expect(
+            page.getByRole('button', { name: 'Surprise me' }),
+          ).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
         const pieces = await textPieces(page);
         expect(pieces.length, 'text nodes measured').toBeGreaterThan(3);
+        if (path === '/')
+          expect(pieces.map((piece) => piece.text)).toContain('Surprise me');
         const short = pieces.filter(
           (piece) => piece.ratio < (piece.large ? 4.5 : 7),
         );
@@ -173,6 +181,9 @@ for (const width of WIDTHS) {
     }) => {
       await page.goto('/');
       await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        page.getByRole('button', { name: 'Surprise me' }),
+      ).toBeVisible();
       const stops = await page.evaluate(
         () =>
           [
@@ -239,6 +250,7 @@ for (const width of WIDTHS) {
         rings.push(seen?.label ?? '');
       }
       expect(rings.length).toBe(stops);
+      expect(rings.some((ring) => ring.startsWith('Surprise me'))).toBe(true);
     });
   });
 }

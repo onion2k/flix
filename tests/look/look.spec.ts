@@ -82,10 +82,18 @@ for (const [width, height] of [
     await page.setViewportSize({ width, height });
     await page.goto('/');
     // Script has run once the row buttons have taken their state, except at
-    // 320, where a row is stacked and has none.
+    // 320, where a row is stacked and has none; and the header's Surprise me
+    // button is shown by the same script, at every width.
     if (width >= 340)
       await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await expect(
+      page.getByRole('button', { name: 'Surprise me' }),
+    ).toBeVisible();
     await settle(page);
+    // A throwaway full-page shot first: the first one made after the pictures
+    // decode can be drawn with a coarser resample than the later ones, and
+    // which one the held shot met changed from run to run.
+    await page.screenshot({ fullPage: true });
     await expect(page).toHaveScreenshot(`home-${width}.png`, {
       fullPage: true,
       ...TOLERANCE,

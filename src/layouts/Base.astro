@@ -1,7 +1,8 @@
 ---
 // The document every page is drawn in: the head (title, description, address,
 // social card, icon, the self-hosted fonts and the two stylesheets), the skip
-// link, the header with the wordmark and the row links, the main that the
+// link, the header with the wordmark, the row links and the Surprise me
+// button (hidden until script shows it), the main that the
 // page's content goes in, and the footer every page ends in. Without it each page would repeat the head, and one
 // that forgot the viewport tag, the canonical link or the skip link would be
 // the odd one out. Every absolute address is made here from Astro's `site`,
@@ -103,6 +104,12 @@ const cardImage = card
           {rows.map((row) => (
             <a href={`#${row.id}`}>{row.title}</a>
           ))}
+          {/* Hidden until script shows it, which it does only where there are
+              two or more cards to choose between: with no script it would do
+              nothing. It is in the nav so that it wraps with the links. */}
+          <button type="button" class="surprise-button" data-surprise hidden>
+            Surprise me
+          </button>
         </nav>
       ) : null}
     </header>

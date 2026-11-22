@@ -20,7 +20,8 @@ html {
 }
 
 /* The browser's `hidden` loses to any rule that sets display, and the row
-   buttons are hidden by the attribute, so it is made to win here. */
+   buttons and the Surprise me button are hidden by the attribute, so it is
+   made to win here. */
 [hidden] {
   display: none !important;
 }
@@ -227,8 +228,11 @@ p {
 }
 
 /* A live button has a solid edge; one at its end has a dashed edge and plain
-   words, so that the two differ by more than colour. */
-.row-button {
+   words, so that the two differ by more than colour. The header's Surprise me
+   button is drawn the same way, as one of the page's rectangular buttons with
+   the accent edge, and is never at an end. */
+.row-button,
+.surprise-button {
   min-width: var(--size-target);
   min-height: var(--size-target);
   padding: 0 var(--space-l);
