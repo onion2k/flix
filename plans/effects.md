@@ -1,6 +1,6 @@
 # Effects, one at a time
 
-State: building, part 1 of 7.
+State: building, part 2 of 7.
 
 ## Context
 
@@ -38,7 +38,7 @@ and this plan is copied to `plans/effects.md`.
 
 ## Parts
 
-- [ ] **1. House lights.** CSS only. While a linked card is hovered with
+- [x] **1. House lights.** CSS only. While a linked card is hovered with
       a mouse or holds keyboard focus, the pictures of the other cards in
       its row dim. The words do not dim, so contrast holds. An unlinked
       card triggers nothing. The dim is a state and stays under reduced
