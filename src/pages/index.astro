@@ -42,7 +42,7 @@ if (page.notListed.length > 0) {
   rows={page.rows}
   card={{ picture: page.feature.picture, alt: page.feature.pictureAlt }}
 >
-  <Feature card={page.feature} />
+  <Feature cards={page.candidates} />
   {page.rows.map((row, at) => (
     <Row row={row} at={at} />
   ))}

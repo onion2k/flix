@@ -13,12 +13,15 @@ export interface RowFile {
 
 export interface RowsFile {
   feature: string;
+  /** More sites the feature may be, after `feature`, in order. */
+  features: string[];
   rows: RowFile[];
 }
 
 /** The file as written: a row's list is called "sites". */
 interface CatalogueJson {
   feature: string;
+  features?: string[];
   rows: { id: string; title: string; sites: string[] }[];
 }
 
@@ -32,6 +35,7 @@ export function readRows(): RowsFile {
   // entries, so the name is kept here and not changed in every spec.
   return {
     feature: parsed.feature,
+    features: parsed.features ?? [],
     rows: parsed.rows.map((row) => ({
       id: row.id,
       title: row.title,
@@ -47,3 +51,8 @@ export const LABELS = [
   'Toy · Play now',
   'Toy · In the workshop',
 ];
+
+/** The sites the day's feature is taken from, in order: `feature`, then `features`. */
+export function candidatesOf(catalogue: RowsFile): string[] {
+  return [catalogue.feature, ...catalogue.features];
+}

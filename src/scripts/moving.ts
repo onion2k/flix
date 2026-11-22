@@ -31,7 +31,9 @@ const KEYS: Readonly<Record<string, Move>> = {
   End: 'last',
 };
 
-const FEATURE_LINK = 'section.feature a.button';
+// Only the feature that is shown: with a list of features the others are in
+// the page, hidden, and a link in one of them must never be found.
+const FEATURE_LINK = 'section.feature:not([hidden]) a.button';
 const CARD_LINK = 'section.row li.card a.card-link';
 
 /** The grid as it stands: each row's links, and the stops that stand for them. */

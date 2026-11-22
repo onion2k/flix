@@ -20,7 +20,9 @@ test('every card and picture is there, and no row button is shown', async ({
     0,
   );
   expect(total).toBeGreaterThan(0);
-  await expect(page.locator('main [data-entry]')).toHaveCount(total + 1);
+  await expect(page.locator('main [data-entry]:not([hidden])')).toHaveCount(
+    total + 1,
+  );
   // One picture a card, and the feature's, in the accessibility tree: a late
   // card's placeholder is hidden with script off, and its plain picture is
   // the one in the <noscript>.

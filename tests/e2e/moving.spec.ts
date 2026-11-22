@@ -646,7 +646,9 @@ test.describe('a gamepad', () => {
     expect((await where(page)).kind).toBe('other');
     await hold(page, { buttons: [13] });
     await step(page, FRAME);
-    await expect(page.locator('section.feature a.button')).toBeFocused();
+    await expect(
+      page.locator('section.feature:not([hidden]) a.button'),
+    ).toBeFocused();
     await hold(page, {});
     await step(page, FRAME);
     await hold(page, { buttons: [13] });

@@ -26,7 +26,7 @@ function takingTestDirectly(sources: Record<string, string>): string[] {
 
 describe('the specs and the held clock', () => {
   it('reads the specs, so that an empty reading is not a pass', () => {
-    expect(Object.keys(specs).length).toBeGreaterThanOrEqual(19);
+    expect(Object.keys(specs).length).toBeGreaterThanOrEqual(20);
   });
 
   it('has no spec that takes test from @playwright/test', () => {

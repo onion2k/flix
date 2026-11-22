@@ -4,7 +4,28 @@
 // Without it the build would fetch fonts from Google at view time, and the
 // page would have no policy.
 // @ts-check
+import { readFileSync } from 'node:fs';
 import { defineConfig, fontProviders } from 'astro/config';
+import {
+  hasFeatures,
+  inlineScriptText,
+  scriptHash,
+} from './src/build/inline-script.ts';
+
+// With a list of features the page carries one inline script, which picks the
+// day's feature before the page is drawn. Astro hashes the scripts it bundles
+// and not this one, which is written by hand, so its hash is given here, worked
+// out from the file the page reads. With no list there is no such script and so
+// no hash, and the policy is what it was.
+const catalogue = JSON.parse(
+  readFileSync(
+    new URL('./src/content/catalogue.json', import.meta.url),
+    'utf8',
+  ),
+);
+const todayHash = hasFeatures(catalogue)
+  ? [scriptHash(inlineScriptText())]
+  : [];
 
 export default defineConfig({
   site: 'https://flix.ooer.com',
@@ -22,6 +43,9 @@ export default defineConfig({
      * a real header in netlify.toml.
      */
     csp: {
+      ...(todayHash.length > 0
+        ? { scriptDirective: { hashes: todayHash } }
+        : {}),
       directives: [
         "default-src 'self'",
         // Nothing is embedded, plugged in or submitted by a form.

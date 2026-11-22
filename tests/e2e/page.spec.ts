@@ -117,7 +117,7 @@ test('every card is there in the order written', async ({ page }) => {
 test('every picture has loaded, with size, alt words and a modern source', async ({
   page,
 }) => {
-  const cards = page.locator('[data-entry]');
+  const cards = page.locator('[data-entry]:not([hidden])');
   const total = await cards.count();
   expect(total).toBeGreaterThan(catalogue.rows.length);
   for (let at = 0; at < total; at += 1) {
@@ -145,7 +145,7 @@ test('every picture has loaded, with size, alt words and a modern source', async
 test('each card says one of the four labels, and is a link only where it can be played', async ({
   page,
 }) => {
-  const cards = page.locator('main [data-entry]');
+  const cards = page.locator('main [data-entry]:not([hidden])');
   const total = await cards.count();
   expect(total).toBeGreaterThan(0);
   let playable = 0;

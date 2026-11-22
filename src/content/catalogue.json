@@ -1,5 +1,6 @@
 {
   "feature": "nuclear-fishin",
+  "features": ["aquaclysm", "ooergolf", "chopdrop"],
   "rows": [
     {
       "id": "play-now",

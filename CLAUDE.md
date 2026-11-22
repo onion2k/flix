@@ -21,7 +21,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the eight pictures, tests/look, against baselines
+    npm run look         the nine pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -71,7 +71,9 @@ commit of its own that says what it is for.
   handed in). Nothing in `src/` calls the language's global random.
   `today.ts` says which candidate is the day's feature, from a count and
   the clock's reading handed in (whole days since 1970-01-01 UTC, modulo
-  the count).
+  the count). `buildPage` returns `candidates`: `feature`, then the
+  optional `features` list of `catalogue.json`, each refused by name if it
+  has no file, repeats or is `feature` itself.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -103,9 +105,20 @@ commit of its own that says what it is for.
   button (in `Base.astro`, `hidden` until script shows it, and only
   where two or more cards have a link): it picks with `chance.ts`, never
   the card focus came from nor the last pick, and focuses its link. It is
-  the one place the generator is made and the clock is read. All five are
-  imported by the one script block in
-  `index.astro`. Building the catalogue in
+  the one place the generator is made and (with the next) the clock is
+  read. All five are imported by the one script block in
+  `index.astro`. **The feature by the day:** with a list, `Feature.astro`
+  writes a `section.feature` for each candidate (`data-place`, its own
+  title id, all but the first `hidden`, pictures as a late card's, the
+  first with a `<noscript>` picture), then one inline classic script,
+  `src/scripts/today-inline.js`, which reads the clock once, shows the
+  day's candidate and fills only its picture before first paint, with no
+  help from the module. It says `today.ts`'s rule a second time (it cannot
+  import), held equal by `today-inline.test.ts`. Astro hashes the scripts
+  it bundles and not an `is:inline` one, so `astro.config.mjs` gives the
+  policy that file's SHA-256 (`scriptDirective.hashes`, from
+  `src/build/inline-script.ts`, the same file the page reads); with no
+  list there is no script and no hash, and the page is as before. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
   `src/styles/site.css` reads them and holds no value of its own.
@@ -117,6 +130,12 @@ commit of its own that says what it is for.
   `npm run preview`. `gates/` holds the weight baseline and its budgets,
   `scripts/` the two gates that need the network.
 - `plans/` holds each plan, with its state line and its boxes.
+
+**To set the features by the day:** `features` in `catalogue.json` is a
+list of site ids (each with a file, none twice, none the `feature`); the
+day's is `[feature, ...features]` at index whole days since 1970-01-01 UTC
+modulo its length. `feature` is still what shows with script off and what
+the social card uses. Empty or absent, the page is one feature as before.
 
 **To list, unlist or move a site:** edit `src/content/catalogue.json`. A
 new site also needs its `entries/<id>.yaml` and its picture in
@@ -194,6 +213,10 @@ Every new thing is taken through each of these that it can reach.
 - Surprise me: shown only with script and two or more linked cards; never
   the card focus came from, the last pick or an unlinked card; a pick in a
   late row loads that row.
+- The date, with a list of features: each place in the list, 60 days
+  running, the first and last millisecond of a day, a zone far either side
+  of UTC (the day changes at midnight UTC for everyone), and the module
+  never loading. Exactly one feature is in the accessibility tree.
 - A gamepad: none connected reads nothing; connected, one read a frame;
   disconnected, none.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
@@ -231,6 +254,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
 | `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals  |
 | `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`         |
+| `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates        |
+| `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed    |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
@@ -245,13 +270,15 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
+| `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched, |
+|                                     | no module, UTC, script off, arrows, clean console    |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
-| `tests/look/look.spec.ts`           | eight pictures of the built site, as written         |
+| `tests/look/look.spec.ts`           | nine pictures of the built site, as written          |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the five headers (not in check) |
@@ -294,6 +321,14 @@ The nine points of the definition of done, as this project has them.
   remembered between visits (nothing is stored). Focus moved by script
   after a mouse press is ringed through `focus({ focusVisible: true })`,
   which Chromium honours and Safari and Firefox are not seen to.
+- **With a list of features the big picture is found by the inline
+  script and not by the browser's look-ahead,** so it may start a moment
+  later; nothing times that (the weight gate counts requests and bytes). A
+  browser that blocks inline scripts (the hash is what allows it; seen with
+  the script taken out) shows the first candidate with its words and link,
+  and in its frame a broken-image mark with the picture's alt words in the
+  panel colour, for good. The day changes at midnight UTC and only on a
+  load: a page left open does not change.
 - **Headers as served.** `netlify.toml` is not read by anything here. The
   headers are read from the live address once it exists.
 - **A card half cut off at a strip's edge is brought into view by

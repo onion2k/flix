@@ -132,6 +132,23 @@ p {
   height: 100%;
 }
 
+.feature-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* With a list of features the picture is brought in by script, and the frame
+     keeps the room it will fill and waits in the panel's colour until then. */
+  background: var(--color-panel);
+}
+
+/* With script off nothing will fill the placeholder: the plain picture in the
+   noscript beside it is the one, so the placeholder is not drawn or read. */
+@media (scripting: none) {
+  .feature-frame > .feature-picture {
+    display: none;
+  }
+}
+
 .feature-picture img {
   aspect-ratio: 16 / 9;
   object-fit: cover;

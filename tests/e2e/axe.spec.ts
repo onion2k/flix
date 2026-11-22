@@ -102,9 +102,12 @@ test('the home page has no axe violation once the late rows have loaded', async 
   await expect(page.locator('[aria-disabled]').first()).toBeAttached();
   // Scroll to the foot, as a reader does, and wait for every picture to come.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect(page.locator('img[data-src]')).toHaveCount(0);
+  await expect(page.locator('section.row img[data-src]')).toHaveCount(0);
   await page.waitForFunction(() =>
-    [...document.images].every((img) => img.complete && img.naturalWidth > 0),
+    // The pictures of a feature candidate that is hidden are never fetched.
+    [...document.images]
+      .filter((img) => img.closest('[hidden]') === null)
+      .every((img) => img.complete && img.naturalWidth > 0),
   );
   await audit(page, 'home with the late rows loaded');
 });

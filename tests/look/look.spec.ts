@@ -15,8 +15,8 @@
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, type Page } from '@playwright/test';
-import { test } from '../clock';
-import { readRows } from '../e2e/catalogue';
+import { noonOf, test } from '../clock';
+import { candidatesOf, readRows } from '../e2e/catalogue';
 
 /** The entries of the rows after the second, which wait for script. */
 const LATE_IDS = readRows()
@@ -60,10 +60,14 @@ async function settle(page: Page): Promise<void> {
     window.scrollTo(0, 0);
     await frames();
   });
-  await expect(page.locator('img[data-src]')).toHaveCount(0);
+  await expect(page.locator('section.row img[data-src]')).toHaveCount(0);
   await page.evaluate(async () => {
     await document.fonts.ready;
-    const images = [...document.images];
+    // A hidden feature candidate's picture has no address by design, and an
+    // image with none cannot be decoded.
+    const images = [...document.images].filter(
+      (image) => image.currentSrc !== '' || image.src !== '',
+    );
     for (const image of images) image.loading = 'eager';
     await Promise.all(images.map((image) => image.decode()));
   });
@@ -198,4 +202,29 @@ test('the Toys row at 1440 with its pictures held back', async ({ page }) => {
     ...TOLERANCE,
   });
   release();
+});
+
+// The top of the home page on a day that is not the first candidate's: the
+// feature the list gives for a day that is place 2 in it, in the window and
+// not the whole page (a window the size of the first screen, so that the
+// picture is one the reader sees). Every other picture is of day 0, which is
+// the first candidate, so without this the other features are never looked at.
+test('the top of the home page at 1440 on a day that shows another feature', async ({
+  page,
+}) => {
+  const count = candidatesOf(readRows()).length;
+  expect(count).toBeGreaterThan(2);
+  const base = 20_000;
+  await page.clock.setFixedTime(noonOf(base - (base % count) + 2));
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await settle(page);
+  await expect(page.locator('section.feature:not([hidden])')).toHaveAttribute(
+    'data-entry',
+    candidatesOf(readRows())[2] ?? '',
+  );
+  await expect(page).toHaveScreenshot('home-top-another-day-1440.png', {
+    ...TOLERANCE,
+  });
 });

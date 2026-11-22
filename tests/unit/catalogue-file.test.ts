@@ -75,6 +75,20 @@ describe('src/content/catalogue.json', () => {
     expect(withoutFile(catalogueJson, ids)).toEqual([]);
   });
 
+  it('has a list of features, so that reading none is not a pass', () => {
+    // Part 6 of plans/effects.md sets three. If the owner empties the list
+    // this is the one test to change, on purpose.
+    expect(catalogueJson.features.length).toBeGreaterThanOrEqual(1);
+    expect(catalogueJson.features).toEqual(
+      expect.arrayContaining(['aquaclysm', 'ooergolf', 'chopdrop']),
+    );
+  });
+
+  it('repeats none of the features, and none is the feature itself', () => {
+    const all = [catalogueJson.feature, ...catalogueJson.features];
+    expect(new Set(all).size).toBe(all.length);
+  });
+
   it('is seen to refuse a site with no file (the check itself)', () => {
     const broken = {
       feature: 'nuclear-fishin',

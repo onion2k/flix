@@ -1,16 +1,27 @@
 ---
 // The featured entry: its picture beside a panel of words, stacked on a
-// phone. The picture carries no words, and loads at once and at high
-// priority, since it is the largest thing the first screen draws. Without it
-// the home page would have no first thing to look at.
-import { Picture } from 'astro:assets';
+// phone. With no list of features it is one section whose picture loads at
+// once and at high priority, since it is the largest thing the first screen
+// draws. With a list (src/content/catalogue.json) it is one section for each
+// candidate, in order, all but the first hidden, and each picture written as
+// a late card's is: its addresses in data- attributes, which no browser
+// fetches, so that the markup alone fetches nothing, and the first also holds
+// the ordinary picture in a <noscript>, which is what shows with script off. A
+// small inline script straight after them (src/scripts/today-inline.js) picks
+// the day's, shows it and fills its picture before the page is first drawn.
+// Without this the home page would have no first thing to look at, or would
+// fetch the big picture of every candidate.
+import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
+import inlineScript from '../scripts/today-inline.js?raw';
 
 interface Props {
-  card: Card<ImageMetadata>;
+  /** The candidates, in order: the feature, then each of the list. */
+  cards: Card<ImageMetadata>[];
 }
 
-const { card } = Astro.props;
+const { cards } = Astro.props;
+const listed = cards.length > 1;
 
 // The picture is seven twelfths of the window less the gutters, and the whole
 // of it less the gutters below 64rem, where the grid has one column (and the
@@ -18,31 +29,134 @@ const { card } = Astro.props;
 // that the browser fetches the width it will draw.
 const sizes =
   '(max-width: 40rem) calc(100vw - 2rem), (max-width: 64rem) calc(100vw - 6rem), calc((100vw - 6rem) * 7 / 12)';
+
+// The widths and formats of a picture, said once so that the ordinary picture
+// and a late one's sources cannot differ.
+const widths = [640, 960, 1280];
+
+// With a list, the three files <Picture> would make (AVIF, WebP, then the JPEG
+// that is the fallback) for each candidate, written here so that their
+// addresses can go in data- attributes instead of src and srcset.
+const files = listed
+  ? await Promise.all(
+      cards.map(async (card) => {
+        const shared = {
+          src: card.picture,
+          width: 1280,
+          height: 720,
+          widths,
+          sizes,
+        };
+        const [avif, webp, jpeg] = await Promise.all([
+          getImage({ ...shared, format: 'avif' }),
+          getImage({ ...shared, format: 'webp' }),
+          getImage({ ...shared, format: 'jpeg' }),
+        ]);
+        return { avif, webp, jpeg };
+      }),
+    )
+  : [];
 ---
 
-<section class="feature" aria-labelledby="feature-title" data-entry={card.id}>
-  <Picture
-    src={card.picture}
-    alt={card.pictureAlt}
-    width={1280}
-    height={720}
-    widths={[640, 960, 1280]}
-    sizes={sizes}
-    formats={['avif', 'webp']}
-    fallbackFormat="jpeg"
-    priority
-    pictureAttributes={{ class: 'feature-picture' }}
-  />
-  <div class="words">
-    <p class="label" data-label>
-      {card.label}
-    </p>
-    <h2 id="feature-title">{card.title}</h2>
-    <p class="description">{card.description}</p>
-    {card.href ? (
-      <a class="button" href={card.href}>
-        {card.linkName}
-      </a>
-    ) : null}
-  </div>
-</section>
+{listed ? (
+  <>
+    {cards.map((card, at) => {
+      const found = files[at];
+      return (
+        <section
+          class="feature"
+          aria-labelledby={`feature-title-${at}`}
+          data-entry={card.id}
+          data-place={at}
+          hidden={at > 0}
+        >
+          <div class="feature-frame">
+            <picture class="feature-picture">
+              <source
+                data-srcset={found?.avif.srcSet.attribute}
+                type="image/avif"
+                sizes={sizes}
+              />
+              <source
+                data-srcset={found?.webp.srcSet.attribute}
+                type="image/webp"
+                sizes={sizes}
+              />
+              <img
+                data-src={found?.jpeg.src}
+                data-srcset={found?.jpeg.srcSet.attribute}
+                alt={card.pictureAlt}
+                sizes={sizes}
+                width={1280}
+                height={720}
+                decoding="async"
+              />
+            </picture>
+            {at === 0 ? (
+              <noscript>
+                <Picture
+                  src={card.picture}
+                  alt={card.pictureAlt}
+                  width={1280}
+                  height={720}
+                  widths={widths}
+                  sizes={sizes}
+                  formats={['avif', 'webp']}
+                  fallbackFormat="jpeg"
+                  priority
+                  pictureAttributes={{ class: 'feature-picture' }}
+                />
+              </noscript>
+            ) : null}
+          </div>
+          <div class="words">
+            <p class="label" data-label>
+              {card.label}
+            </p>
+            <h2 id={`feature-title-${at}`}>{card.title}</h2>
+            <p class="description">{card.description}</p>
+            {card.href ? (
+              <a class="button" href={card.href}>
+                {card.linkName}
+              </a>
+            ) : null}
+          </div>
+        </section>
+      );
+    })}
+    <script is:inline set:html={inlineScript} />
+  </>
+) : (
+  cards.map((card) => (
+    <section
+      class="feature"
+      aria-labelledby="feature-title"
+      data-entry={card.id}
+    >
+      <Picture
+        src={card.picture}
+        alt={card.pictureAlt}
+        width={1280}
+        height={720}
+        widths={widths}
+        sizes={sizes}
+        formats={['avif', 'webp']}
+        fallbackFormat="jpeg"
+        priority
+        pictureAttributes={{ class: 'feature-picture' }}
+      />
+      <div class="words">
+        <p class="label" data-label>
+          {card.label}
+        </p>
+        <h2 id="feature-title">{card.title}</h2>
+        <p class="description">{card.description}</p>
+        {card.href ? (
+          <a class="button" href={card.href}>
+            {card.linkName}
+          </a>
+        ) : null}
+      </div>
+    </section>
+  ))
+)}
