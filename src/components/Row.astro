@@ -1,12 +1,16 @@
 ---
-// One row: its title, the Previous and Next buttons, and the strip of cards.
-// The strip is a focusable list so that a keyboard can scroll it with no
-// script (and so that a row with no link in it still has a stop), named by
-// the row's heading and given the list role by hand, which a list with its
-// bullets removed otherwise loses in some browsers. The buttons are in the
-// markup but hidden: only script can know that the row overflows, and a button
-// shown without it would do nothing. Without this the three rows would repeat
-// the markup and drift apart.
+// One row: its title, the page marks and the words that say which page, and
+// the strip of cards with an arrow on each edge. The strip is a focusable list
+// so that a keyboard can scroll it with no script (and so that a row with no
+// link in it still has a stop), named by the row's heading and given the list
+// role by hand, which a list with its bullets removed otherwise loses in some
+// browsers. The arrows are the row's Previous and Next: real buttons, in the
+// markup but hidden, since only script can know that the row overflows and
+// where it is, and an arrow shown without it would do nothing. Previous comes
+// before the strip and Next after it, so that Tab meets them in the order the
+// eye does. The marks and the words are filled in by the same script and are
+// empty without it. Without this the three rows would repeat the markup and
+// drift apart.
 import type { Page } from '../catalogue/rows';
 import Card from './Card.astro';
 
@@ -39,35 +43,53 @@ const late = at >= LATE_ROWS_FROM;
 >
   <div class="row-head">
     <h2 id={`${row.id}-title`}>{row.title}</h2>
-    <div class="row-buttons">
-      <button
-        type="button"
-        class="row-button"
-        data-page="previous"
-        aria-label={`Previous in ${row.title}`}
-        hidden
-      >
-        Previous
-      </button>
-      <button
-        type="button"
-        class="row-button"
-        data-page="next"
-        aria-label={`Next in ${row.title}`}
-        hidden
-      >
-        Next
-      </button>
-    </div>
+    <div class="row-pages" aria-hidden="true" hidden></div>
+    <p class="visually-hidden" data-page-words></p>
   </div>
-  <ul
-    class="strip"
-    role="list"
-    tabindex="0"
-    aria-labelledby={`${row.id}-title`}
-  >
-    {row.cards.map((card, index) => (
-      <Card card={card} eager={at === 0 && index < EAGER_CARDS} late={late} />
-    ))}
-  </ul>
+  <div class="strip-box">
+    <button
+      type="button"
+      class="row-arrow"
+      data-page="previous"
+      aria-label={`Previous in ${row.title}`}
+      hidden
+    >
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path
+          d="M11 2L5 8l6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="square"
+        ></path>
+      </svg>
+    </button>
+    <ul
+      class="strip"
+      role="list"
+      tabindex="0"
+      aria-labelledby={`${row.id}-title`}
+    >
+      {row.cards.map((card, index) => (
+        <Card card={card} eager={at === 0 && index < EAGER_CARDS} late={late} />
+      ))}
+    </ul>
+    <button
+      type="button"
+      class="row-arrow"
+      data-page="next"
+      aria-label={`Next in ${row.title}`}
+      hidden
+    >
+      <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <path
+          d="M5 2l6 6-6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="square"
+        ></path>
+      </svg>
+    </button>
+  </div>
 </section>

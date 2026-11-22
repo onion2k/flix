@@ -497,7 +497,9 @@ test.describe('too few playable cards', () => {
     const page = await onlyPlayable(browser, baseURL ?? '', 1);
     await page.goto('/');
     // Script has run once the row buttons have taken their state.
-    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
     await expect(page.locator('li.card[data-linked]')).toHaveCount(1);
     await expect(page.locator('button[data-surprise]')).toHaveCount(1);
     await expect(page.locator('button[data-surprise]')).toBeHidden();
@@ -511,7 +513,9 @@ test.describe('too few playable cards', () => {
   }) => {
     const page = await onlyPlayable(browser, baseURL ?? '', 0);
     await page.goto('/');
-    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
     await expect(page.locator('li.card[data-linked]')).toHaveCount(0);
     await expect(page.locator('button[data-surprise]')).toHaveCount(1);
     await expect(page.locator('button[data-surprise]')).toBeHidden();

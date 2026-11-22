@@ -292,16 +292,16 @@ test.describe('under the header, as a browser enforces it', () => {
         )
         .toBe(true);
 
-      // The page's script has run: Surprise me is shown, and a row's Previous
-      // button has taken its state.
+      // The page's script has run: Surprise me is shown, and a row's Next
+      // arrow has been given its place.
       await expect(page.locator('button[data-surprise]')).toBeVisible();
       const first = catalogue.rows[0];
       expect(first, 'a row was read').toBeDefined();
       await expect(
         page
           .locator(`section[id="${first?.id ?? ''}"]`)
-          .getByRole('button', { name: /^Previous/ }),
-      ).toHaveAttribute('aria-disabled', 'true');
+          .getByRole('button', { name: /^Next/ }),
+      ).toBeVisible();
 
       // The fonts are the site's own, the display and the body face.
       const faces = await loadedFaces(page);
@@ -363,7 +363,9 @@ test.describe('a card that grows, under the header', () => {
     const start = noonOf(0);
     await page.clock.install({ time: start });
     await page.goto('/');
-    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
     await page.clock.pauseAt(start + 1000);
     const card = page
       .locator('section.row')

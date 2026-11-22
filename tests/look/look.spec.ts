@@ -124,7 +124,9 @@ for (const [width, height] of [
       // at 320, where a row is stacked and has none; and the header's
       // Surprise me button is shown by the same script, at every width.
       if (width >= 340)
-        await expect(opened.locator('[aria-disabled]').first()).toBeAttached();
+        await expect(
+          opened.locator('section.row[data-arrows]').first(),
+        ).toBeAttached();
       await expect(
         opened.getByRole('button', { name: 'Surprise me' }),
       ).toBeVisible();
@@ -160,7 +162,7 @@ test('the first row at 1440 with its second card focused by keyboard', async ({
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await settle(page);
   const row = page.locator('section.row').first();
   const second = row.locator('.card').nth(1);
@@ -170,6 +172,40 @@ test('the first row at 1440 with its second card focused by keyboard', async ({
   }
   await expect(second.locator('.card-link:focus')).toHaveCount(1);
   await expect(row).toHaveScreenshot('first-row-second-card-focused.png', {
+    ...TOLERANCE,
+  });
+});
+
+// The first row at 1440 part way along, as a reader sees it once script has
+// run: no scrollbar, an arrow on each edge over the cut-off cards, and the
+// marks at the top right with the middle page lit. The strip is put there by a
+// jump (reduced motion is emulated, so it does not glide) and waited on until
+// it is at rest, so that the same cards show every run. Without it the
+// arrows, which are drawn over the pictures, would be looked at only as the
+// first page shows them, with Next alone.
+test('the first row at 1440 part way along, with both arrows and the page marks', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
+  await settle(page);
+  const row = page.locator('section.row').first();
+  await row.evaluate((el: HTMLElement) => {
+    const strip = el.querySelector<HTMLElement>('.strip');
+    if (strip === null) throw new Error('the row has no strip');
+    strip.scrollTo({ left: strip.clientWidth * 0.5 });
+  });
+  await expect(row.getByRole('button', { name: /^Previous/ })).toBeVisible();
+  await expect(row.getByRole('button', { name: /^Next/ })).toBeVisible();
+  await expect(row.locator('.page-mark[data-current]')).toHaveCount(1);
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => done())),
+      ),
+  );
+  await expect(row).toHaveScreenshot('first-row-part-way-1440.png', {
     ...TOLERANCE,
   });
 });
@@ -192,7 +228,7 @@ test('the Toys row at 1440 with its pictures held back', async ({ page }) => {
     await route.continue().catch(() => undefined);
   });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   const row = page.locator('section[id="toys"]');
   await row.evaluate((el) => {
     el.scrollIntoView();
@@ -218,7 +254,7 @@ test('the top of the home page at 1440 on a day that shows another feature', asy
   await page.clock.setFixedTime(noonOf(base - (base % count) + 2));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await settle(page);
   await expect(page.locator('section.feature:not([hidden])')).toHaveAttribute(
     'data-entry',
@@ -247,7 +283,7 @@ test('the first row at 1440 with Chopdrop grown, its loop held at 2.0 seconds', 
   await page.clock.install({ time: DAY_ZERO });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   // Settled before the clock is held, since settling asks the page for frames.
   await settle(page);
   await page.clock.pauseAt(DAY_ZERO + 1000);

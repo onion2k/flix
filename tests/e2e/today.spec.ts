@@ -372,7 +372,9 @@ test.describe('arrow keys', () => {
   }) => {
     const place = 2;
     await openOn(page, noonOf(dayAt(place)));
-    await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
     await page
       .locator('section.row')
       .first()

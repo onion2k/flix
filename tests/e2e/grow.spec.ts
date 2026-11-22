@@ -87,7 +87,7 @@ function watch(page: Page): { urls: string[] } {
 async function opened(page: Page): Promise<void> {
   await page.clock.install({ time: DAY_ZERO });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await page.clock.pauseAt(DAY_ZERO + 1000);
 }
 
@@ -679,6 +679,76 @@ test.describe('only one, and what closes it', () => {
       ),
       'focus is still on the link',
     ).toBe(true);
+  });
+
+  test('a row’s edge arrow is above its cards and below a grown card', async ({
+    page,
+  }) => {
+    await opened(page);
+    // The fourth card is the one the Next arrow is drawn over, so that its
+    // copy, which is kept inside the window, is the one that lands on the
+    // arrow's place. It is pointed at where it shows, left of the arrow.
+    const card = row(page).locator('li.card[data-linked]').nth(3);
+    const arrow = row(page).getByRole('button', { name: /^Next/ });
+    await expect(arrow).toBeVisible();
+    await arrow.scrollIntoViewIfNeeded();
+    const at = await card.boundingBox();
+    expect(at, 'the card is drawn').not.toBeNull();
+    const over = await arrow.boundingBox();
+    expect(over, 'the arrow is drawn').not.toBeNull();
+    // Without a copy, the arrow is what is on top of the card under it.
+    const under = {
+      x: (over?.x ?? 0) + (over?.width ?? 0) / 2,
+      y: (over?.y ?? 0) + (over?.height ?? 0) / 2,
+    };
+    expect(
+      await page.evaluate(
+        ({ x, y }) =>
+          document
+            .elementFromPoint(x, y)
+            ?.closest('button[data-page]')
+            ?.getAttribute('data-page'),
+        under,
+      ),
+      'the arrow is above the card’s own picture',
+    ).toBe('next');
+    await page.mouse.move((at?.x ?? 0) + 40, (at?.y ?? 0) + 40);
+    await pastPause(page);
+    await opens(page, await idOf(card));
+    // The copy covers the arrow's place, so that is what is on top there.
+    const copy = await grown(page).boundingBox();
+    expect((copy?.x ?? 0) + (copy?.width ?? 0)).toBeGreaterThan(under.x);
+    expect(
+      await page.evaluate(
+        ({ x, y }) =>
+          document.elementFromPoint(x, y)?.closest('.grown') !== null,
+        under,
+      ),
+      'a grown card is above the arrow',
+    ).toBe(true);
+  });
+
+  test('the pointer leaving a grown card onto an arrow closes it, as leaving onto anything else does', async ({
+    page,
+  }) => {
+    await opened(page);
+    // The third card's copy ends short of the arrow, so that the arrow is
+    // there to be moved onto.
+    const card = row(page).locator('li.card[data-linked]').nth(2);
+    await pointAt(page, card);
+    await pastPause(page);
+    await opens(page, await idOf(card));
+    const copy = await grown(page).boundingBox();
+    const arrow = await row(page)
+      .getByRole('button', { name: /^Next/ })
+      .boundingBox();
+    expect((copy?.x ?? 0) + (copy?.width ?? 0)).toBeLessThan(arrow?.x ?? 0);
+    await page.mouse.move(
+      (arrow?.x ?? 0) + (arrow?.width ?? 0) / 2,
+      (arrow?.y ?? 0) + (arrow?.height ?? 0) / 2,
+      { steps: 8 },
+    );
+    await expect(grown(page)).toHaveCount(0);
   });
 
   test('a small scroll of its strip closes it, and the card, still focused and in view, opens again after the pause', async ({

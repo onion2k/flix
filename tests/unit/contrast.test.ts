@@ -59,6 +59,14 @@ const EDGES: [string, string, string][] = [
   ['--color-accent', '--color-ground', 'a live row button edge'],
   ['--color-text', '--color-ground', 'a disabled row button edge'],
   ['--color-accent', '--color-ground', 'the bar before a row title'],
+  // An edge arrow sits on its own solid ground, so these are the pairs drawn.
+  ['--color-accent', '--color-ground', 'an edge arrow: its edge'],
+  ['--color-accent', '--color-ground', 'an edge arrow: its chevron'],
+  [
+    '--color-page-mark',
+    '--color-ground',
+    'a page mark that is not the current',
+  ],
 ];
 
 describe('contrast from the tokens', () => {

@@ -53,7 +53,7 @@ async function quiet(page: Page): Promise<void> {
 /** The page has loaded and script has run (the row buttons have their state). */
 async function ready(page: Page): Promise<void> {
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
 }
 
 /** The computed filter of every picture in a card, as a list. */

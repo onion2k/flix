@@ -75,7 +75,7 @@ async function hold(
 /** Scrolls the Toys row near and waits until script has started its pictures. */
 async function near(page: Page): Promise<Locator> {
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   const row = page.locator(`section[id="${toys?.id}"]`);
   await row.evaluate((el) => {
     el.scrollIntoView();

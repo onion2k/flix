@@ -36,7 +36,7 @@ interface Where {
 
 async function ready(page: Page): Promise<void> {
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
 }
 
 function where(page: Page): Promise<Where> {

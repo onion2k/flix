@@ -58,7 +58,7 @@ async function settled(page: Page): Promise<void> {
 /** The page has loaded, script has run, and the network has gone quiet. */
 async function idle(page: Page): Promise<void> {
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await page.waitForLoadState('networkidle');
   await settled(page);
 }
@@ -181,7 +181,7 @@ test('with no IntersectionObserver every late picture is brought in at once', as
   expect(await page.evaluate(() => typeof window.IntersectionObserver)).toBe(
     'undefined',
   );
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await drawn(page, seen, ids(late));
 });
 

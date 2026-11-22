@@ -22,7 +22,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the eleven pictures, tests/look, against baselines
+    npm run look         the twelve pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -63,8 +63,8 @@ commit of its own that says what it is for.
   catalogue file, and `rows.ts` builds the page's model from them, refuses
   a catalogue that does not hold together (naming file and id) and returns
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
-  scroll position, whether its Previous and Next buttons are live and
-  where each goes. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
+  scroll position, whether its Previous and Next arrows are live, where
+  each goes, how many pages the strip has and which it is on. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
   `hero.ts` says what the moving hero does at load (play its loop, offer
@@ -108,7 +108,11 @@ commit of its own that says what it is for.
   Source); `OutsideLink.astro` and `NewWindowIcon.astro` draw a link that
   leaves the site (words: `NEW_WINDOW`, `rows.ts`); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
   `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
-  `src/scripts/rows.ts` works the row buttons from `paging.ts`, and
+  `src/scripts/rows.ts` works each row's edge arrows (its Previous and Next,
+  hidden from the tree where there is nothing that way), its page marks and
+  the words that say the page, from `paging.ts`, and marks the row
+  `data-arrows` once it has, which is what hides the strip's scrollbar and
+  what specs wait on to know script has run; and
   `src/scripts/pictures.ts` brings in the pictures of the **late rows**
   (every row after the second, `LATE_ROWS_FROM` in `Row.astro`): a late
   card's `<picture>` holds its addresses in `data-` attributes and the
@@ -273,6 +277,10 @@ Every new thing is taken through each of these that it can reach.
 - With script and without it. Late pictures arrive by script when it is on
   and from the `<noscript>` when it is off; each must be whole, and a card
   has exactly one picture in the accessibility tree either way.
+- With script a row has no scrollbar and moves by its edge arrows, with
+  script off it keeps its scrollbar and has no arrows or marks (a mouse
+  with no sideways wheel has no other way along). Below 340px a row stacks
+  and has neither.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
   press that does not move is a click.
 - By keyboard alone: order, a visible focus ring, nothing trapped. With
@@ -341,11 +349,11 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it    |
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
-| `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
+| `tests/e2e/rows.spec.ts`            | the edge arrows, page marks and words, ends, fitting |
 | `tests/e2e/drag.spec.ts`            | a mouse drag, no link followed; touch left alone     |
 | `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll, link,  |
 |                                     | Tab, print, no observer; markup holds no address     |
-| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
+| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; the arrows   |
 | `tests/e2e/moving.spec.ts`          | arrow keys through the grid; a stood-in pad, stepped |
 | `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
@@ -364,7 +372,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | eleven pictures of the built site, as written        |
+| `tests/look/look.spec.ts`           | twelve pictures of the built site, as written        |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;  |
 |                                     | the hero's loop apart, against its own budget        |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
@@ -505,6 +513,16 @@ The nine points of the definition of done, as this project has them.
   buttons 12 to 15, left stick axes 0 and 1, first button 0); a pad with
   another mapping is ignored. The owner is to try one.
 - **No mutation gate.** Mutations are by hand, and reported.
+
+- **A scrollbar is only seen with flags.** Headless Chromium on this Mac
+  draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with
+  `--disable-features=OverlayScrollbar` and without `--hide-scrollbars`;
+  the look pictures draw none either way.
+- **The page marks can outnumber the arrows' stops.** A page is the
+  window, so the first row at 1440 has three marks, yet Next goes from the
+  start to the end in one step (the second page is reached by wheel, drag
+  or key). The words are not a live region: a screen reader reads them in
+  place, and is told nothing as the strip moves.
 
 ## Keeps
 

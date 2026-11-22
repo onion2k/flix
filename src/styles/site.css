@@ -293,16 +293,86 @@ p {
   border-left: var(--size-bar-width) solid var(--color-accent);
 }
 
-.row-buttons {
+/* The marks of a row's pages, at the top right of its heading: one short bar a
+   page, the current one in the accent colour and thicker, so that it is told
+   apart by its size as well as its colour, and the others in a muted colour
+   that is 3:1 on the ground. A border and not a background, so that they are
+   still drawn where backgrounds are taken away. They are decoration: the
+   words beside them (visually hidden, and in the markup) say the page. */
+.row-pages {
   display: flex;
-  gap: var(--space-s);
+  align-items: center;
+  gap: var(--space-xs);
 }
 
-/* A live button has a solid edge; one at its end has a dashed edge and plain
-   words, so that the two differ by more than colour. The header's Surprise me
-   button is drawn the same way, as one of the page's rectangular buttons with
-   the accent edge, and is never at an end. */
-.row-button,
+.page-mark {
+  width: var(--size-page-mark-width);
+  border-top: var(--size-page-mark) solid var(--color-page-mark);
+}
+
+.page-mark[data-current] {
+  border-top-width: var(--size-page-mark-current);
+  border-top-color: var(--color-accent);
+}
+
+/* The strip and the row's two arrows. The arrows are placed against this box
+   and not the row, so that their top is the strip's own top padding, which
+   is where the pictures start. */
+.strip-box {
+  position: relative;
+}
+
+/* An arrow on a row's edge, over the cut-off card: as tall as the pictures
+   and level with them, on a solid ground of its own so that its chevron and
+   edge are 3:1 whatever is behind, with the accent edge of the page's other
+   buttons. It is above the strip's cards and below a grown card (which is 2),
+   and shown by script only where there is more that way. */
+.row-arrow {
+  position: absolute;
+  top: var(--space-m);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--size-arrow-width);
+  min-width: var(--size-target);
+  height: calc(var(--card-width) * 9 / 16);
+  min-height: var(--size-target);
+  padding: 0;
+  background: var(--color-ground);
+  color: var(--color-accent);
+  border: var(--size-outline-button) solid var(--color-accent);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.row-arrow[data-page='previous'] {
+  left: 0;
+}
+
+.row-arrow[data-page='next'] {
+  right: 0;
+}
+
+.row-arrow svg {
+  width: var(--size-arrow-chevron);
+  height: var(--size-arrow-chevron);
+}
+
+/* Pointed at, its edge thickens, as a pointed card's does: it answers the
+   pointer without motion and keeps its solid ground, so that its edge is still
+   3:1 on it and not lost in a fill. */
+.row-arrow:hover {
+  border-width: var(--size-edge-hover);
+}
+
+/* The ring is drawn against a flat ground and not the picture behind it, as
+   the hero's button's is: a gap of the ground inside it. */
+.row-arrow:focus-visible {
+  box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
+}
+
 .surprise-button,
 .hero-button {
   min-width: var(--size-target);
@@ -317,7 +387,7 @@ p {
   cursor: pointer;
 }
 
-/* The hero's button is over a moving picture, so unlike the row buttons it has
+/* The hero's button is over a moving picture, so unlike a plain button it has
    the ground behind it, which keeps its words at 7:1 and its edge at 3:1
    whatever the loop shows; its ring has a gap of the ground inside it for the
    same reason, so that the ring is drawn against a flat colour. */
@@ -333,14 +403,6 @@ p {
   box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
 }
 
-.row-button[aria-disabled='true'] {
-  color: var(--color-text);
-  border-style: dashed;
-  border-color: var(--color-text);
-  font-weight: 400;
-  cursor: not-allowed;
-}
-
 .strip {
   display: flex;
   gap: var(--space-l);
@@ -350,6 +412,19 @@ p {
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scroll-padding-inline: var(--gutter);
+}
+
+/* The scrollbar goes once script has run and the row has its arrows (it marks
+   the row), since the arrows and the page marks say that it scrolls and move
+   it. With script off the row is not marked and keeps its scrollbar, the one
+   way along for a mouse with no sideways wheel. The strip still scrolls by
+   wheel, trackpad, touch, drag and the arrow keys. */
+.row[data-arrows] .strip {
+  scrollbar-width: none;
+}
+
+.row[data-arrows] .strip::-webkit-scrollbar {
+  display: none;
 }
 
 /* The strip's own ring is drawn inside it, since it runs to the window's
@@ -718,6 +793,7 @@ main {
 @media (max-width: 40rem) {
   :root {
     --gutter: var(--gutter-phone);
+    --card-width: var(--card-width-phone);
   }
 
   .site-header {
@@ -741,15 +817,12 @@ main {
   .row h2 {
     font-size: var(--size-row-title-phone);
   }
-
-  .card {
-    flex-basis: var(--card-width-phone);
-  }
 }
 
 /* Below 340px a row stops scrolling sideways and its cards stack down the
-   page (WCAG 1.4.10, reflow), and with nothing to page its buttons stay
-   hidden. */
+   page (WCAG 1.4.10, reflow), and with nothing to page it has no arrows and
+   no marks: script hides them for want of an overflow, and this says so too,
+   for a window that is being narrowed between one measure and the next. */
 @media (width < 21.25rem) {
   .strip {
     flex-direction: column;
@@ -761,7 +834,8 @@ main {
     flex: 0 0 auto;
   }
 
-  .row-buttons {
+  .row-arrow,
+  .row-pages {
     display: none;
   }
 }

@@ -185,7 +185,11 @@ for (const each of PAGES) {
     test('the icon is out of the accessibility tree and at least as tall as the text’s x-height', async ({
       page,
     }) => {
-      const icons = page.locator('svg[aria-hidden="true"]:visible');
+      // The new-window icons: a row's arrow draws a chevron the same way, which
+      // is not a link's icon and has no link round it.
+      const icons = page.locator(
+        'svg[aria-hidden="true"]:visible:not(button svg)',
+      );
       const total = await icons.count();
       expect(total).toBeGreaterThan(FOOTER - 1);
       for (let at = 0; at < total; at += 1) {
@@ -231,7 +235,9 @@ test.describe('following a link opens one new window and leaves this page where 
   for (const how of ['a real click', 'a real Enter on the focused link']) {
     test(`${how} on a card`, async ({ page, context }) => {
       await page.goto('/');
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       const asked = await stopOutside(page);
       const link = page.locator('li.card[data-linked] a.card-link').first();
       const href = new URL((await link.getAttribute('href')) ?? '').href;

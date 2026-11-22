@@ -2,7 +2,9 @@
 // the skip link is the first stop, visible, and takes focus into main; then
 // every link, button and strip in reading order, each one inside the window,
 // ringed by an outline of at least 2px, and not covered by anything else.
-// Every visible link and button is also at least 44 by 44 (a card's link by
+// A row's edge arrows are stops where they are shown and not stops where they
+// are hidden, ringed and uncovered, and 44 by 44 (see the last describe). Every
+// visible link and button is also at least 44 by 44 (a card's link by
 // the card, its hit area; a link inside a paragraph of running text in main
 // is exempt, see below). The home page and the privacy page are both walked,
 // the footer included. Without it a ring
@@ -10,6 +12,10 @@
 // pass every other check, since none of them presses Tab.
 import { expect, type Page } from '@playwright/test';
 import { test } from '../clock';
+import { atRest } from './scrolling';
+import { readRows } from './catalogue';
+
+const catalogue = readRows();
 
 const WIDTHS = [1440, 390];
 const PAGES = [
@@ -20,9 +26,16 @@ const PAGES = [
 interface Stop {
   tag: string;
   name: string;
+  /** Whether focus is on it now. */
+  focused: boolean;
 }
 
-/** What each press of Tab should land on, in reading order, from the DOM. */
+/**
+ * What a press of Tab can land on, in reading order, from the DOM as it is
+ * now. A row's edge arrows are in it where they are shown, and a walk of a
+ * row's cards moves the strip, which shows and hides them as it goes, so the
+ * list is read again before every press and not once for the walk.
+ */
 async function tabbable(page: Page): Promise<Stop[]> {
   return page.evaluate(() => {
     const visible = (el: Element) => {
@@ -41,6 +54,7 @@ async function tabbable(page: Page): Promise<Stop[]> {
         name: (el.getAttribute('aria-label') ?? el.textContent ?? '')
           .trim()
           .slice(0, 60),
+        focused: el === document.activeElement,
       }));
   });
 }
@@ -92,10 +106,12 @@ for (const width of WIDTHS) {
 
       test.beforeEach(async ({ page }) => {
         await page.goto(path);
-        // Script has run once the row buttons have taken their state; the
-        // privacy page has no script and no row buttons.
+        // Script has run once the rows have been given their arrows; the
+        // privacy page has no script and no rows.
         if (path === '/') {
-          await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+          await expect(
+            page.locator('section.row[data-arrows]').first(),
+          ).toBeAttached();
           await expect(
             page.getByRole('button', { name: 'Surprise me' }),
           ).toBeVisible();
@@ -144,8 +160,17 @@ for (const width of WIDTHS) {
           expect(expected[pause - 1]?.tag).toBe('a');
           expect(expected[pause - 1]?.name).toMatch(/^Play /);
         }
+        // The stops that are there before the first press and cannot go: all
+        // but a row's arrows, which a row's own scrolling shows and hides.
+        const fixed = expected.filter(
+          (s) => !/^(Previous|Next) in /.test(s.name),
+        );
         let reached = 0;
-        for (const stop of expected) {
+        let arrows = 0;
+        for (let step = 0; step < 500; step += 1) {
+          const list = await tabbable(page);
+          const stop = list[list.findIndex((s) => s.focused) + 1];
+          if (stop === undefined) break;
           await page.keyboard.press('Tab');
           // A strip scrolls a card in smoothly, so wait for it to be in.
           await expect
@@ -153,6 +178,10 @@ for (const width of WIDTHS) {
               message: `${stop.name} is in the window`,
             })
             .toBe(true);
+          // And for the strip to have stopped, so that its arrows have taken
+          // the state the scroll left them in before the next press.
+          const strip = page.locator('ul.strip:is(:focus, :has(:focus))');
+          if ((await strip.count()) > 0) await atRest(strip.first());
           const now = await active(page);
           expect(now?.tag).toBe(stop.tag);
           expect(now?.name).toBe(stop.name);
@@ -162,9 +191,17 @@ for (const width of WIDTHS) {
             true,
           );
           expect(now?.covered).toBe(false);
+          if (/^(Previous|Next) in /.test(stop.name)) arrows += 1;
           reached += 1;
         }
-        expect(reached).toBe(expected.length);
+        // Every stop that cannot go was walked, the footer's last included,
+        // and the walk ended there and not at the loop's cap.
+        expect(reached).toBeGreaterThanOrEqual(fixed.length);
+        expect(reached).toBeLessThan(500);
+        test.info().annotations.push({
+          type: 'measured',
+          description: `${reached} stops, ${arrows} of them row arrows`,
+        });
       });
 
       test('every visible link and button is at least 44 by 44', async ({
@@ -215,3 +252,101 @@ for (const width of WIDTHS) {
     });
   }
 }
+
+// The edge arrows, by a real Tab press. An arrow is before its strip in the
+// reading order (Previous) or after it (Next), so Previous is reached by
+// Shift+Tab from the strip, and Next by Shift+Tab from the next row's strip
+// when the first row has not moved, which are the two places no walk of the
+// cards would stand. A hidden arrow is not a stop at all.
+test.describe('the edge arrows at a desk', () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+  });
+
+  const first = () => {
+    const row = catalogue.rows[0];
+    if (row === undefined) throw new Error('no rows were read');
+    return row;
+  };
+  const second = () => {
+    const row = catalogue.rows[1];
+    if (row === undefined) throw new Error('no second row was read');
+    return row;
+  };
+
+  test('Next is a stop, ringed, uncovered and 44 by 44, and Previous is not one at the start', async ({
+    page,
+  }) => {
+    const row = page.locator(`section[id="${first().id}"]`);
+    await expect(row.locator('button[data-page="previous"]')).toBeHidden();
+    await page.locator(`section[id="${second().id}"] ul.strip`).focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(
+      page.getByRole('button', { name: `Next in ${first().title}` }),
+    ).toBeFocused();
+    const now = await active(page);
+    expect(now?.tag).toBe('button');
+    expect(now?.ringSeen, 'Next has a ring that shows').toBe(true);
+    expect(now?.outlineWidth).toBeGreaterThanOrEqual(2);
+    await expect.poll(async () => (await active(page))?.inside).toBe(true);
+    expect((await active(page))?.covered).toBe(false);
+    const box = await page.evaluate(() => {
+      const el = document.activeElement?.getBoundingClientRect();
+      return { width: el?.width ?? 0, height: el?.height ?? 0 };
+    });
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+  });
+
+  test('Previous is a stop once the strip has moved, just before the strip, ringed and uncovered', async ({
+    page,
+  }) => {
+    const list = page.locator(`section[id="${first().id}"] ul.strip`);
+    await page
+      .getByRole('button', { name: `Next in ${first().title}` })
+      .click();
+    await atRest(list);
+    await list.focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(
+      page.getByRole('button', { name: `Previous in ${first().title}` }),
+    ).toBeFocused();
+    await expect.poll(async () => (await active(page))?.inside).toBe(true);
+    const now = await active(page);
+    expect(now?.ringSeen, 'Previous has a ring that shows').toBe(true);
+    expect(now?.covered).toBe(false);
+    const box = await page.evaluate(() => {
+      const el = document.activeElement?.getBoundingClientRect();
+      return { width: el?.width ?? 0, height: el?.height ?? 0 };
+    });
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    // And Tab goes on into the strip.
+    await page.keyboard.press('Tab');
+    await expect(list).toBeFocused();
+  });
+
+  test('a hidden arrow is not a stop: Shift+Tab from the first strip does not land on Previous', async ({
+    page,
+  }) => {
+    await page.locator(`section[id="${first().id}"] ul.strip`).focus();
+    await page.keyboard.press('Shift+Tab');
+    const landed = await page.evaluate(
+      () => document.activeElement?.matches('button[data-page]') ?? false,
+    );
+    expect(landed).toBe(false);
+    // Nor does the walk back through the page ever stop on a hidden arrow.
+    const stops = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('button[data-page]')]
+        .filter((el) => !el.checkVisibility())
+        .map((el) => el.tabIndex >= 0 && el.offsetParent !== null),
+    );
+    expect(stops.length).toBeGreaterThan(0);
+    expect(stops.every((stop) => !stop)).toBe(true);
+  });
+});

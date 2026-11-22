@@ -82,4 +82,62 @@ describe('paging', () => {
     });
     expect(narrow.next.to).toBe(300);
   });
+
+  // The page marks and their words: how many pages a strip has, and which one
+  // it is on. A page is the window, as Next takes it, so the count is the
+  // strip's width over the window's, rounded up.
+  it('counts one page for a strip that fits', () => {
+    const fits = paging({
+      scrollLeft: 0,
+      clientWidth: 1000,
+      scrollWidth: 1000,
+    });
+    expect(fits.pages).toBe(1);
+    expect(fits.page).toBe(0);
+  });
+
+  it('counts the pages of a strip: its width over the window, rounded up', () => {
+    expect(strip(0, 1000, 3000).pages).toBe(3);
+    expect(strip(0, 1000, 3002).pages).toBe(4);
+    expect(strip(0, 1000, 2500).pages).toBe(3);
+    expect(strip(0, 1000, 1500).pages).toBe(2);
+  });
+
+  it('forgives a pixel when counting pages, as it does for overflowing', () => {
+    expect(strip(0, 1000, 3001).pages).toBe(3);
+    expect(
+      paging({ scrollLeft: 0, clientWidth: 1000, scrollWidth: 1001 }).pages,
+    ).toBe(1);
+  });
+
+  it('puts the strip on the page its position is nearest to', () => {
+    expect(strip(0).page).toBe(0);
+    expect(strip(400).page).toBe(0);
+    expect(strip(600).page).toBe(1);
+    expect(strip(1000).page).toBe(1);
+    expect(strip(1400).page).toBe(1);
+    expect(strip(1600).page).toBe(2);
+  });
+
+  it('puts a strip at its end on the last page, however short that page is', () => {
+    // 2500 wide in a window of 1000: the end is at 1500, which is 1.5 pages in
+    // and would round to the second page if the end were not taken as the last.
+    expect(strip(1500, 1000, 2500).page).toBe(2);
+    expect(strip(1499, 1000, 2500).page).toBe(2);
+    expect(strip(1000, 1000, 2500).page).toBe(1);
+  });
+
+  it('never puts the strip on a page the count does not have', () => {
+    for (const at of [-5, 0, 1, 999, 1500, 2000, 5000]) {
+      const got = strip(at);
+      expect(got.page).toBeGreaterThanOrEqual(0);
+      expect(got.page).toBeLessThan(got.pages);
+    }
+  });
+
+  it('has no pages to count in a window of no width', () => {
+    const none = paging({ scrollLeft: 0, clientWidth: 0, scrollWidth: 0 });
+    expect(none.pages).toBe(1);
+    expect(none.page).toBe(0);
+  });
 });

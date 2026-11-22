@@ -1,17 +1,31 @@
 // Holds that the page is whole without script: in a context with JavaScript
-// off every card and picture is there, the row buttons are not shown (they
-// would do nothing), and a focused strip scrolls by the arrow key. Without it
-// a change that drew cards or showed the buttons from script would pass every
-// spec that runs with it.
+// off every card and picture is there, the rows' edge arrows and page marks
+// are not shown (they would do nothing), each row that overflows keeps its
+// scrollbar (a mouse with no sideways wheel has no other way along), and a
+// focused strip scrolls by the arrow key. Without it a change that drew cards
+// or showed the arrows from script, or hid the scrollbar for everyone, would
+// pass every spec that runs with it.
 import { expect } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
 
 const catalogue = readRows();
 
-test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 1000 } });
+// Chromium on this Mac draws overlay scrollbars that take no room (the system's
+// setting), and headless Chromium hides them besides (--hide-scrollbars), so a
+// test of one would find none drawn however the page was made. Both are turned
+// off here, which gives the classic bar of 15px, so that a scrollbar that is
+// there is measured as there. Nothing else in this file measures one.
+test.use({
+  javaScriptEnabled: false,
+  viewport: { width: 1440, height: 1000 },
+  launchOptions: {
+    ignoreDefaultArgs: ['--hide-scrollbars'],
+    args: ['--disable-features=OverlayScrollbar'],
+  },
+});
 
-test('every card and picture is there, and no row button is shown', async ({
+test('every card and picture is there, and no arrow or page mark is shown', async ({
   page,
 }) => {
   await page.goto('/');
@@ -32,6 +46,24 @@ test('every card and picture is there, and no row button is shown', async ({
     await expect(card.getByRole('img')).toHaveCount(1);
   await expect(page.getByRole('button')).toHaveCount(0);
   await expect(page.locator('button:visible')).toHaveCount(0);
+  await expect(page.locator('.row-pages .page-mark')).toHaveCount(0);
+  await expect(page.locator('section.row[data-arrows]')).toHaveCount(0);
+});
+
+test('a row that overflows keeps its scrollbar', async ({ page }) => {
+  await page.goto('/');
+  let reached = 0;
+  for (const each of catalogue.rows) {
+    const list = page.locator(`section[id="${each.id}"]`).getByRole('list');
+    const bar = await list.evaluate((el: HTMLElement) => ({
+      overflows: el.scrollWidth - el.clientWidth > 1,
+      shown: el.offsetHeight - el.clientHeight,
+    }));
+    if (!bar.overflows) continue;
+    reached += 1;
+    expect(bar.shown, `${each.id} has a scrollbar`).toBeGreaterThan(0);
+  }
+  expect(reached).toBeGreaterThan(0);
 });
 
 test('the Surprise me button is in the markup, hidden, and neither seen nor in the accessibility tree', async ({

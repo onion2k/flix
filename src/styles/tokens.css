@@ -12,6 +12,9 @@
   --color-text: #f4f1e8;
   --color-accent: #ffb81c;
   --color-picture-edge: #2c3d35;
+  /* The marks of the pages a row is not on: muted, but 3:1 on the ground, so
+     that they are seen as marks (1.4.11). The words say the page as well. */
+  --color-page-mark: #5f7469;
   /* Text on the accent is the ground, said by name so that it cannot drift. */
   --color-on-accent: var(--color-ground);
 
@@ -76,6 +79,15 @@
   --height-hero: 72vh;
   --height-hero-max: 42rem;
   --width-hero-panel: 38.5rem;
+
+  /* A row's edge arrows (the row's Previous and Next): how wide one is, which
+     is at least a target, and how large its chevron is; and its page marks:
+     how long and thick each is, and how thick the current one. */
+  --size-arrow-width: 3.25rem;
+  --size-arrow-chevron: 1.6rem;
+  --size-page-mark-width: 1.4rem;
+  --size-page-mark: 0.3rem;
+  --size-page-mark-current: 0.5rem;
 
   /* A card, and how far a hover zooms a picture in its frame. */
   --card-width: clamp(17rem, 27vw, 25rem);

@@ -55,7 +55,9 @@ for (const width of WIDTHS) {
 
     test('the home page has no axe violation', async ({ page }) => {
       await page.goto('/');
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       // The button is shown by script, so the audit reads it.
       await expect(
         page.getByRole('button', { name: 'Surprise me' }),
@@ -80,7 +82,7 @@ test('the home page with a card focused has no axe violation', async ({
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await expect(page.getByRole('button', { name: 'Surprise me' })).toBeVisible();
   // Tab for real until a card's link has focus, as a keyboard user would.
   for (let press = 0; press < 30; press += 1) {
@@ -99,7 +101,7 @@ test('the home page with a card grown has no axe violation', async ({
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await expect(page.getByRole('button', { name: 'Surprise me' })).toBeVisible();
   const card = page
     .locator('section.row')
@@ -121,7 +123,7 @@ test('the home page has no axe violation once the late rows have loaded', async 
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   // Scroll to the foot, as a reader does, and wait for every picture to come.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await expect(page.locator('section.row img[data-src]')).toHaveCount(0);

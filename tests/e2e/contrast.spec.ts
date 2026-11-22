@@ -58,7 +58,9 @@ for (const width of WIDTHS) {
       page,
     }) => {
       await page.goto('/');
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       await page.evaluate(() => document.fonts.ready);
       const second = page
         .locator('section.row')
@@ -101,11 +103,103 @@ for (const width of WIDTHS) {
       });
     });
 
+    test('an edge arrow’s edge and chevron, and a page mark, are 3:1 or better as drawn', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
+      const first = page.locator('section.row').first();
+      // Part way along, so that both arrows and the marks are drawn.
+      await first.getByRole('button', { name: /^Next/ }).click();
+      await expect(
+        first.getByRole('button', { name: /^Previous/ }),
+      ).toBeVisible();
+      await page.waitForFunction(() => document.getAnimations().length === 0);
+      const drawn = await page.evaluate(() => {
+        const luminance = (colour: string): number => {
+          const channels =
+            colour
+              .match(/[\d.]+/g)
+              ?.map(Number)
+              .slice(0, 3) ?? [];
+          return [0.2126, 0.7152, 0.0722].reduce((sum, weight, at) => {
+            const value = (channels[at] ?? 0) / 255;
+            return (
+              sum +
+              weight *
+                (value <= 0.03928
+                  ? value / 12.92
+                  : ((value + 0.055) / 1.055) ** 2.4)
+            );
+          }, 0);
+        };
+        const ratio = (a: string, b: string): number => {
+          const [high, low] = [luminance(a), luminance(b)].sort(
+            (x, y) => y - x,
+          );
+          return ((high ?? 0) + 0.05) / ((low ?? 0) + 0.05);
+        };
+        const row = document.querySelector('section.row');
+        const out: { what: string; ratio: number }[] = [];
+        // An arrow is on its own solid ground, so its edge and its chevron
+        // are measured against that and not against the picture behind it.
+        for (const arrow of row?.querySelectorAll<HTMLElement>(
+          'button[data-page]',
+        ) ?? []) {
+          const style = getComputedStyle(arrow);
+          const chevron = getComputedStyle(
+            arrow.querySelector('svg') as Element,
+          );
+          out.push({
+            what: `${arrow.dataset['page']} ground is solid`,
+            ratio: style.backgroundColor.startsWith('rgb(') ? 99 : 0,
+          });
+          out.push({
+            what: `${arrow.dataset['page']} edge`,
+            ratio: ratio(style.borderTopColor, style.backgroundColor),
+          });
+          out.push({
+            what: `${arrow.dataset['page']} chevron`,
+            ratio: ratio(chevron.color, style.backgroundColor),
+          });
+        }
+        const ground = getComputedStyle(document.body).backgroundColor;
+        for (const mark of row?.querySelectorAll<HTMLElement>(
+          '.row-pages .page-mark',
+        ) ?? []) {
+          out.push({
+            what: `page mark${mark.hasAttribute('data-current') ? ' (current)' : ''}`,
+            ratio: ratio(getComputedStyle(mark).borderTopColor, ground),
+          });
+        }
+        return out;
+      });
+      expect(
+        drawn.length,
+        'edges, chevrons and marks measured',
+      ).toBeGreaterThan(6);
+      expect(drawn.filter((each) => each.what.includes('chevron')).length).toBe(
+        2,
+      );
+      expect(
+        drawn.filter((each) => each.what.startsWith('page mark')).length,
+      ).toBeGreaterThan(1);
+      for (const each of drawn)
+        expect(
+          each.ratio,
+          `${each.what} is 3:1 or better`,
+        ).toBeGreaterThanOrEqual(3);
+    });
+
     test('the ring of every control Tab reaches is 3:1 or better against what is behind it', async ({
       page,
     }) => {
       await page.goto('/');
-      await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       await expect(
         page.getByRole('button', { name: 'Surprise me' }),
       ).toBeVisible();
