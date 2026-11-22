@@ -121,8 +121,9 @@ Every new thing is taken through each of these that it can reach.
 
 - With script and without it.
 - By keyboard alone: order, a visible focus ring, nothing trapped.
-- A desk's width, a phone's (390px), 320px, and 640px standing in for
-  200% zoom. WCAG 1.4.12 text spacing.
+- A desk's width, a phone's (390px), 320px, 640px standing in for 200%
+  zoom, and each side of every step in `site.css`: a fault can sit
+  between two widths that both pass. WCAG 1.4.12 text spacing.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
@@ -154,7 +155,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
-| `tests/e2e/reflow.spec.ts`          | 320 and 640, text spacing, stacked rows              |
+| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console under the policy      |
 | `tests/look/look.spec.ts`           | five pictures of the built site, as written          |

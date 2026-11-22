@@ -1,9 +1,12 @@
-// Holds that the page reflows: at 320 and at 640 wide (which stands in for
-// 200% zoom of 1280) the document does not scroll sideways and no text is
-// clipped, the same again with the WCAG 1.4.12 text spacing laid on, and at
-// 320 a row's cards stack and its strip does not scroll (1.4.10). Without it
-// a long title or a strip wider than the window would show only to someone
-// zoomed in.
+// Holds that the page reflows: at every width in WIDTHS, from 320 up to a
+// desk's, the document does not scroll sideways and no text is clipped, the
+// same again with the WCAG 1.4.12 text spacing laid on, and at 320 a row's
+// cards stack and its strip does not scroll (1.4.10). 640 stands in for 200%
+// zoom of a 1280 window. The widths between the layout's own steps are here
+// because the first fault of this kind was at one of them: the feature's two
+// columns could not hold its title between 641 and about 780 wide, and a test of
+// 320 and 640 alone passed it. Without this a long title or a strip wider
+// than the window would show only to someone zoomed in, or on a tablet.
 import { expect, test, type Page } from '@playwright/test';
 import { readRows } from './catalogue';
 
@@ -66,7 +69,14 @@ async function problems(page: Page): Promise<string[]> {
   });
 }
 
-for (const width of [320, 640]) {
+// Each side of every step in site.css (21.25rem, 40rem and 64rem: a media
+// query's rem is the browser's 16px, whatever the page's own root size), and
+// plain widths between and beyond them.
+const WIDTHS = [
+  320, 339, 341, 390, 480, 640, 641, 700, 768, 900, 1023, 1025, 1280, 1440,
+];
+
+for (const width of WIDTHS) {
   for (const spaced of [false, true]) {
     test(`at ${width} wide${spaced ? ' with text spacing' : ''}: no sideways scroll, nothing clipped`, async ({
       page,

@@ -13,9 +13,11 @@ interface Props {
 const { card } = Astro.props;
 
 // The picture is seven twelfths of the window less the gutters, and the whole
-// of it less the gutters on a phone, where the grid has one column.
+// of it less the gutters below 64rem, where the grid has one column (and the
+// gutters are the phone's below 40rem). These follow site.css's steps, so
+// that the browser fetches the width it will draw.
 const sizes =
-  '(max-width: 40rem) calc(100vw - 2rem), calc((100vw - 6rem) * 7 / 12)';
+  '(max-width: 40rem) calc(100vw - 2rem), (max-width: 64rem) calc(100vw - 6rem), calc((100vw - 6rem) * 7 / 12)';
 ---
 
 <section class="feature" aria-labelledby="feature-title" data-entry={card.id}>
