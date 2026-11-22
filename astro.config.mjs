@@ -55,13 +55,19 @@ export default defineConfig({
   // sized to match, so text may shift a little when the real face arrives.
   fonts: [
     {
-      // Titles and the wordmark. A condensed face, set in capitals.
+      // Titles and the wordmark. A condensed face, set in capitals, at the
+      // display end of its optical-size axis (see options below).
       provider: fontProviders.google(),
       name: 'Big Shoulders',
       cssVariable: '--face-display',
       weights: [800],
       styles: ['normal'],
       subsets: ['latin'],
+      // Google serves Big Shoulders as one variable family with an optical-size
+      // axis, and without this the build takes the instance for small text,
+      // which is wider: the feature title wrapped to two lines. Asking the
+      // provider for opsz 72 gets the display cut, still one self-hosted file.
+      options: { experimental: { variableAxis: { opsz: [72] } } },
       fallbacks: ['Impact', 'sans-serif'],
       optimizedFallbacks: false,
     },
