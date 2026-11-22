@@ -1,6 +1,6 @@
 # Ooerflix: the first site
 
-State: building, part 5 of 6.
+State: building, part 6 of 6.
 
 ## Context
 
@@ -182,7 +182,7 @@ session. Each part is checked here against its files before the next.
       favicon. **Out:** baselines, budgets. **Proved by:** e2e seen red
       then green against the built site; Tab pressed for real; the no
       script run in a context with JavaScript off.
-- [ ] **5. The gates.** Each seen failing on a fault put in on purpose,
+- [x] **5. The gates.** Each seen failing on a fault put in on purpose,
       then green: `tests/unit/contrast.test.ts` (pairs listed, read from
       `tokens.css`; spec 7) and contrast of drawn text in the keyboard
       walk; `tests/e2e/motion.spec.ts` (every rule of the built CSS, and
