@@ -69,6 +69,9 @@ commit of its own that says what it is for.
   (mulberry32), `pick` (one id that is not excluded, with the random
   handed in), and `seedFrom` (a seed from outside, or the clock's reading
   handed in). Nothing in `src/` calls the language's global random.
+  `today.ts` says which candidate is the day's feature, from a count and
+  the clock's reading handed in (whole days since 1970-01-01 UTC, modulo
+  the count).
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -163,6 +166,18 @@ calls) and holds the clock with `page.clock.install` then `pauseAt`. Each
 `runFor(16)` is one frame, since Playwright steps `requestAnimationFrame`,
 `performance.now` and `Date` together, so the 400ms and 150ms are stepped.
 
+**The clock.** With a list of features the page shows a different
+feature each day, so every spec takes `test` from `tests/clock.ts` and
+never from `@playwright/test` (`fixture-used.test.ts` fails for one that
+does). Its auto fixture holds `Date` at noon on day 0 (1970-01-01 UTC,
+which is the first candidate whatever the list's length) in every context,
+before any page script runs, with `setFixedTime`: timers and frames still
+run. A test that makes a context of its own calls `holdClock(context)`; a
+test for another day calls `page.clock.setFixedTime(noonOf(day))` before
+`goto`. `moving.spec.ts` installs the stepped clock itself at time 0 (also
+day 0), which replaces the held one, and `surprise.spec.ts` sets its own
+time, which wins, since the later call does.
+
 ## Edge cases
 
 Every new thing is taken through each of these that it can reach.
@@ -214,6 +229,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
+| `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals  |
+| `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`         |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |

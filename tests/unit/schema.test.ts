@@ -152,6 +152,29 @@ describe('catalogueShape', () => {
     expect(found.map((f) => f.path)).toEqual(['feature']);
   });
 
+  it('passes a file with a list of features, an empty one, or none', () => {
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, features: ['ooergolf'] }),
+    ).toEqual([]);
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, features: [] }),
+    ).toEqual([]);
+    expect(refusals(catalogueShape, goodCatalogue)).toEqual([]);
+  });
+
+  it('refuses features that is not a list of ids, at its place', () => {
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, features: 'ooergolf' }).map(
+        (f) => f.path,
+      ),
+    ).toEqual(['features']);
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, features: ['a', ''] }).map(
+        (f) => f.path,
+      ),
+    ).toEqual(['features.1']);
+  });
+
   it('refuses a file with no rows, and one with an empty list of rows', () => {
     expect(
       refusals(catalogueShape, without(goodCatalogue, 'rows')).map(

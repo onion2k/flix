@@ -211,3 +211,73 @@ describe('buildPage', () => {
     expect(message).toContain('beta');
   });
 });
+
+describe('buildPage, with a list of features', () => {
+  const listed: CatalogueFile = { ...config, features: ['gamma', 'alpha'] };
+
+  it('returns the candidates in order: the feature, then the list', () => {
+    const page = buildPage(entries, listed);
+    expect(page.candidates.map((card) => card.id)).toEqual([
+      'beta',
+      'gamma',
+      'alpha',
+    ]);
+    expect(page.feature.id).toBe('beta');
+  });
+
+  it('returns the feature alone as the one candidate with no list, or an empty one', () => {
+    expect(buildPage(entries, config).candidates.map((c) => c.id)).toEqual([
+      'beta',
+    ]);
+    const empty = buildPage(entries, { ...config, features: [] });
+    expect(empty.candidates.map((c) => c.id)).toEqual(['beta']);
+  });
+
+  it('draws a candidate as it draws a card: its words, and a link only with an address', () => {
+    const page = buildPage(entries, listed);
+    expect(page.candidates[1]?.label).toBe('Game · In the workshop');
+    expect(page.candidates[1]).not.toHaveProperty('href');
+    expect(page.candidates[2]?.href).toBe('https://alpha.example.com');
+  });
+
+  it('counts a site named only in features as listed', () => {
+    const rows: CatalogueFile = {
+      feature: 'beta',
+      features: ['delta'],
+      rows: [{ id: 'one', title: 'One', sites: ['alpha'] }],
+    };
+    expect(buildPage(entries, rows).notListed).toEqual(['gamma']);
+  });
+
+  it('refuses a feature in the list with no file, naming the file and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      features: ['nobody'],
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('features');
+    expect(message).toContain('nobody');
+    expect(message).toContain('src/content/entries/nobody.yaml');
+  });
+
+  it('refuses an id said twice in the list, naming the file and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      features: ['gamma', 'alpha', 'gamma'],
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('features');
+    expect(message).toContain('gamma');
+    expect(message).toContain('twice');
+  });
+
+  it('refuses the feature itself in the list, naming the file and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      features: ['alpha', 'beta'],
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('beta');
+    expect(message).toContain('"feature"');
+  });
+});

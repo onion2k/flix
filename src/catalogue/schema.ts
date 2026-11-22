@@ -38,6 +38,9 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
  */
 export const catalogueShape = z.strictObject({
   feature: z.string().min(1),
+  // More sites the feature may be, a day each in turn after `feature`. Absent
+  // or empty, the page is built as it is without them.
+  features: z.array(z.string().min(1)).optional(),
   rows: z
     .array(
       z.strictObject({

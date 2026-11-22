@@ -22,18 +22,32 @@ function fileIds(names: string[]): string[] {
 }
 
 /** Every site a catalogue names: the feature, then each row's, in order. */
-function named(catalogue: { feature: string; rows: { sites: string[] }[] }) {
-  return [catalogue.feature, ...catalogue.rows.flatMap((row) => row.sites)];
+function named(catalogue: {
+  feature: string;
+  features?: string[];
+  rows: { sites: string[] }[];
+}) {
+  return [
+    catalogue.feature,
+    ...(catalogue.features ?? []),
+    ...catalogue.rows.flatMap((row) => row.sites),
+  ];
 }
 
 /** The sites named that have no file, each with where it was named. */
 function withoutFile(
-  catalogue: { feature: string; rows: { id: string; sites: string[] }[] },
+  catalogue: {
+    feature: string;
+    features?: string[];
+    rows: { id: string; sites: string[] }[];
+  },
   ids: string[],
 ): string[] {
   const missing: string[] = [];
   if (!ids.includes(catalogue.feature))
     missing.push(`feature ${catalogue.feature}`);
+  for (const site of catalogue.features ?? [])
+    if (!ids.includes(site)) missing.push(`features ${site}`);
   for (const row of catalogue.rows)
     for (const site of row.sites)
       if (!ids.includes(site)) missing.push(`${row.id} ${site}`);
@@ -69,6 +83,9 @@ describe('src/content/catalogue.json', () => {
     expect(withoutFile(broken, ids)).toEqual(['play-now no-such-site']);
     expect(withoutFile({ ...broken, feature: 'nobody' }, ids)).toContain(
       'feature nobody',
+    );
+    expect(withoutFile({ ...broken, features: ['nobody'] }, ids)).toContain(
+      'features nobody',
     );
   });
 });

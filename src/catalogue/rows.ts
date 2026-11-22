@@ -47,7 +47,13 @@ export interface Card<Picture> {
 }
 
 export interface Page<Picture> {
+  /** What shows with script off and what the social card uses. */
   feature: Card<Picture>;
+  /**
+   * The sites the feature may be, in the order the day's pick takes them: the
+   * feature first, then each of the list. One when there is no list.
+   */
+  candidates: Card<Picture>[];
   rows: { id: string; title: string; cards: Card<Picture>[] }[];
   /** Ids that have an entry file and are neither the feature nor in a row. */
   notListed: string[];
@@ -121,6 +127,34 @@ export function buildPage<Picture>(
     );
   }
 
+  // The list is checked in the order written, so that the first fault named
+  // is the first a person would reach. The feature is already the first
+  // candidate, so it may not be named again, and a day's pick is one site.
+  const first = cardOf(feature);
+  const candidates = [first];
+  const inList = new Set<string>();
+  for (const id of config.features ?? []) {
+    const entry = byId.get(id);
+    if (entry === undefined) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "features" names the site "${id}", and there is no ${entryFile(id)}.`,
+      );
+    }
+    if (id === config.feature) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "features" names the site "${id}", which is already the "feature" and comes first without being named again.`,
+      );
+    }
+    if (inList.has(id)) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "features" names the site "${id}" twice.`,
+      );
+    }
+    inList.add(id);
+    used.add(id);
+    candidates.push(cardOf(entry));
+  }
+
   // A site with a file that no row names is left out on purpose or by
   // mistake, and the catalogue cannot tell which, so it reports and does not
   // refuse. The order is the ids', not the files', so that it is the same on
@@ -131,5 +165,5 @@ export function buildPage<Picture>(
     .filter((id) => !used.has(id))
     .sort();
 
-  return { feature: cardOf(feature), rows, notListed };
+  return { feature: first, candidates, rows, notListed };
 }
