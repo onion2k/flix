@@ -17,6 +17,16 @@
 // markup, sets no style but the attribute the stylesheet reads, and keeps one
 // small record and one frame's handle, so nothing it keeps grows. Without it
 // the previews are never fetched or shown, and the page loses nothing.
+//
+// It also shows each previewed card's bar of segments (one for the card's own
+// picture and one a preview, written hidden in the markup), and only where this
+// reader's previews could play: not under reduced motion, not with Save-Data,
+// and only where a mouse hovers. A bar that promised pictures the reader cannot
+// get would be worse than none. It is shown whether or not the card's own
+// picture has arrived, and again or not as those settings change. The lit
+// segment is marked with data-lit: the first at rest, and during a pass the one
+// at the place of the preview showing (the card's own picture is place 0), so
+// that leaving or the end of a pass lights the first again at once.
 import { PAUSE_MS, passLength, previewAt } from '../catalogue/preview';
 
 /** What is playing: the card, its previews, and when its first frame was. */
@@ -48,6 +58,16 @@ function drawn(image: HTMLImageElement | null | undefined): boolean {
   );
 }
 
+/** Whether this reader's previews could play on some card: motion, data, a mouse. */
+function couldPlay(): boolean {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const connection = (
+    navigator as Navigator & { connection?: { saveData?: boolean } }
+  ).connection;
+  if (connection?.saveData === true) return false;
+  return matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 /** Whether this reader and this card allow a pass to begin. */
 function allowed(card: HTMLElement): boolean {
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
@@ -75,11 +95,27 @@ function bringIn(running: Pass): void {
   }
 }
 
+/** Lights the segment at `place` of a card's bar, and no other. */
+function light(card: HTMLElement, place: number): void {
+  card
+    .querySelectorAll('.cue .segment')
+    .forEach((segment, at) =>
+      segment.toggleAttribute('data-lit', at === place),
+    );
+}
+
 /** Marks the preview at `place` (and no other), or none where it is null. */
 function show(running: Pass, place: number | null): void {
-  running.images.forEach((image, at) =>
-    image.toggleAttribute('data-showing', at === place && drawn(image)),
+  const showing = running.images.map(
+    (image, at) => at === place && drawn(image),
   );
+  running.images.forEach((image, at) =>
+    image.toggleAttribute('data-showing', showing[at] === true),
+  );
+  // The card's own picture is place 0, so the previews are one on, and a
+  // preview that is not shown (none, or one still on its way) is the card's own.
+  const shown = showing.indexOf(true);
+  light(running.card, shown + 1);
 }
 
 /** One frame of a pass: the rule says what shows, and the frame is asked for again until it ends. */
@@ -121,6 +157,24 @@ function reconcile(): void {
   stop();
   if (wanted !== null) start(wanted);
 }
+
+/** Shows the bars where the previews could play, and hides them where not. */
+function showBars(): void {
+  const playable = couldPlay();
+  for (const card of CARDS) {
+    const bar = card.querySelector<HTMLElement>('.cue');
+    if (bar === null) continue;
+    bar.hidden = !playable;
+    if (pass?.card !== card) light(card, 0);
+  }
+}
+
+showBars();
+for (const query of [
+  '(prefers-reduced-motion: reduce)',
+  '(hover: hover) and (pointer: fine)',
+])
+  matchMedia(query).addEventListener('change', showBars);
 
 for (const card of CARDS) {
   card.addEventListener('pointerenter', (event) => {

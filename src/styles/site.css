@@ -419,6 +419,33 @@ p {
   }
 }
 
+/* The bar that says a card has previews, along the foot of its frame: a strip
+   of the ground, inset from the picture the same on three sides so that it
+   reads on any picture, holding equal segments. It is after the layer, and in
+   the frame and not over the picture, so the picture's zoom never moves it, and
+   inside the edge, which is drawn over it. A segment is a border and not a
+   background, so that it is still drawn where backgrounds are taken away. The
+   script shows it (it is hidden in the markup) and marks the lit one. */
+.cue {
+  position: absolute;
+  inset: auto var(--size-cue-inset) var(--size-cue-inset);
+  display: flex;
+  gap: var(--space-segment);
+  padding: var(--size-cue-pad);
+  background: var(--color-ground);
+  pointer-events: none;
+}
+
+.segment {
+  flex: 1 1 0;
+  height: 0;
+  border-top: var(--size-segment) solid var(--color-segment);
+}
+
+.segment[data-lit] {
+  border-top-color: var(--color-accent);
+}
+
 .frame::after {
   content: '';
   position: absolute;
@@ -652,6 +679,14 @@ main {
   .card[data-linked]:hover .frame::after {
     border-color: Highlight;
   }
+
+  .segment {
+    border-top-color: GrayText;
+  }
+
+  .segment[data-lit] {
+    border-top-color: Highlight;
+  }
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
@@ -661,7 +696,7 @@ main {
    picture eases in from its frame's colour (the transparency is above). The
    same rule fades a card's previews in and out, over --duration-preview and not
    the arrival's, by the custom property the previews set above, which is a
-   value and not motion. */
+   value and not motion. The lit segment of a card's bar eases the same way. */
 @media (prefers-reduced-motion: no-preference) {
   .strip {
     scroll-behavior: smooth;
@@ -676,5 +711,10 @@ main {
 
   .card[data-linked]:hover .frame img {
     transform: scale(var(--zoom-hover));
+  }
+
+  /* The lit segment of a card's bar moves with the pass by the same fade. */
+  .segment {
+    transition: border-top-color var(--duration-preview) ease-out;
   }
 }

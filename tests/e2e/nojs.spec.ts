@@ -136,3 +136,17 @@ test('no preview is fetched or seen, and each card has the one picture it had', 
     page.locator('main li.card').first().getByRole('img'),
   ).toHaveCount(1);
 });
+
+test('no card shows its bar of segments, though each has one in the markup', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const bars = page.locator('li.card .cue');
+  // Seven cards have previews, so that a page with none is not a pass.
+  await expect(bars).toHaveCount(7);
+  for (const bar of await bars.all()) {
+    await expect(bar).toHaveAttribute('hidden', '');
+    await expect(bar).toBeHidden();
+  }
+  await expect(page.locator('li.card .cue:visible')).toHaveCount(0);
+});

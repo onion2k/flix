@@ -122,7 +122,10 @@ commit of its own that says what it is for.
   `:focus-visible` on its link; it moves the addresses to `src` after the
   600ms pause, once, marks one preview `data-showing` a frame at a time,
   and does nothing for reduced motion, Save-Data, touch or a card whose own
-  picture has not arrived. **The feature by the day:** with a list, `Feature.astro`
+  picture has not arrived. The same `Previews.astro` writes a `.cue` bar
+  (a `.segment` for the card's picture and one a preview; `aria-hidden`,
+  `hidden`), which `preview.ts` shows only where the previews could play
+  and marks the lit segment `data-lit` (the first at rest). **The feature by the day:** with a list, `Feature.astro`
   writes a `section.feature` for each candidate (`data-place`, its own
   title id, all but the first `hidden`, pictures as a late card's, the
   first with a `<noscript>` picture), then one inline classic script,
@@ -245,7 +248,8 @@ Every new thing is taken through each of these that it can reach.
 - `forced-colors`.
 - A card with previews: hovered or focused it plays once, after 600ms, in
   under 5s; leaving stops it; and with reduced motion, Save-Data, touch
-  or its own picture not yet arrived it does nothing and fetches nothing.
+  or its own picture not yet arrived it does nothing and fetches nothing;
+  its bar of segments shows only where it could play, lit with the pass.
 - A card hovered (mouse) and focused (Tab), and a tap on touch: the others
   in its row dim, nothing else does, text stays 7:1.
 - An entry with an address and one without. A link inside the site and
@@ -299,11 +303,11 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
-| `tests/e2e/preview.spec.ts`         | a preview pass, stepped; where it must not run       |
+| `tests/e2e/preview.spec.ts`         | a pass and its bar, stepped; where they must not run |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | ten pictures of the built site, as written           |
+| `tests/look/look.spec.ts`           | eleven pictures of the built site, as written        |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the five headers (not in check) |

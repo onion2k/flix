@@ -9,13 +9,13 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 78505,
-        "gzip": 12507
+        "bytes": 80235,
+        "gzip": 12696
       },
       "script": {
         "count": 1,
-        "bytes": 9208,
-        "gzip": 3503
+        "bytes": 9808,
+        "gzip": 3642
       },
       "stylesheet": {
         "count": 0,
@@ -38,13 +38,13 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 78505,
-        "gzip": 12507
+        "bytes": 80235,
+        "gzip": 12696
       },
       "script": {
         "count": 1,
-        "bytes": 9208,
-        "gzip": 3503
+        "bytes": 9808,
+        "gzip": 3642
       },
       "stylesheet": {
         "count": 0,

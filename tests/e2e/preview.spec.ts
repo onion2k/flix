@@ -18,6 +18,11 @@
 // a context with touch and by a dispatched pointerenter of type touch, since
 // no real phone is here. That proves the rule and the reading, not a device.
 // Each test counts what it reached.
+//
+// The bar along the foot of a card's picture, one segment a picture (its own
+// and each preview), is held here too: at rest it shows the first lit, during
+// a pass it follows the preview showing, and it is shown only where the
+// previews could play, and is decoration like them.
 import { expect, type Locator, type Page } from '@playwright/test';
 import { DAY_ZERO, test } from '../clock';
 
@@ -193,6 +198,84 @@ async function tabTo(page: Page, id: string): Promise<void> {
   throw new Error(`Tab never reached the link of ${id}`);
 }
 
+/** What a card's bar shows: each segment's mark and its drawn colour. */
+interface Cue {
+  present: boolean;
+  hiddenAttribute: boolean;
+  display: string;
+  segments: { lit: boolean; colour: string }[];
+}
+
+/** The bar of a card, read as drawn, once any ease of its colours is over. */
+function cueOf(page: Page, id: string): Promise<Cue> {
+  return page.evaluate(async (entry) => {
+    const bar = document.querySelector<HTMLElement>(
+      `li.card[data-entry="${entry}"] .cue`,
+    );
+    if (bar === null)
+      return {
+        present: false,
+        hiddenAttribute: false,
+        display: '',
+        segments: [],
+      };
+    await Promise.all(
+      bar
+        .getAnimations({ subtree: true })
+        .map((each) => each.finished.catch(() => null)),
+    );
+    return {
+      present: true,
+      hiddenAttribute: bar.hasAttribute('hidden'),
+      display: getComputedStyle(bar).display,
+      segments: [...bar.querySelectorAll<HTMLElement>('.segment')].map(
+        (each) => ({
+          lit: each.hasAttribute('data-lit'),
+          colour: getComputedStyle(each).borderTopColor,
+        }),
+      ),
+    };
+  }, id);
+}
+
+/** A token's colour as the browser draws it, by a probe element. */
+function tokenColour(page: Page, token: string): Promise<string> {
+  return page.evaluate((name) => {
+    const probe = document.createElement('div');
+    probe.style.color = `var(${name})`;
+    document.body.append(probe);
+    const colour = getComputedStyle(probe).color;
+    probe.remove();
+    return colour;
+  }, token);
+}
+
+/** The place that is lit, failing unless exactly one is, and its colour is right. */
+async function lit(page: Page, id: string): Promise<number> {
+  const bar = await cueOf(page, id);
+  const accent = await tokenColour(page, '--color-accent');
+  const muted = await tokenColour(page, '--color-segment');
+  const marked = bar.segments.flatMap((each, at) => (each.lit ? [at] : []));
+  expect(marked.length, `${id}: segments lit at once`).toBe(1);
+  bar.segments.forEach((each, at) =>
+    expect(each.colour, `${id}: segment ${at}'s colour`).toBe(
+      marked[0] === at ? accent : muted,
+    ),
+  );
+  return marked[0] ?? -1;
+}
+
+/** Every card that has previews, which is seven. */
+const PREVIEWED = [
+  'nuclear-fishin',
+  AQUA,
+  'coinpush',
+  'ooergolf',
+  'pushminer',
+  'chopdrop',
+  SNAPPY,
+];
+
 test.describe('the markup', () => {
   test('nothing is fetched at load, and no preview has an address to fetch', async ({
     page,
@@ -299,6 +382,210 @@ test.describe('the markup', () => {
       snappy: 3,
     });
     expect(counts.length).toBeGreaterThan(12);
+  });
+
+  test('a card with previews has a bar of one segment a picture, as decoration, and one with none has no bar', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const found = await page.$$eval('li.card', (cards) =>
+      cards.map((each) => ({
+        id: (each as HTMLElement).dataset['entry'] ?? '',
+        previews: each.querySelectorAll('.previews img').length,
+        bars: each.querySelectorAll('.cue').length,
+        segments: each.querySelectorAll('.cue .segment').length,
+        insideFrame: each.querySelectorAll('.frame .cue').length,
+        ariaHidden: [...each.querySelectorAll('.cue')].every(
+          (bar) => bar.getAttribute('aria-hidden') === 'true',
+        ),
+        words: [...each.querySelectorAll('.cue')].every(
+          (bar) => (bar.textContent ?? '').trim() === '',
+        ),
+      })),
+    );
+    const previewed = found.filter((each) => each.previews > 0);
+    expect(previewed.map((each) => each.id).sort()).toEqual(
+      [...PREVIEWED].sort(),
+    );
+    for (const each of previewed) {
+      expect(each.bars, `${each.id} bars`).toBe(1);
+      expect(each.segments, `${each.id} segments`).toBe(each.previews + 1);
+      expect(each.insideFrame, `${each.id} in its frame`).toBe(1);
+      expect(each.ariaHidden, `${each.id} aria-hidden`).toBe(true);
+      expect(each.words, `${each.id} holds no words`).toBe(true);
+    }
+    for (const each of found.filter((other) => other.previews === 0))
+      expect(each.bars, `${each.id} has no previews, so no bar`).toBe(0);
+    expect(found.length).toBeGreaterThan(12);
+  });
+});
+
+test.describe('the bar at rest', () => {
+  test('every card with previews shows its bar with the first segment lit and no other', async ({
+    page,
+  }) => {
+    await opened(page);
+    let reached = 0;
+    for (const id of PREVIEWED) {
+      const bar = await cueOf(page, id);
+      expect(bar.hiddenAttribute, `${id} still hidden`).toBe(false);
+      expect(bar.display, `${id} drawn`).not.toBe('none');
+      expect(await lit(page, id), `${id}'s lit segment`).toBe(0);
+      reached += bar.segments.length;
+    }
+    // 3 + 3 + 2 + 3 + 3 + 3 + 3 previews, and a segment more on each card.
+    expect(reached).toBe(20 + 7);
+    expect(
+      await page.locator('li.card:not(:has(.previews)) .cue').count(),
+    ).toBe(0);
+    expect(await page.locator('li.card:has(.previews)').count()).toBe(7);
+  });
+
+  test('the bar is inset from the picture by one space on three sides, inside its edge, and clear of the label line', async ({
+    page,
+  }) => {
+    await opened(page);
+    const inset = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.style.width = 'var(--size-cue-inset)';
+      document.body.append(probe);
+      const width = probe.getBoundingClientRect().width;
+      probe.remove();
+      return width;
+    });
+    expect(inset).toBeGreaterThan(1);
+    for (const id of PREVIEWED) {
+      const boxes = await page.evaluate((entry) => {
+        const each = document.querySelector(`li.card[data-entry="${entry}"]`);
+        const rect = (selector: string) => {
+          const found = each?.querySelector(selector)?.getBoundingClientRect();
+          if (found === undefined) throw new Error(`no ${selector}`);
+          return found.toJSON() as DOMRect;
+        };
+        return {
+          frame: rect('.frame'),
+          cue: rect('.cue'),
+          label: rect('.label'),
+        };
+      }, id);
+      const { frame, cue, label } = boxes;
+      expect(frame.left + inset - cue.left, `${id} left`).toBeCloseTo(0, 0);
+      expect(frame.right - inset - cue.right, `${id} right`).toBeCloseTo(0, 0);
+      expect(frame.bottom - inset - cue.bottom, `${id} foot`).toBeCloseTo(0, 0);
+      expect(cue.top, `${id} within the frame`).toBeGreaterThan(frame.top);
+      // The label is the line under the picture: no overlap.
+      expect(cue.bottom, `${id} clear of the label`).toBeLessThanOrEqual(
+        label.top,
+      );
+      expect(frame.bottom, `${id} frame above the label`).toBeLessThanOrEqual(
+        label.top,
+      );
+    }
+  });
+
+  test('the bar stays where it is while the picture zooms on hover', async ({
+    page,
+  }) => {
+    await opened(page);
+    const box = () =>
+      card(page, AQUA)
+        .locator('.cue')
+        .evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    const before = await box();
+    await card(page, AQUA).hover();
+    await step(page, 400);
+    const zoom = await card(page, AQUA)
+      .locator('.frame > picture img')
+      .evaluate((el) => getComputedStyle(el).transform);
+    expect(zoom, 'the picture is zoomed').not.toBe('none');
+    expect(await box()).toEqual(before);
+  });
+});
+
+test.describe('the bar in a pass', () => {
+  test('the lit segment is the preview showing, and the first again when the pass ends', async ({
+    page,
+  }) => {
+    await opened(page);
+    await card(page, AQUA).hover();
+    await step(page, 500);
+    expect(await lit(page, AQUA), 'in the pause').toBe(0);
+    await intoFirstTurn(page, AQUA);
+    expect(await showing(page, AQUA)).toBe(0);
+    expect(await lit(page, AQUA), 'first preview').toBe(1);
+    await step(page, 1000);
+    expect(await showing(page, AQUA)).toBe(1);
+    expect(await lit(page, AQUA), 'second preview').toBe(2);
+    await step(page, 1000);
+    expect(await showing(page, AQUA)).toBe(2);
+    expect(await lit(page, AQUA), 'third preview').toBe(3);
+    await step(page, 1000);
+    expect(await showing(page, AQUA)).toBeNull();
+    expect(await lit(page, AQUA), 'after the last').toBe(0);
+  });
+
+  test('leaving mid-pass lights the first at once, before another frame', async ({
+    page,
+  }) => {
+    await opened(page);
+    await card(page, AQUA).hover();
+    await intoFirstTurn(page, AQUA);
+    await step(page, 1000);
+    expect(await lit(page, AQUA)).toBe(2);
+    await away(page);
+    expect(await lit(page, AQUA), 'at once').toBe(0);
+    await step(page, 3000);
+    expect(await lit(page, AQUA), 'later').toBe(0);
+  });
+
+  test('a preview that is slow is not shown, and the lit segment is the card own', async ({
+    page,
+  }) => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((done) => {
+      release = done;
+    });
+    await page.route('**/_astro/aquaclysm-2.*', async (route) => {
+      await gate;
+      await route.continue().catch(() => undefined);
+    });
+    await opened(page);
+    await card(page, AQUA).hover();
+    await step(page, 700);
+    await arrived(page, AQUA, [0, 2]);
+    await step(page, 100);
+    expect(await lit(page, AQUA)).toBe(1);
+    await step(page, 1000);
+    expect(await lit(page, AQUA), 'the held one has its turn').toBe(0);
+    await step(page, 1000);
+    expect(await lit(page, AQUA)).toBe(3);
+    release();
+  });
+});
+
+test.describe('the bar is decoration', () => {
+  test('it is aria-hidden, holds nothing focusable, and the card tree is the same before, during and after a pass', async ({
+    page,
+  }) => {
+    await opened(page);
+    const bar = card(page, AQUA).locator('.cue');
+    await expect(bar).toHaveAttribute('aria-hidden', 'true');
+    expect(
+      await bar
+        .locator('a, button, input, select, textarea, [tabindex]')
+        .count(),
+    ).toBe(0);
+    const tree = () => card(page, AQUA).ariaSnapshot();
+    const before = await tree();
+    expect(before).toContain('img');
+    await card(page, AQUA).hover();
+    await intoFirstTurn(page, AQUA);
+    expect(await lit(page, AQUA)).toBe(1);
+    expect(await tree(), 'during').toBe(before);
+    await step(page, 3000);
+    expect(await lit(page, AQUA)).toBe(0);
+    expect(await tree(), 'after').toBe(before);
+    expect(await card(page, AQUA).getByRole('img').count()).toBe(1);
   });
 });
 
@@ -580,11 +867,52 @@ test.describe('where it does nothing, and fetches nothing', () => {
     ).toBe(true);
   }
 
+  /** No card shows a bar, though each one is in the markup to be shown. */
+  async function noBars(page: Page): Promise<void> {
+    for (const id of PREVIEWED) {
+      const bar = await cueOf(page, id);
+      expect(bar.present, `${id} has its bar`).toBe(true);
+      expect(bar.hiddenAttribute, `${id} bar hidden`).toBe(true);
+      expect(bar.display, `${id} bar drawn`).toBe('none');
+    }
+    await expect(page.locator('li.card .cue:visible')).toHaveCount(0);
+  }
+
   test('with reduced motion', async ({ page }) => {
     const seen = watch(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await opened(page);
     await nothing(page, seen);
+  });
+
+  test('with reduced motion no card shows its bar', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await opened(page);
+    await noBars(page);
+  });
+
+  test('with Save-Data on no card shows its bar', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'connection', {
+        value: { saveData: true },
+        configurable: true,
+      });
+    });
+    await opened(page);
+    await noBars(page);
+  });
+
+  test('with Save-Data present and off, the bars are shown', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'connection', {
+        value: { saveData: false },
+        configurable: true,
+      });
+    });
+    await opened(page);
+    await expect(page.locator('li.card .cue:visible')).toHaveCount(7);
   });
 
   test('with Save-Data on', async ({ page }) => {
@@ -651,6 +979,21 @@ test.describe('where it does nothing, and fetches nothing', () => {
 
 test.describe('on a touch screen', () => {
   test.use({ hasTouch: true });
+
+  test('no card shows its bar', async ({ page }) => {
+    await opened(page);
+    expect(
+      await page.evaluate(() => matchMedia('(hover: none)').matches),
+      'this context is a touch one',
+    ).toBe(true);
+    for (const id of PREVIEWED) {
+      const bar = await cueOf(page, id);
+      expect(bar.present, `${id} has its bar`).toBe(true);
+      expect(bar.hiddenAttribute, `${id} bar hidden`).toBe(true);
+      expect(bar.display, `${id} bar drawn`).toBe('none');
+    }
+    await expect(page.locator('li.card .cue:visible')).toHaveCount(0);
+  });
 
   test('a tap, and a touch pointerenter, start nothing and fetch nothing', async ({
     page,

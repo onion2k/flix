@@ -229,6 +229,26 @@ test('the top of the home page at 1440 on a day that shows another feature', asy
   });
 });
 
+// The first row at 1440 at rest, with motion not reduced (the other pictures
+// are taken under reduced motion, where no card shows its bar of segments), so
+// that the bars are held as a reader with a mouse sees them: each card with
+// previews with its first segment lit, along the foot of its picture. The mouse
+// is nowhere, so no pass has begun.
+test('the first row at 1440 at rest with motion, showing the bars', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  await settle(page);
+  const row = page.locator('section.row').first();
+  await expect(row.locator('.cue:visible')).not.toHaveCount(0);
+  await expect(row).toHaveScreenshot('first-row-at-rest-1440.png', {
+    ...TOLERANCE,
+  });
+});
+
 // Aquaclysm's card in the middle of its pass, with the clock held on its
 // second preview: a mouse on the card, the clock stepped a frame at a time
 // past the pause and the first preview's turn, every fade finished (asked of
