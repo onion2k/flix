@@ -73,11 +73,12 @@ const cardImage = card
         <meta property="og:image:alt" content={card.alt} />
       </>
     ) : null}
-    {/* Only the display face is preloaded: it is the one the first screen
-        draws. The body face loads when text in it is drawn, and a preload of
-        a face nothing uses yet is a console warning. */}
+    {/* Both faces are preloaded: the first screen draws titles in one and
+        the label, the description and the button in the other, in both its
+        weights. Left to be found in the styles, the body face arrives a
+        request later and the words are drawn twice. */}
     <Font cssVariable="--face-display" preload />
-    <Font cssVariable="--face-body" />
+    <Font cssVariable="--face-body" preload />
   </head>
   <body>
     <a class="skip-link" href="#main">

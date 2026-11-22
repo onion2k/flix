@@ -228,6 +228,17 @@ The nine points of the definition of done, as this project has them.
   arrive.
 - **No mutation gate.** Mutations are by hand, and reported.
 
+## Keeps
+
+What `/ooer-design:polish` or a reader may question, kept on purpose.
+
+- **One theme, dark.** The pictures are the colour, and the look the owner
+  chose from the mocks (`plans/first-site-look/`) is a cinema listing.
+- **`--color-text` is a warm off-white.** The scanner reads it as a cream.
+  It is the ink on a dark ground and never a ground itself.
+- **No footer and no print styles.** Preflight asks for both. There are no
+  agreed words for a footer yet, and the page is not one to print.
+
 ## How a change lands
 
 - **Merge style:** a merge commit.
