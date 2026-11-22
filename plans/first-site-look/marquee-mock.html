@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ooerflix: Marquee mock</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800&family=Atkinson+Hyperlegible:wght@400;700&display=block" />
+<style>
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--text);font-family:var(--body);font-size:1.0625rem;line-height:1.5}
+a{color:inherit}
+.top{display:flex;align-items:baseline;gap:2.5rem;padding:1.25rem var(--gutter) 1rem}
+.mark{font-family:var(--display);font-size:var(--mark-size);line-height:1;color:var(--mark);text-decoration:none;font-weight:var(--display-weight)}
+.top nav{display:flex;gap:1.5rem}
+.top nav a{text-underline-offset:.3em;text-decoration-thickness:2px}
+.feature{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);margin:0 var(--gutter) 2.5rem;background:var(--panel);color:var(--panel-text)}
+.feature img{display:block;width:100%;height:100%;aspect-ratio:16/9;object-fit:cover}
+.feature .words{padding:2.25rem;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:.75rem}
+.feature .words p{margin:0;max-width:34ch}
+.feature h1{font-family:var(--display);font-weight:var(--display-weight);font-size:var(--h1);line-height:1;margin:0}
+.button{display:inline-block;margin-top:.75rem;padding:.8rem 1.4rem;background:var(--button);color:var(--button-text);font-weight:700;text-decoration:none}
+.row h2{font-family:var(--display);font-weight:var(--display-weight);font-size:var(--h2);line-height:1.1;margin:0 var(--gutter) .25rem}
+.strip{display:flex;gap:var(--gap);overflow-x:auto;scroll-snap-type:x proximity;scroll-padding-inline:var(--gutter);padding:.75rem var(--gutter) 2rem;margin:0;list-style:none}
+.strip li{flex:0 0 clamp(17rem,27vw,25rem);scroll-snap-align:start}
+.card{display:block;text-decoration:none;height:100%}
+.card img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.card h3{font-family:var(--display);font-weight:var(--display-weight);font-size:var(--h3);line-height:1.1;margin:.5rem 0 .25rem}
+.card p{margin:0;font-size:1rem}
+.kind{display:inline-block;font-size:.875rem;font-weight:700;margin-top:.75rem}
+@media (max-width:700px){
+  .top{gap:1.25rem;flex-wrap:wrap}
+  .feature{grid-template-columns:1fr}
+  .feature .words{padding:1.25rem}
+  .strip li{flex-basis:78vw}
+}
+
+:root{--ground:#0c1311;--text:#f4f1e8;--panel:#18251f;--panel-text:#f4f1e8;--mark:#ffb81c;--button:#ffb81c;--button-text:#0c1311;
+--display:'Big Shoulders Display',sans-serif;--display-weight:800;--body:'Atkinson Hyperlegible',sans-serif;
+--mark-size:2.5rem;--h1:4.5rem;--h2:2.25rem;--h3:1.75rem;--gutter:3rem;--gap:1.25rem}
+.mark,.feature h1,.row h2,.card h3{text-transform:uppercase;letter-spacing:.01em}
+.row h2{display:flex;align-items:center;gap:.75rem}
+.row h2::before{content:'';width:.5rem;height:1.6rem;background:var(--mark)}
+.kind{color:var(--mark);text-transform:uppercase;letter-spacing:.06em}
+.card img{outline:1px solid #2c3d35;outline-offset:-1px}
+.button{border-radius:2px}
+@media (max-width:700px){:root{--gutter:1rem;--h1:3rem;--h2:1.9rem;--mark-size:2rem}}
+</style>
+</head>
+<body>
+  <header class="top">
+    <a class="mark" href="#">ooerflix</a>
+    <nav aria-label="Sections"><a href="#row-0">Play now</a><a href="#row-1">In the workshop</a><a href="#row-2">Toys</a></nav>
+  </header>
+  <main>
+    <section class="feature" aria-labelledby="feature-title">
+      <img src="file:///Users/christopherneale/projects/ooerfish/smoke/screens/cabin-afternoon.png" alt="" />
+      <div class="words">
+        <span class="kind">Game</span>
+        <h1 id="feature-title">Nuclear Fishin'</h1>
+        <p>A calm, cosy fishing game in 3D, for a phone or a desktop.</p>
+        <a class="button" href="#">Play Nuclear Fishin'</a>
+      </div>
+    </section>
+    <section class="row" aria-labelledby="row-0">
+      <h2 id="row-0">Play now</h2>
+      <ul class="strip" tabindex="0" role="region" aria-labelledby="row-0">
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/water/art/title.webp" alt="" />
+            <span class="kind">Game</span>
+            <h3>Aquaclysm</h3>
+            <p>A jetpack platformer where you open valves and route particle liquid to unlock the level.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/coinpush/smoke/screens/machine.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Coinpush</h3>
+            <p>A coin pusher, the arcade kind.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/ooerfish/smoke/screens/splash-sick.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Nuclear Fishin'</h3>
+            <p>A calm, cosy fishing game in 3D, for a phone or a desktop.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20160%2090%22%3E%3Crect%20width%3D%22160%22%20height%3D%2290%22%20fill%3D%22hsl(232%2045%25%2030%25)%22%2F%3E%3Ccircle%20cx%3D%22112%22%20cy%3D%2245%22%20r%3D%2230%22%20fill%3D%22hsl(272%2060%25%2050%25)%22%2F%3E%3Crect%20x%3D%2232%22%20y%3D%2255%22%20width%3D%2270%22%20height%3D%2250%22%20fill%3D%22hsl(72%2050%25%2022%25)%22%2F%3E%3Ctext%20x%3D%228%22%20y%3D%2282%22%20font-family%3D%22sans-serif%22%20font-size%3D%227%22%20fill%3D%22%23fff%22%3Eno%20picture%20yet%3C%2Ftext%3E%3C%2Fsvg%3E" alt="" />
+            <span class="kind">Game</span>
+            <h3>Chess</h3>
+            <p>A game of chess played on a precious-metals set.</p>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <section class="row" aria-labelledby="row-1">
+      <h2 id="row-1">In the workshop</h2>
+      <ul class="strip" tabindex="0" role="region" aria-labelledby="row-1">
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/ooergolf/smoke/screens/dog-leg.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Ooergolf</h3>
+            <p>Golf in 3D, played like a physics game.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/pushminer/smoke/screens/deep-hall.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Pushminer</h3>
+            <p>A bulldozer in a cave full of coins, and a hole to push them into.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/chopdrop/smoke/screens/arena.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Chopdrop</h3>
+            <p>An arcade helicopter game for the browser: fly about, pick deliveries up, and set them down where they are wanted.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/snappy/smoke/screens/meadow.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>Snappy</h3>
+            <p>A game where the player explores an environment and takes pictures of things.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="file:///Users/christopherneale/projects/ooerrace/docs/vehicles.png" alt="" />
+            <span class="kind">Game</span>
+            <h3>ooerrace</h3>
+            <p>Drive a truck round a lit track over rolling ground against three others.</p>
+          </a>
+        </li>
+      </ul>
+    </section>
+    <section class="row" aria-labelledby="row-2">
+      <h2 id="row-2">Toys</h2>
+      <ul class="strip" tabindex="0" role="region" aria-labelledby="row-2">
+        <li>
+          <a class="card" href="#">
+            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20160%2090%22%3E%3Crect%20width%3D%22160%22%20height%3D%2290%22%20fill%3D%22hsl(329%2045%25%2030%25)%22%2F%3E%3Ccircle%20cx%3D%2249%22%20cy%3D%2245%22%20r%3D%2230%22%20fill%3D%22hsl(9%2060%25%2050%25)%22%2F%3E%3Crect%20x%3D%2229%22%20y%3D%2255%22%20width%3D%2270%22%20height%3D%2250%22%20fill%3D%22hsl(169%2050%25%2022%25)%22%2F%3E%3Ctext%20x%3D%228%22%20y%3D%2282%22%20font-family%3D%22sans-serif%22%20font-size%3D%227%22%20fill%3D%22%23fff%22%3Eno%20picture%20yet%3C%2Ftext%3E%3C%2Fsvg%3E" alt="" />
+            <span class="kind">Toy</span>
+            <h3>PETZ-9000</h3>
+            <p>A 3D virtual pet in a plastic shell.</p>
+          </a>
+        </li>
+        <li>
+          <a class="card" href="#">
+            <img src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20160%2090%22%3E%3Crect%20width%3D%22160%22%20height%3D%2290%22%20fill%3D%22hsl(181%2045%25%2030%25)%22%2F%3E%3Ccircle%20cx%3D%2261%22%20cy%3D%2245%22%20r%3D%2230%22%20fill%3D%22hsl(221%2060%25%2050%25)%22%2F%3E%3Crect%20x%3D%2281%22%20y%3D%2255%22%20width%3D%2270%22%20height%3D%2250%22%20fill%3D%22hsl(21%2050%25%2022%25)%22%2F%3E%3Ctext%20x%3D%228%22%20y%3D%2282%22%20font-family%3D%22sans-serif%22%20font-size%3D%227%22%20fill%3D%22%23fff%22%3Eno%20picture%20yet%3C%2Ftext%3E%3C%2Fsvg%3E" alt="" />
+            <span class="kind">Toy</span>
+            <h3>heist</h3>
+            <p>A gemmologist's bench: cut stones drawn by a path tracer.</p>
+          </a>
+        </li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
