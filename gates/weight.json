@@ -1,0 +1,68 @@
+{
+  "note": "Page weight of the built home page, without scrolling, at 1440x1000 and 390x844. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. Written by npm run weight:update, only for a change meant to move it.",
+  "budgets": {
+    "status": "ESTIMATES, awaiting the owner: the plan's own guesses, not agreed figures. KB here is 1000 bytes.",
+    "pageWithFontsNoPicturesBytes": 80000,
+    "firstScreenPicturesDeskBytes": 250000
+  },
+  "measured": {
+    "1440x1000": {
+      "document": {
+        "count": 1,
+        "bytes": 28727,
+        "gzip": 6916
+      },
+      "script": {
+        "count": 0,
+        "bytes": 0,
+        "gzip": 0
+      },
+      "stylesheet": {
+        "count": 0,
+        "bytes": 0,
+        "gzip": 0
+      },
+      "font": {
+        "count": 3,
+        "bytes": 36840
+      },
+      "image": {
+        "count": 11,
+        "bytes": 111658
+      },
+      "other": {
+        "count": 0,
+        "bytes": 0
+      }
+    },
+    "390x844": {
+      "document": {
+        "count": 1,
+        "bytes": 28727,
+        "gzip": 6916
+      },
+      "script": {
+        "count": 0,
+        "bytes": 0,
+        "gzip": 0
+      },
+      "stylesheet": {
+        "count": 0,
+        "bytes": 0,
+        "gzip": 0
+      },
+      "font": {
+        "count": 3,
+        "bytes": 36840
+      },
+      "image": {
+        "count": 11,
+        "bytes": 59477
+      },
+      "other": {
+        "count": 0,
+        "bytes": 0
+      }
+    }
+  }
+}

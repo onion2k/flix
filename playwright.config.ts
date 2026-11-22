@@ -37,6 +37,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
     {
+      // Page weight: measured in Chromium, held to gates/weight.json.
+      name: 'weight',
+      testDir: 'tests/gates',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
       name: 'look',
       testDir: 'tests/look',
       use: { ...devices['Desktop Chrome'] },

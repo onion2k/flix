@@ -1,0 +1,78 @@
+// Holds the page-weight gate's judgement with figures handed to it on both
+// sides of each line: a count that rises or falls, bytes over and under the
+// tolerance, a drop as much as a rise, and the two budgets. The measuring is
+// a browser's and is in tests/gates; this is only the rule.
+import { describe, expect, it } from 'vitest';
+import {
+  judge,
+  overBudget,
+  pageWithoutPictures,
+  type Weight,
+} from '../gates/judging';
+
+const base: Weight = {
+  document: { count: 1, bytes: 1000, gzip: 400 },
+  script: { count: 1, bytes: 500, gzip: 200 },
+  stylesheet: { count: 0, bytes: 0, gzip: 0 },
+  font: { count: 3, bytes: 36000 },
+  image: { count: 5, bytes: 100000 },
+  other: { count: 0, bytes: 0 },
+};
+
+function with_(
+  kind: keyof Weight,
+  change: Partial<Weight[typeof kind]>,
+): Weight {
+  return { ...base, [kind]: { ...base[kind], ...change } };
+}
+
+describe('judge', () => {
+  it('finds nothing in a copy', () => {
+    expect(judge(base, structuredClone(base), 0)).toEqual([]);
+  });
+
+  it('fails a count that rises and one that falls', () => {
+    expect(judge(base, with_('image', { count: 6 }), 0.5)).toHaveLength(1);
+    expect(judge(base, with_('font', { count: 2 }), 0.5)).toHaveLength(1);
+  });
+
+  it('holds bytes exactly when the tolerance is 0, up and down', () => {
+    expect(judge(base, with_('image', { bytes: 100001 }), 0)).toHaveLength(1);
+    expect(judge(base, with_('image', { bytes: 99999 }), 0)).toHaveLength(1);
+  });
+
+  it('lets bytes wobble inside the tolerance and fails them outside it', () => {
+    expect(judge(base, with_('image', { bytes: 101000 }), 0.02)).toEqual([]);
+    expect(judge(base, with_('image', { bytes: 99000 }), 0.02)).toEqual([]);
+    expect(judge(base, with_('image', { bytes: 103000 }), 0.02)).toHaveLength(
+      1,
+    );
+    expect(judge(base, with_('image', { bytes: 97000 }), 0.02)).toHaveLength(1);
+  });
+
+  it('holds the gzipped figure as well as the raw one', () => {
+    expect(judge(base, with_('document', { gzip: 401 }), 0)).toEqual([
+      'document gzip rose: 400 to 401',
+    ]);
+  });
+});
+
+describe('budgets', () => {
+  it('adds the text kinds gzipped to the fonts, and leaves the pictures out', () => {
+    expect(pageWithoutPictures(base)).toBe(400 + 200 + 0 + 36000);
+  });
+
+  it('names a budget that is passed, and nothing when none is', () => {
+    const budgets = {
+      pageWithFontsNoPicturesBytes: 36600,
+      firstScreenPicturesDeskBytes: 100000,
+    };
+    expect(overBudget(base, budgets)).toEqual([]);
+    expect(
+      overBudget(base, { ...budgets, pageWithFontsNoPicturesBytes: 36599 }),
+    ).toHaveLength(1);
+    expect(
+      overBudget(base, { ...budgets, firstScreenPicturesDeskBytes: 99999 }),
+    ).toHaveLength(1);
+  });
+});
