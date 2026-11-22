@@ -1,6 +1,6 @@
 # Motion: loops, a card that grows, a moving hero
 
-State: building, part 3 of 4.
+State: building, part 4 of 4.
 
 ## Context
 
@@ -96,7 +96,7 @@ each is looked at. Pushing is asked for each time.
 - [x] 2. A: the card grows. The owner's new order put the picture budget
       over; the feature is now drawn at AVIF quality 40 and the picture
       budget is 200,000, both the owner's choice on 2026-11-22.
-- [ ] 3. C: the moving hero, with its own budget in `gates/weight.json`.
+- [x] 3. C: the moving hero, with its own budget in `gates/weight.json`.
 - [ ] 4. The pass: full check, polish, preflight against the live site
       after a push you approve, and the report.
 
@@ -115,3 +115,28 @@ each is looked at. Pushing is asked for each time.
 B, the detail panel. Sound. Loops for the 29 other subdomains. Changing
 which sites are listed. The content policy (video from the site's own
 origin is already allowed by `default-src 'self'`; checked in part 2).
+
+# Rows that show they scroll
+
+State: agreed 2026-11-22.
+
+The owner asked on 2026-11-22 for the scrollbars under the rows to go, as on
+Netflix, and for it to be very clear that the rows scroll. From two mocks
+on the real page (kept in the session's scratchpad, `scroll/`), the owner
+chose B: large arrows on a row's left and right edges, over the cut-off
+card, **always shown** wherever there is more that way, and page marks at
+the top right of the row. Then, the same day, the owner dropped the
+Previous and Next buttons: the arrows take their place.
+
+- The scrollbar is hidden only once script has run and the row's own
+  controls are there; with script off it stays, since a mouse with no
+  sideways wheel would have no other way along.
+- The arrows **are** the row's Previous and Next, moved to its edges: the
+  same rule (`paging.ts`), real buttons with the same names for a screen
+  reader ("Previous in <row>", "Next in <row>"), in the Tab order, at
+  least 44 by 44, out of the way of the grown card and the house lights.
+  The buttons in the row's heading go. The page marks say how many pages
+  and which shows, in words as well as marks.
+- Built after part 3 of the plan above, tests first, as before.
+
+- [ ] 1. Hidden scrollbars, edge arrows and page marks.
