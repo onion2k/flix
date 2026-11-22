@@ -313,11 +313,11 @@ p {
 }
 
 /* The link is the title; its ::after is stretched over the whole card, so the
-   card is one link and nothing in it is nested. */
+   card is one link and nothing in it is nested. It has no height or padding of
+   its own: the 44px rule is met by the card, which is where it can be hit, and
+   a title's spacing must be the same whether or not the card is a link. */
 .card-link {
   display: block;
-  min-height: var(--size-target);
-  padding: var(--space-xs) 0;
   text-decoration: none;
 }
 

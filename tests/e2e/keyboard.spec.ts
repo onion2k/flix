@@ -2,7 +2,8 @@
 // the skip link is the first stop, visible, and takes focus into main; then
 // every link, button and strip in reading order, each one inside the window,
 // ringed by an outline of at least 2px, and not covered by anything else.
-// Every visible link and button is also at least 44 by 44. Without it a ring
+// Every visible link and button is also at least 44 by 44 (a card's link by
+// the card, its hit area). Without it a ring
 // lost in a stylesheet, a control under another, or a target too small would
 // pass every other check, since none of them presses Tab.
 import { expect, test, type Page } from '@playwright/test';
@@ -138,7 +139,15 @@ for (const width of WIDTHS) {
       for (let at = 0; at < count; at += 1) {
         const target = targets.nth(at);
         if (!(await target.isVisible())) continue;
-        const box = await target.boundingBox();
+        // A card's link is only its title in size, and is hit through a
+        // stretched ::after over the whole card, so the card is the area it
+        // can be hit in. Every other link and button is measured as drawn.
+        const card = target.locator(
+          'xpath=ancestor::li[contains(@class,"card")]',
+        );
+        const box = await (
+          (await card.count()) > 0 ? card : target
+        ).boundingBox();
         const name = (await target.textContent()) ?? '';
         expect(box?.width, `${name} is wide enough`).toBeGreaterThanOrEqual(44);
         expect(box?.height, `${name} is tall enough`).toBeGreaterThanOrEqual(
