@@ -1,0 +1,6 @@
+title: 'Propshop'
+kind: game
+description: 'A browser game about high-frequency trading, built to learn it.'
+picture: ../pictures/propshop.png
+pictureAlt: 'The Propshop title card over a server room lit blue and pink, with a Start button.'
+url: https://propshop.ooer.com

@@ -167,7 +167,7 @@ test('each card says one of the four labels, and is a link only where it can be 
   expect(workshop).toBeGreaterThan(0);
 });
 
-test('two pinned entries: chess links out, ooergolf does not', async ({
+test('three pinned entries: chess and ooergolf link out, snappy does not', async ({
   page,
 }) => {
   const chess = page.locator('[data-entry="chess"]');
@@ -175,9 +175,14 @@ test('two pinned entries: chess links out, ooergolf does not', async ({
     'href',
     'https://onion2k.github.io/chess/',
   );
-  await expect(page.locator('[data-entry="ooergolf"]')).toHaveCount(1);
+  // Ooergolf was pinned as having no link until its public address was
+  // found; it is kept pinned, the other way, so the change is on record.
   await expect(
     page.locator('[data-entry="ooergolf"]').getByRole('link'),
+  ).toHaveAttribute('href', 'https://golf.ooer.com');
+  await expect(page.locator('[data-entry="snappy"]')).toHaveCount(1);
+  await expect(
+    page.locator('[data-entry="snappy"]').getByRole('link'),
   ).toHaveCount(0);
 });
 

@@ -1,0 +1,6 @@
+title: 'Fruit Machine'
+kind: game
+description: 'An interactive, browser-based slot cabinet rendered in real time. Spin the reels, latch individual columns with hold buttons, and watch the cabinet spring to life.'
+picture: ../pictures/fruit-machine.png
+pictureAlt: 'A gold fruit machine with three reels of fruit and a dot-matrix sign above them.'
+url: https://slots.ooer.com

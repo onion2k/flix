@@ -30,6 +30,23 @@ async function overflows(list: Locator): Promise<boolean> {
   return list.evaluate((el) => el.scrollWidth - el.clientWidth > 1);
 }
 
+/** The strip has stopped: its position is the same across two frames. */
+async function atRest(list: Locator): Promise<void> {
+  await expect
+    .poll(() =>
+      list.evaluate(
+        (el) =>
+          new Promise<boolean>((done) => {
+            const was = el.scrollLeft;
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => done(el.scrollLeft === was)),
+            );
+          }),
+      ),
+    )
+    .toBe(true);
+}
+
 /** Two frames drawn: a state to wait on where nothing is meant to happen. */
 async function settled(page: Page): Promise<void> {
   await page.evaluate(
@@ -69,24 +86,44 @@ test.describe('at a desk', () => {
   });
 
   test('each button says which row it moves', async ({ page }) => {
+    // Read from the markup and not by role: a row that fits keeps its
+    // buttons hidden, and a hidden button has no role to be found by, but
+    // it must already carry the name it will have when the window narrows.
+    let reached = 0;
     for (const each of catalogue.rows) {
-      await expect(previous(page, each.id)).toHaveAccessibleName(
-        `Previous in ${each.title}`,
-      );
-      await expect(next(page, each.id)).toHaveAccessibleName(
+      const section = page.locator(`section[id="${each.id}"]`);
+      await expect(
+        section.locator('button[data-page="previous"]'),
+      ).toHaveAttribute('aria-label', `Previous in ${each.title}`);
+      await expect(section.locator('button[data-page="next"]')).toHaveAttribute(
+        'aria-label',
         `Next in ${each.title}`,
       );
+      reached += 1;
     }
+    expect(reached).toBe(catalogue.rows.length);
   });
 
   test('Next moves the strip to the end of a short row, and then Next is disabled and Previous is not', async ({
     page,
   }) => {
-    const first = catalogue.rows[0];
-    if (first === undefined) throw new Error('no rows were read');
+    // The case is a row that holds less than a page beyond what shows, so
+    // that a page is clamped to the end. Which row that is depends on the
+    // catalogue, so it is found by its shape and not by its place.
+    let first: (typeof catalogue.rows)[number] | undefined;
+    for (const each of catalogue.rows) {
+      const room = await strip(page, each.id).evaluate((el) => ({
+        beyond: el.scrollWidth - el.clientWidth,
+        page: el.clientWidth,
+      }));
+      if (room.beyond > 1 && room.beyond <= room.page) {
+        first = each;
+        break;
+      }
+    }
+    if (first === undefined)
+      throw new Error('no row holds less than a page beyond what shows');
     const list = strip(page, first.id);
-    // At this width the row holds less than a page beyond what shows, so a
-    // page is clamped to the end.
     const furthest = await list.evaluate(
       (el) => el.scrollWidth - el.clientWidth,
     );
@@ -175,7 +212,22 @@ test.describe('where a page is shorter than the row', () => {
       'aria-disabled',
       'false',
     );
-    await next(page, first.id).click();
+    // Then to the end, however many clicks away the catalogue has put it. A
+    // click moves the strip less than a full page, since it comes to rest on
+    // the start of a card, so the clicks are counted against the cards: each
+    // must move the strip on, and there may be no more of them than cards.
+    let clicks = 0;
+    while (
+      (await next(page, first.id).getAttribute('aria-disabled')) === 'false'
+    ) {
+      clicks += 1;
+      expect(clicks).toBeLessThanOrEqual(first.entries.length);
+      const before = await left(list);
+      await next(page, first.id).click();
+      await expect.poll(() => left(list)).toBeGreaterThan(before);
+      await atRest(list);
+    }
+    expect(clicks).toBeGreaterThan(0);
     await expect.poll(() => left(list)).toBeGreaterThan(furthest - 2);
     await expect(next(page, first.id)).toHaveAttribute('aria-disabled', 'true');
     await previous(page, first.id).click();

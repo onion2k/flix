@@ -7,12 +7,27 @@ rows:
       - aquaclysm
       - coinpush
       - chess
+      - ooergolf
+      - pushminer
+      - chopdrop
+      - propshop
+  - id: more-to-play
+    title: More to play
+    entries:
+      - book-worm
+      - codex-squadron
+      - fruit-machine
+      - tiny-slots
+  - id: toys
+    title: Toys
+    entries:
+      - petz-9000
+      - heist
+      - spiro
+      - release-flow-model
       - coinpusher
   - id: in-the-workshop
     title: In the workshop
     entries:
-      - ooergolf
-      - pushminer
-      - chopdrop
       - snappy
       - ooerrace

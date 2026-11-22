@@ -3,3 +3,4 @@ kind: game
 description: 'An arcade helicopter game for the browser: fly about, pick deliveries up, and set them down where they are wanted.'
 picture: ../pictures/chopdrop.png
 pictureAlt: 'A small helicopter on a helipad on an island of palms and pines, the sea beyond.'
+url: https://copter.ooer.com

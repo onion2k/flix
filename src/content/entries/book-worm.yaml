@@ -1,0 +1,6 @@
+title: 'Book Worm'
+kind: game
+description: 'A word-grid game: drag across the letter grid to create words and score points.'
+picture: ../pictures/book-worm.png
+pictureAlt: 'A grid of blue letter tiles, eight across, under the title Book Worm.'
+url: https://bookworm.ooer.com

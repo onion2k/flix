@@ -1,0 +1,6 @@
+title: 'Release Flow Model'
+kind: toy
+description: 'An interactive simulator for how work flows through a multi-team release train.'
+picture: ../pictures/release-flow-model.png
+pictureAlt: 'A dense page of text columns above a timeline chart of work moving through a release.'
+url: https://allaboard.ooer.com
