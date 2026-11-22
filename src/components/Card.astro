@@ -8,9 +8,11 @@
 // forgot the alt words or the link's name would be the odd one out. A late
 // card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
-// <noscript>, so that script brings the one in and no script has the other.
+// <noscript>, so that script brings the one in and no script has the other. It
+// also carries the colour of its picture, which the frame waits in.
 import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
+import { dominantColour } from '../build/dominant-colour';
 
 interface Props {
   card: Card<ImageMetadata>;
@@ -38,6 +40,15 @@ const shared = {
   widths,
   sizes,
 };
+// The colour the frame waits in, read from the picture's own file at build.
+// Astro gives the file's path as fsPath on what image() returns, set so that it
+// does not show when the object is listed, so it is asked for by name, and a
+// picture without one stops the build and names the entry.
+const fsPath = (card.picture as ImageMetadata & { fsPath?: string }).fsPath;
+if (late && fsPath === undefined)
+  throw new Error(`${card.id}: Astro gave no file path for the picture`);
+const waiting = late && fsPath ? await dominantColour(fsPath) : undefined;
+
 // The same three files <Picture> would make (AVIF, WebP, then the JPEG that
 // is the fallback), written here so that their addresses can go in data-
 // attributes instead of src and srcset.
@@ -52,7 +63,7 @@ const [avif, webp, jpeg] = late
 
 <li class="card" data-entry={card.id} data-linked={card.href ? '' : undefined}>
   {late && avif && webp && jpeg ? (
-    <div class="frame" data-late>
+    <div class="frame" data-late data-waiting={waiting}>
       <picture>
         <source
           data-srcset={avif.srcSet.attribute}

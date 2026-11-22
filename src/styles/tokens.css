@@ -78,4 +78,14 @@
    */
   --brightness-dim: 0.55;
   --duration-dim: 300ms;
+
+  /*
+   * Waiting frames: how much of a late picture's own colour its frame shows
+   * while the picture is on its way, the rest being the panel, and how long
+   * the picture takes to ease in. Half keeps each frame plainly its picture's
+   * colour and still inside the page's dark look, since the panel is half of
+   * it. The colours themselves are each picture's and are not tokens.
+   */
+  --share-waiting: 50%;
+  --duration-arrive: 400ms;
 }

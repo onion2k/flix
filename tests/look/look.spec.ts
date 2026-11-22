@@ -19,6 +19,12 @@
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, test, type Page } from '@playwright/test';
+import { readRows } from '../e2e/catalogue';
+
+/** The entries of the rows after the second, which wait for script. */
+const LATE_IDS = readRows()
+  .rows.slice(2)
+  .flatMap((row) => row.entries);
 
 /**
  * Over 8 runs of the unchanged page, each on a page just started, against a
@@ -127,4 +133,34 @@ test('the first row at 1440 with its second card focused by keyboard', async ({
   await expect(row).toHaveScreenshot('first-row-second-card-focused.png', {
     ...TOLERANCE,
   });
+});
+
+// The Toys row at 1440 as it waits: its pictures' requests are held at a route
+// (and let go after the shot), so that what is drawn is each frame's own
+// colour, mixed with the panel, and no picture. The colours are each picture's
+// and are not tokens, so this is the one place they are seen and held.
+test('the Toys row at 1440 with its pictures held back', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((done) => {
+    release = done;
+  });
+  await page.route(/\/_astro\/.*\.(avif|webp|jpe?g|png)$/, async (route) => {
+    // The first two rows and the feature are not held, only the late rows'.
+    const url = new URL(route.request().url()).pathname;
+    const waits = LATE_IDS.some((id) => url.startsWith(`/_astro/${id}.`));
+    if (waits) await gate;
+    await route.continue().catch(() => undefined);
+  });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  const row = page.locator('section[id="toys"]');
+  await row.evaluate((el) => {
+    el.scrollIntoView();
+  });
+  await expect(row.locator('img[data-src]')).toHaveCount(0);
+  await expect(row).toHaveScreenshot('late-row-waiting-1440.png', {
+    ...TOLERANCE,
+  });
+  release();
 });

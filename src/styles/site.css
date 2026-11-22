@@ -298,10 +298,27 @@ p {
 .frame[data-late] {
   aspect-ratio: 16 / 9;
   background: var(--color-panel);
+  /* The picture's own colour, which script sets as --waiting once it has
+     checked it, mixed with the panel by the token's share. Where --waiting is
+     not set the mix is of the panel with itself, which is the panel; where
+     color-mix is not known the line above stands. */
+  background: color-mix(
+    in srgb,
+    var(--waiting, var(--color-panel)) var(--share-waiting),
+    var(--color-panel)
+  );
 }
 
 .frame[data-late] picture {
   display: block;
+}
+
+/* Until a late picture has loaded (or failed, which marks it too so that its
+   alt words show) it is fully transparent and the frame's colour shows. Only
+   the placeholder is reached: the plain picture in the noscript is a child of
+   the noscript, not of the frame's own picture, and is never made clear. */
+.frame[data-late] > picture > img:not([data-arrived]) {
+  opacity: 0;
 }
 
 /* With script off nothing will fill the placeholder: the plain picture in the
@@ -550,7 +567,8 @@ main {
 /* Motion exists only here, and only for a visitor who has not asked for less:
    the strip glides when a button or a key moves it, the picture of a linked
    card eases to a slight zoom inside its own frame, and the pictures of its
-   row's other cards ease to their dim (the dim itself is above). */
+   row's other cards ease to their dim (the dim itself is above), and a late
+   picture eases in from its frame's colour (the transparency is above). */
 @media (prefers-reduced-motion: no-preference) {
   .strip {
     scroll-behavior: smooth;
@@ -559,7 +577,8 @@ main {
   .frame img {
     transition:
       transform var(--duration-hover) ease-out,
-      filter var(--duration-dim) ease-out;
+      filter var(--duration-dim) ease-out,
+      opacity var(--duration-arrive) ease-out;
   }
 
   .card[data-linked]:hover .frame img {

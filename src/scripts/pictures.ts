@@ -10,7 +10,14 @@
 // no markup from a string, since the content policy refuses that, and it
 // keeps nothing that grows. Without it a late row would show only its panel
 // colour where the pictures should be, and the alt words would never be set;
-// with script off the <noscript> beside each picture is the whole of it.
+// with script off the <noscript> beside each picture is the whole of it. It
+// also gives each late frame the colour it waits in, which the build wrote as
+// data-waiting and which is checked here as a colour before it is used, and it
+// marks each picture arrived when it has loaded, or failed, so that the
+// stylesheet, which keeps a late picture clear until then, shows it or its alt
+// words.
+
+import { asColour } from '../catalogue/colour';
 
 /**
  * How far below the window a row may be, in pixels, and still be loaded. The
@@ -21,6 +28,15 @@
  * without a scroll, which is what put the page over its budget.
  */
 const MARGIN = 300;
+
+/**
+ * Marks a picture as done with, whether it loaded or not: the stylesheet keeps
+ * a late picture clear until this, and a picture that failed must not stay
+ * clear, or its alt words would be hidden.
+ */
+function markArrived(image: HTMLImageElement): void {
+  image.dataset['arrived'] = '';
+}
 
 /** Moves one row's pictures' addresses to where a browser fetches from. */
 function bringIn(row: Element): void {
@@ -33,6 +49,8 @@ function bringIn(row: Element): void {
   for (const image of row.querySelectorAll<HTMLImageElement>('img[data-src]')) {
     // The source's srcset first, then the img's, then its src: the img is
     // what starts the fetch, and it should find the sources already set.
+    image.addEventListener('load', () => markArrived(image), { once: true });
+    image.addEventListener('error', () => markArrived(image), { once: true });
     image.srcset = image.dataset['srcset'] ?? '';
     image.src = image.dataset['src'] ?? '';
     image.alt = image.dataset['alt'] ?? '';
@@ -40,6 +58,17 @@ function bringIn(row: Element): void {
     delete image.dataset['src'];
     delete image.dataset['alt'];
   }
+}
+
+// Each late frame waits in its picture's own colour. The attribute is text the
+// build wrote, and is used only if it is a colour; the custom property is set
+// through the CSSOM, which the content policy allows where it refuses a style
+// attribute.
+for (const frame of document.querySelectorAll<HTMLElement>(
+  '.frame[data-late]',
+)) {
+  const colour = asColour(frame.dataset['waiting'] ?? '');
+  if (colour !== null) frame.style.setProperty('--waiting', colour);
 }
 
 const rows = [...document.querySelectorAll('section.row[data-late]')];

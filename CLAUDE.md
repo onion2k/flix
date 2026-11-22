@@ -21,7 +21,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the seven pictures, tests/look, against baselines
+    npm run look         the eight pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -60,7 +60,12 @@ commit of its own that says what it is for.
   a catalogue that does not hold together (naming file and id) and returns
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next buttons are live and
-  where each goes.
+  where each goes. `colour.ts` says whether text is a colour the page may
+  use (`#` and six lower-case hex digits, nothing else).
+- `src/build/` is build-time code that is not the thing: `dominant-colour.ts`
+  reads a picture file's dominant colour with `sharp` (Node, so not in
+  `src/catalogue/`). `Card.astro` writes it on a late card's frame as
+  `data-waiting`.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and `catalogue.json`, the one file that says which sites are
   listed (the `feature` and each row's `sites`), in which rows and in what
@@ -80,7 +85,9 @@ commit of its own that says what it is for.
   card's `<picture>` holds its addresses in `data-` attributes and the
   ordinary picture sits beside it in a `<noscript>`, and an
   IntersectionObserver on each late row (`MARGIN`, 300px) moves them into
-  `srcset` and `src`. Both are imported by the one script block in
+  `srcset` and `src`; it also checks each frame's `data-waiting` with
+  `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
+  `data-arrived` when it loads or fails. Both are imported by the one script block in
   `index.astro`. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
@@ -168,6 +175,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/rows.test.ts`           | the page's model, refusals, the not listed           |
 | `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files           |
 | `tests/unit/structure.test.ts`      | `src/catalogue` imports nothing but `astro/zod`      |
+| `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
 | `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
 | `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
@@ -183,9 +191,10 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
 | `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
+| `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
-| `tests/look/look.spec.ts`           | seven pictures of the built site, as written         |
+| `tests/look/look.spec.ts`           | eight pictures of the built site, as written         |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, at 1440 and 390          |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
 | `scripts/headers.mjs`               | a live address sends the five headers (not in check) |
@@ -238,7 +247,9 @@ The nine points of the definition of done, as this project has them.
 - **Late rows' pictures depend on script when it is on.** If
   `pictures.ts` fails to run (an error, a blocked file) the late rows
   keep their panel colour and no picture; the words stand and nothing
-  holds that case. `loading="lazy"` alone does not wait (Chromium fetched
+  holds that case. The waiting colour is `sharp`'s coarse dominant
+  (a few dozen values a channel, often a picture's background), and no
+  test reads it against the picture, only the look picture shows it. `loading="lazy"` alone does not wait (Chromium fetched
   rows 2000px down), so the weight gate is what holds the waiting, by
   count and by the budget. It measures the home page alone and times no
   load or interaction.
@@ -274,6 +285,9 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
   chose from the mocks (`plans/first-site-look/`) is a cinema listing.
 - **`--color-text` is a warm off-white.** The scanner reads it as a cream.
   It is the ink on a dark ground and never a ground itself.
+- **The waiting colours are not tokens.** They are each picture's own,
+  worked out at build, carry no words and no meaning, and are mixed with
+  the panel token by `--share-waiting` so they stay inside the dark look.
 - **No print styles.** Preflight asks for them, and the page is not one to
   print.
 
