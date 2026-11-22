@@ -1,0 +1,6 @@
+title: 'Chess'
+kind: game
+description: 'A game of chess played on a precious-metals set: Staunton men, six in silver and six in gold, standing on an art deco board on a walnut table.'
+picture: ../pictures/chess.png
+pictureAlt: "A chessboard lit from above on a dark table, silver and gold pieces set out, with the game's controls beside it."
+url: https://onion2k.github.io/chess/

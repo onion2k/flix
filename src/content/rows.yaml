@@ -1,0 +1,18 @@
+feature: nuclear-fishin
+rows:
+  - id: play-now
+    title: Play now
+    entries:
+      - nuclear-fishin
+      - aquaclysm
+      - coinpush
+      - chess
+      - coinpusher
+  - id: in-the-workshop
+    title: In the workshop
+    entries:
+      - ooergolf
+      - pushminer
+      - chopdrop
+      - snappy
+      - ooerrace

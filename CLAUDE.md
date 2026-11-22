@@ -44,11 +44,13 @@ commit of its own that says what it is for.
   catalogue that does not hold together, naming file and id. _`paging.ts`
   is not built yet: part 4._
 - `src/content/` is where the content lives: an entry a file, its
-  picture, and the rows in their order. _Not built yet: part 3._
+  picture, and the rows in their order. `src/content.config.ts` tells
+  Astro where each is and which of the catalogue's schemas it must meet.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
   out. Today there is `Base.astro` and an `index.astro` holding the
-  wordmark.
+  wordmark, which also builds the catalogue so that a broken one stops
+  the build.
 - `src/styles/tokens.css` says every colour, size and font once.
   `src/styles/site.css` reads them and holds no value of its own.
 - `astro.config.mjs` holds the site's address, the fonts and the content
@@ -142,6 +144,10 @@ The nine points of the definition of done, as this project has them.
 - **The Playwright config has run no test.** There are no specs yet.
 - **The secret scan reaches only what is staged,** so run by hand outside
   a commit it scans nothing and passes. The history is not scanned.
+- **The real content is held by the build alone.** No unit test loads
+  `src/content/`: it is YAML, and parsing it here would need a
+  dependency the project does not have. A refusal there is seen as a
+  failed `npm run build`, not as a failed test.
 - **No audit, licence or unused-dependency check.**
 - **One browser, Chromium, on one machine.** Firefox, Safari and a real
   phone are not looked at. A screen reader is a person's to try.
