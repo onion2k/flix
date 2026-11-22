@@ -115,3 +115,26 @@ test('at 320 wide a row stacks its cards and does not scroll sideways', async ({
   }
   expect(reached).toBe(catalogue.rows.length);
 });
+
+// Preflight stands in for 200% zoom by zooming the root with CSS at 1280
+// wide, which halves the room and leaves the desk's layout in place: no
+// window width a reader can reach does that, but it is what a title of one
+// very long word would do to the feature's words column at any width. So it
+// is held here as the test of the title's last resort, breaking inside a
+// word, and so that preflight and this spec agree.
+test('with the root zoomed to 2 at 1280 wide, the page does not scroll sideways', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.locator('[data-entry]').first()).toBeVisible();
+  const widths = await page.evaluate(() => {
+    document.documentElement.style.zoom = '2';
+    return {
+      page: document.documentElement.scrollWidth,
+      window: window.innerWidth,
+    };
+  });
+  expect(widths.window).toBe(1280);
+  expect(widths.page).toBeLessThanOrEqual(widths.window + 1);
+});

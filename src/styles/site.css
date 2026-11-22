@@ -163,7 +163,10 @@ p {
   text-transform: uppercase;
   letter-spacing: 0.01em;
   /* A title that is one long word breaks inside it before it pushes the page
-     sideways. Titles of several words break between them, as before. */
+     sideways. Titles of several words break between them, as before. The
+     width is capped because the title is a flex item, which would otherwise
+     grow to its longest word and never need to break. */
+  max-width: 100%;
   overflow-wrap: break-word;
 }
 
