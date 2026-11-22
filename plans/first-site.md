@@ -1,6 +1,6 @@
 # Ooerflix: the first site
 
-State: building, part 6 of 6.
+State: landed on main at 702fd0d, 2026-11-22.
 
 ## Context
 
@@ -193,7 +193,7 @@ session. Each part is checked here against its files before the next.
       `scripts/weight.mjs` with `gates/weight.json`; `scripts/links.mjs` (a `url`
       that is gone fails; needs the network, so outside `check`).
       **Proved by:** the fault and the failure for each, in the report.
-- [ ] **6. The pass.** Full check; `/ooer-design:polish` over the look;
+- [x] **6. The pass.** Full check; `/ooer-design:polish` over the look;
       `/ooer-design:preflight` against the local preview for what it can
       settle; pictures looked at, at a desk's width, a phone's and 320;
       new tests mutation-checked; the report, point by point.
