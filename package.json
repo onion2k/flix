@@ -15,7 +15,9 @@
     "secrets": "gitleaks git --pre-commit --staged --redact --verbose --no-banner",
     "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "test:e2e": "playwright test --project=e2e",
-    "headers": "node scripts/headers.mjs"
+    "headers": "node scripts/headers.mjs",
+    "look": "playwright test --project=look",
+    "look:update": "playwright test --project=look --update-snapshots"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",

@@ -16,6 +16,9 @@ export default defineConfig({
   // waiting on something that is not coming.
   timeout: 15_000,
   use: { baseURL: address },
+  // Pictures sit beside the spec that takes them, one folder, no platform in
+  // the name: they are this machine's and the file says so in its header.
+  snapshotPathTemplate: '{testDir}/baselines/{arg}{ext}',
   // Never reuse a server already on the port: it would be someone else's, and
   // it may serve a build that is not this one.
   webServer: {
