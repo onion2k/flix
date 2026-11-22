@@ -373,6 +373,14 @@ The nine points of the definition of done, as this project has them.
   the test itself, since the preview sends none. That Netlify sends it, and
   that `netlify.toml` leaves it alone, is read only by `npm run headers`
   against the live address, after a deploy.
+- **The page Netlify serves is not quite the page built.** Netlify adds
+  its "Powered by Netlify" badge script (`/.netlify/scripts/hud`) to every
+  page at its edge. The content policy refuses the frame it draws in, so
+  no badge shows and a live console has two Trusted Types refusals a page:
+  Netlify's own docs say a policy without `'unsafe-inline'` does this and
+  that nothing else is affected. No local test sees that script. The
+  badge is switched off in Netlify (Project configuration, General) where
+  the plan allows.
 - **A card half cut off at a strip's edge is brought into view by
   script only.** With script off, Tab leaves it part hidden (the arrow
   keys scroll the strip).
