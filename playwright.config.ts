@@ -12,11 +12,18 @@ const address = 'http://localhost:4390';
 
 export default defineConfig({
   testDir: 'tests',
+  // A test that waits on a state fails in seconds; one that waits longer is
+  // waiting on something that is not coming.
+  timeout: 15_000,
   use: { baseURL: address },
   // Never reuse a server already on the port: it would be someone else's, and
   // it may serve a build that is not this one.
   webServer: {
-    command: 'npm run preview',
+    // Astro 7 sends `preview` to the background and exits when it is run by an
+    // agent or in CI-like shells, which Playwright reads as the server dying.
+    // --ignore-lock keeps it in the foreground, and leaves no lock file
+    // behind for a later `astro preview` to trip over.
+    command: 'npm run preview -- --ignore-lock',
     url: address,
     reuseExistingServer: false,
   },

@@ -11,9 +11,10 @@
     "lint": "eslint .",
     "test:unit": "vitest run",
     "check:quick": "npm run --silent secrets && prettier --check . && astro check && eslint . && vitest run",
-    "check": "npm run check:quick && npm run build",
+    "check": "npm run check:quick && npm run build && npm run test:e2e",
     "secrets": "gitleaks git --pre-commit --staged --redact --verbose --no-banner",
-    "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true"
+    "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
+    "test:e2e": "playwright test --project=e2e"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",

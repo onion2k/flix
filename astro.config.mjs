@@ -8,8 +8,8 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
   site: 'https://flix.ooer.com',
-  // The build writes /about/index.html, so a link with the slash is the one
-  // that is served and the one the canonical link and the sitemap must say.
+  // Every address ends in a slash, so the one served, the canonical link and
+  // the sitemap's all agree and no page has two addresses.
   trailingSlash: 'always',
   security: {
     /**

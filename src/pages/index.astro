@@ -1,10 +1,13 @@
 ---
-// The home page. For now only the wordmark, which is the h1. The catalogue is
-// loaded and built here all the same, so that a catalogue that does not hold
-// together stops the build, naming the file and the id. Without the call the
-// cross-file checks would never run, and markup is the next part's.
+// The home page: the feature, then each row in the order written. The model
+// is built by the catalogue, which refuses a catalogue that does not hold
+// together, naming the file and the id, so that a broken one stops the build;
+// this page only draws what comes back. The one script, which pages the rows,
+// is added here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
+import Feature from '../components/Feature.astro';
+import Row from '../components/Row.astro';
 import { buildPage } from '../catalogue/rows';
 
 const entries = await getCollection('entries');
@@ -15,14 +18,24 @@ if (rowsFile === undefined) {
   );
 }
 
-buildPage(
+const page = buildPage(
   entries.map((entry) => ({ id: entry.id, ...entry.data })),
   rowsFile.data,
 );
 ---
 
-<Base title="ooerflix">
-  <main>
-    <h1>ooerflix</h1>
-  </main>
+<Base
+  title="ooerflix"
+  home
+  rows={page.rows}
+  card={{ picture: page.feature.picture, alt: page.feature.pictureAlt }}
+>
+  <Feature card={page.feature} />
+  {page.rows.map((row, at) => (
+    <Row row={row} at={at} />
+  ))}
 </Base>
+
+<script>
+  import '../scripts/rows';
+</script>

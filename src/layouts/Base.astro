@@ -1,16 +1,46 @@
 ---
-// The document every page is drawn in: the head, the self-hosted fonts and
-// the two stylesheets. Without it each page would repeat the head, and one
-// that forgot the viewport tag or the fonts would be the odd one out.
-import { Font } from 'astro:assets';
+// The document every page is drawn in: the head (title, description, address,
+// social card, icon, the self-hosted fonts and the two stylesheets), the skip
+// link, the header with the wordmark and the row links, and the main that the
+// page's content goes in. Without it each page would repeat the head, and one
+// that forgot the viewport tag, the canonical link or the skip link would be
+// the odd one out. Every absolute address is made here from Astro's `site`,
+// which astro.config.mjs says once.
+import { Font, getImage } from 'astro:assets';
 import '../styles/tokens.css';
 import '../styles/site.css';
 
 interface Props {
   title: string;
+  /** True on the home page, where the wordmark is the h1 and no link. */
+  home?: boolean;
+  /** The rows to link to from the header, in order. */
+  rows?: { id: string; title: string }[];
+  /** The picture the social card shows, and what it shows, in words. */
+  card?: { picture: ImageMetadata; alt: string };
+  skipLabel?: string;
 }
 
-const { title } = Astro.props;
+const {
+  title,
+  home = false,
+  rows = [],
+  card,
+  skipLabel = 'Skip to the games',
+} = Astro.props;
+
+const description = 'Games and toys to play in a browser.';
+const address = new URL(Astro.url.pathname, Astro.site).href;
+// Social cards are cut to 1200 by 630, the size they are drawn at, and as a
+// JPEG because not every crawler reads a newer format.
+const cardImage = card
+  ? await getImage({
+      src: card.picture,
+      width: 1200,
+      height: 630,
+      format: 'jpeg',
+    })
+  : undefined;
 ---
 
 <!doctype html>
@@ -19,6 +49,30 @@ const { title } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {home ? (
+      <>
+        <link rel="canonical" href={address} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={address} />
+        <meta name="twitter:card" content="summary_large_image" />
+      </>
+    ) : (
+      <meta name="robots" content="noindex" />
+    )}
+    {cardImage && card ? (
+      <>
+        <meta
+          property="og:image"
+          content={new URL(cardImage.src, Astro.site).href}
+        />
+        <meta property="og:image:alt" content={card.alt} />
+      </>
+    ) : null}
     {/* Only the display face is preloaded: it is the one the first screen
         draws. The body face loads when text in it is drawn, and a preload of
         a face nothing uses yet is a console warning. */}
@@ -26,6 +80,27 @@ const { title } = Astro.props;
     <Font cssVariable="--face-body" />
   </head>
   <body>
-    <slot />
+    <a class="skip-link" href="#main">
+      {skipLabel}
+    </a>
+    <header class="site-header">
+      {home ? (
+        <h1 class="mark">ooerflix</h1>
+      ) : (
+        <a class="mark" href="/">
+          ooerflix
+        </a>
+      )}
+      {rows.length > 0 ? (
+        <nav aria-label="Jump to a row">
+          {rows.map((row) => (
+            <a href={`#${row.id}`}>{row.title}</a>
+          ))}
+        </nav>
+      ) : null}
+    </header>
+    <main id="main">
+      <slot />
+    </main>
   </body>
 </html>

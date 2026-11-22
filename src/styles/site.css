@@ -1,10 +1,13 @@
 /*
- * The wordmark page and nothing more. Every colour, size and face comes from
- * tokens.css, so that this file can be read for layout alone and a change of
- * look is a change of tokens. Without it the page is the browser's default
- * white. There is no animation or transition here: motion is added only
- * inside a prefers-reduced-motion: no-preference block, when the site has
- * some.
+ * How the page looks: layout and the rules of each part, reading every colour,
+ * size, space and face from tokens.css and holding no value of its own. Read
+ * it for layout alone; a change of look is a change of tokens. The only
+ * numbers here are the two window widths a media query cannot take from a
+ * token (40rem, the phone, which also stands in for 200% zoom of a 1280 window,
+ * and 21.25rem, below which a row stacks), and the ratios and zeros that are
+ * not looks. Every transition, animation and smooth scroll is inside a
+ * prefers-reduced-motion: no-preference block at the foot, and nowhere else.
+ * Without this file the page is the browser's white default.
  */
 html {
   /* One theme, dark: tells the browser to draw its own scrollbars to match. */
@@ -16,33 +19,430 @@ html {
   line-height: var(--line-body);
 }
 
+/* The browser's `hidden` loses to any rule that sets display, and the row
+   buttons are hidden by the attribute, so it is made to win here. */
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  padding: var(--gutter);
 }
 
-h1 {
+/* The one focus ring, for every control. Never removed, only moved. */
+:focus-visible {
+  outline: var(--size-ring) solid var(--color-accent);
+  outline-offset: var(--size-ring-offset);
+}
+
+a {
+  color: inherit;
+}
+
+/* The skip link waits above the window and drops in when it has focus, so it
+   is never in the way and is a real 44px target all the same. */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: var(--gutter);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-target);
+  padding: 0 var(--space-l);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 700;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-s) var(--space-xxl);
+  padding: var(--space-l) var(--gutter) var(--space-m);
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-target);
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-mark);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  color: var(--color-accent);
+}
+
+.site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-l);
+}
+
+.site-header nav a {
+  display: inline-flex;
+  align-items: center;
+  min-width: var(--size-target);
+  min-height: var(--size-target);
+  justify-content: center;
+  text-underline-offset: 0.3em;
+  text-decoration-thickness: 2px;
+}
+
+/* Words that must never run past their box, whatever they say or however
+   they are spaced. break-word, not anywhere: it breaks a word only when the
+   word cannot fit on a line by itself, so a short title is never cut. */
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: break-word;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--size-label);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  margin: 0 var(--gutter) var(--space-xxl);
+  background: var(--color-panel);
+}
+
+.feature-picture,
+.feature-picture img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.feature-picture img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.words {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-m);
+  padding: var(--space-words);
+}
+
+.words p {
+  margin: 0;
+  max-width: 34ch;
+}
+
+.words .label {
+  max-width: none;
+}
+
+.feature h2 {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 800;
   font-size: var(--size-feature-title);
   line-height: 1;
   text-transform: uppercase;
-  color: var(--color-accent);
+  letter-spacing: 0.01em;
 }
 
-/*
- * A media query cannot read a custom property, so the phone's width is said
- * here and only here: 640px, which is also the window that stands in for 200%
- * zoom of a 1280px one.
- */
+/* A rectangular button. Its border is transparent so that where the page's
+   colours are taken away (forced-colors) it still has an edge. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-target);
+  margin-top: var(--space-m);
+  padding: var(--space-button-y) var(--space-button-x);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: var(--size-outline-button) solid transparent;
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.row {
+  margin-bottom: var(--space-s);
+}
+
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-l);
+  padding: 0 var(--gutter);
+}
+
+.row h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-row-title);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* The short bar before a row's title. A border and not a background, so that
+   it is still drawn where backgrounds are taken away. */
+.row h2::before {
+  content: '';
+  flex: none;
+  height: var(--size-bar-height);
+  border-left: var(--size-bar-width) solid var(--color-accent);
+}
+
+.row-buttons {
+  display: flex;
+  gap: var(--space-s);
+}
+
+/* A live button has a solid edge; one at its end has a dashed edge and plain
+   words, so that the two differ by more than colour. */
+.row-button {
+  min-width: var(--size-target);
+  min-height: var(--size-target);
+  padding: 0 var(--space-l);
+  background: transparent;
+  color: var(--color-accent);
+  border: var(--size-outline-button) solid var(--color-accent);
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.row-button[aria-disabled='true'] {
+  color: var(--color-text);
+  border-style: dashed;
+  border-color: var(--color-text);
+  font-weight: 400;
+  cursor: not-allowed;
+}
+
+.strip {
+  display: flex;
+  gap: var(--space-l);
+  margin: 0;
+  padding: var(--space-m) var(--gutter) var(--space-xl);
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--gutter);
+}
+
+/* The strip's own ring is drawn inside it, since it runs to the window's
+   edges and a ring outside would be cut off. */
+.strip:focus-visible {
+  outline-offset: calc(var(--size-ring) * -1);
+}
+
+.card {
+  position: relative;
+  flex: 0 0 var(--card-width);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+/* The picture's frame: 16 by 9, cover, with its edge drawn over it as a
+   border so that a zoom inside it cannot cover the edge. */
+.frame {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  /* The img carries width and height attributes, so that its box is reserved
+     before it loads; without height: auto the height attribute would win over
+     the aspect ratio and the card would be 720px tall. */
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: var(--size-edge) solid var(--color-picture-edge);
+  pointer-events: none;
+}
+
+.card .label {
+  margin-top: var(--space-m);
+}
+
+.card h3 {
+  margin: var(--space-xs) 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-card-title);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.description {
+  margin: 0;
+}
+
+/* The link is the title; its ::after is stretched over the whole card, so the
+   card is one link and nothing in it is nested. */
+.card-link {
+  display: block;
+  min-height: var(--size-target);
+  padding: var(--space-xs) 0;
+  text-decoration: none;
+}
+
+.card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* The ring for a card is drawn round the whole card, by :has, since an outline
+   on the link would only go round its words. The link keeps an outline of its
+   own, transparent, so that it still has one where colours are forced. */
+.card-link:focus-visible {
+  outline-color: transparent;
+}
+
+.card:has(.card-link:focus-visible) {
+  outline: var(--size-ring) solid var(--color-accent);
+  outline-offset: var(--size-ring-offset);
+}
+
+/* Hover is only for a card that is a link: the picture's edge takes the
+   accent. A card with no link is not a control and does nothing. */
+.card[data-linked]:hover .frame::after {
+  border-color: var(--color-accent);
+  border-width: var(--size-edge-hover);
+}
+
+.lost {
+  padding: var(--space-xl) var(--gutter);
+}
+
+.lost h1 {
+  margin: 0 0 var(--space-m);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--size-feature-title);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+main {
+  padding-bottom: var(--space-xl);
+}
+
 @media (max-width: 40rem) {
-  body {
-    padding: var(--gutter-phone);
+  :root {
+    --gutter: var(--gutter-phone);
   }
 
-  h1 {
+  .site-header {
+    gap: 0 var(--space-l);
+  }
+
+  .mark {
+    font-size: var(--size-mark-phone);
+  }
+
+  .feature {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .feature h2,
+  .lost h1 {
     font-size: var(--size-feature-title-phone);
+  }
+
+  .words {
+    padding: var(--space-words-phone);
+  }
+
+  .row h2 {
+    font-size: var(--size-row-title-phone);
+  }
+
+  .card {
+    flex-basis: var(--card-width-phone);
+  }
+}
+
+/* Below 340px a row stops scrolling sideways and its cards stack down the
+   page (WCAG 1.4.10, reflow), and with nothing to page its buttons stay
+   hidden. */
+@media (width < 21.25rem) {
+  .strip {
+    flex-direction: column;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  .card {
+    flex: 0 0 auto;
+  }
+
+  .row-buttons {
+    display: none;
+  }
+}
+
+/* Where the page's colours are taken away, an edge is still drawn round the
+   picture, the buttons and the focused card, since those are borders and
+   outlines and not backgrounds. Nothing here needs a colour of its own. */
+@media (forced-colors: active) {
+  .frame::after {
+    border-color: CanvasText;
+  }
+
+  .card[data-linked]:hover .frame::after {
+    border-color: Highlight;
+  }
+}
+
+/* Motion exists only here, and only for a visitor who has not asked for less:
+   the strip glides when a button or a key moves it, and the picture of a
+   linked card eases to a slight zoom inside its own frame. */
+@media (prefers-reduced-motion: no-preference) {
+  .strip {
+    scroll-behavior: smooth;
+  }
+
+  .frame img {
+    transition: transform var(--duration-hover) ease-out;
+  }
+
+  .card[data-linked]:hover .frame img {
+    transform: scale(var(--zoom-hover));
   }
 }

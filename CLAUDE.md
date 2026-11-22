@@ -19,7 +19,8 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run build        the site, as files in dist/
     npm run preview      the built site, at http://localhost:4390
     npm run check:quick  the pre-commit hook: see below
-    npm run check        the quick check, then a build
+    npm run test:e2e     Playwright, tests/e2e, against the built site
+    npm run check        the quick check, a build, then the e2e specs
     npm run format       the formatter, writing
 
 `npm install` points git at `.githooks/`, and `pre-commit` there runs the
@@ -41,16 +42,20 @@ commit of its own that says what it is for.
   it, importing nothing of the page and nothing outside the folder but
   `astro/zod`. `schema.ts` holds the shape of an entry and of the rows
   file, and `rows.ts` builds the page's model from them and refuses a
-  catalogue that does not hold together, naming file and id. _`paging.ts`
-  is not built yet: part 4._
+  catalogue that does not hold together, naming file and id. `paging.ts` says, from a strip's
+  scroll position, whether its Previous and Next buttons are live and
+  where each goes.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and the rows in their order. `src/content.config.ts` tells
   Astro where each is and which of the catalogue's schemas it must meet.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
-  out. Today there is `Base.astro` and an `index.astro` holding the
-  wordmark, which also builds the catalogue so that a broken one stops
-  the build.
+  out. `Base.astro` is the head, skip link and header;
+  `index.astro` and `404.astro` are the pages, `Feature`, `Row` and
+  `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
+  `src/scripts/rows.ts` is the one script: it works the row buttons
+  from `paging.ts` and nothing else. Building the catalogue in
+  `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
   `src/styles/site.css` reads them and holds no value of its own.
 - `astro.config.mjs` holds the site's address, the fonts and the content
@@ -66,8 +71,9 @@ name a thing by what it is.
 
 ## Model features
 
-- **Something the user sees:** none yet. Part 4's `Card.astro`, with its
-  test in `tests/e2e/`, is to be the one to copy.
+- **Something the user sees:** `Card.astro`, held by `tests/e2e/page.spec.ts`
+  (what a card draws and links) and `keyboard.spec.ts` (its ring and
+  target). Each spec counts what it reached.
 - **The thing's logic:** `tests/unit/rows.test.ts`. It builds a small
   catalogue in the test, reads each refusal's message for the file and
   the id, and was mutation-checked by hand for each rule.
@@ -80,7 +86,9 @@ name a thing by what it is.
 
 A unit test imports from `src/catalogue/` and from `tokens.css` as text.
 An end-to-end test opens the built site through Playwright's `baseURL`
-(`playwright.config.ts`), on port 4390, which is this project's own so
+(`playwright.config.ts`), on port 4390 (the config runs `astro preview
+--ignore-lock`, since Astro 7 otherwise backgrounds the server and
+Playwright reads that as it dying), which is this project's own so
 that a test never meets a dev server on 4321. It never reuses a server
 it finds there. There is no scene to set and no time to step: the page is
 the same on every load.
@@ -113,6 +121,14 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/schema.test.ts`    | an entry and the rows file refused by path or name |
 | `tests/unit/rows.test.ts`      | the page's model, and the cross-file refusals      |
 | `tests/unit/structure.test.ts` | `src/catalogue` imports nothing but `astro/zod`    |
+| `tests/unit/paging.test.ts`    | the paging rule, with a pixel of tolerance         |
+| `tests/unit/favicon.test.ts`   | the icon's colours equal the tokens'               |
+| `tests/e2e/page.spec.ts`       | the model drawn, pictures, links, head, 404        |
+| `tests/e2e/rows.spec.ts`       | the row buttons, at both ends, and a fitting row   |
+| `tests/e2e/keyboard.spec.ts`   | real Tab: order, ring, uncovered; 44px targets     |
+| `tests/e2e/reflow.spec.ts`     | 320 and 640, text spacing, stacked rows            |
+| `tests/e2e/nojs.spec.ts`       | the page whole with script off                     |
+| `tests/e2e/origin.spec.ts`     | own origin only, clean console under the policy    |
 
 No gate has a baseline or a tolerance yet. Contrast, motion, the audit,
 the pictures and page weight arrive in part 5, each with its figures in
@@ -141,7 +157,9 @@ The nine points of the definition of done, as this project has them.
   in for "what comes from outside is checked".
 - **Headers as served.** `netlify.toml` is not read by anything here. The
   headers are read from the live address once it exists.
-- **The Playwright config has run no test.** There are no specs yet.
+- **A card half cut off at a strip's edge is brought into view by
+  script only.** With script off, Tab leaves it part hidden (the arrow
+  keys scroll the strip).
 - **The secret scan reaches only what is staged,** so run by hand outside
   a commit it scans nothing and passes. The history is not scanned.
 - **The real content is held by the build alone.** No unit test loads

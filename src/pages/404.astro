@@ -1,0 +1,16 @@
+---
+// The page for an address the site does not have, in the same look. The
+// wordmark is a link home here, since this page is not the home page; there is
+// no row navigation, because the rows are not on this page. Without it a
+// wrong address would get the host's plain page, in another look.
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not here: ooerflix" skipLabel="Skip to the content">
+  <div class="lost">
+    <h1>That page is not here.</h1>
+    <a class="button" href="/">
+      Back to the games
+    </a>
+  </div>
+</Base>

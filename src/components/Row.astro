@@ -1,0 +1,60 @@
+---
+// One row: its title, the Previous and Next buttons, and the strip of cards.
+// The strip is a focusable list so that a keyboard can scroll it with no
+// script (and so that a row with no link in it still has a stop), named by
+// the row's heading and given the list role by hand, which a list with its
+// bullets removed otherwise loses in some browsers. The buttons are in the
+// markup but hidden: only script can know that the row overflows, and a button
+// shown without it would do nothing. Without this the three rows would repeat
+// the markup and drift apart.
+import type { Page } from '../catalogue/rows';
+import Card from './Card.astro';
+
+interface Props {
+  row: Page<ImageMetadata>['rows'][number];
+  /** Where the row is on the page: the first row's first cards are not lazy. */
+  at: number;
+}
+
+const { row, at } = Astro.props;
+
+// A desk's width shows three cards and the edge of a fourth, so the first row
+// loads four pictures at once. Everything below that waits until it is near.
+const EAGER_CARDS = 4;
+---
+
+<section class="row" id={row.id} aria-labelledby={`${row.id}-title`}>
+  <div class="row-head">
+    <h2 id={`${row.id}-title`}>{row.title}</h2>
+    <div class="row-buttons">
+      <button
+        type="button"
+        class="row-button"
+        data-page="previous"
+        aria-label={`Previous in ${row.title}`}
+        hidden
+      >
+        Previous
+      </button>
+      <button
+        type="button"
+        class="row-button"
+        data-page="next"
+        aria-label={`Next in ${row.title}`}
+        hidden
+      >
+        Next
+      </button>
+    </div>
+  </div>
+  <ul
+    class="strip"
+    role="list"
+    tabindex="0"
+    aria-labelledby={`${row.id}-title`}
+  >
+    {row.cards.map((card, index) => (
+      <Card card={card} eager={at === 0 && index < EAGER_CARDS} />
+    ))}
+  </ul>
+</section>

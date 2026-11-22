@@ -1,0 +1,54 @@
+---
+// One card in a row's strip: the picture, a plain label line, the title and
+// the description. Where the entry has an address the title is a link named
+// "Play <title>" and its stretched ::after makes the whole card its hit area,
+// so there is one link per card and none nested; where it has none, there is
+// no link and the card is not a control, so it has no hover or focus
+// treatment. Without it each row would repeat this markup and one that
+// forgot the alt words or the link's name would be the odd one out.
+import { Picture } from 'astro:assets';
+import type { Card } from '../catalogue/rows';
+
+interface Props {
+  card: Card<ImageMetadata>;
+  /** True for a picture the first screen draws, which must not wait. */
+  eager: boolean;
+}
+
+const { card, eager } = Astro.props;
+
+// What the card's width is at each window width, as the stylesheet makes it:
+// the whole window less two gutters below 340px, 78vw on a phone, then
+// clamp(17rem, 27vw, 25rem).
+const sizes =
+  '(width < 21.25rem) calc(100vw - 2rem), (max-width: 40rem) 78vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
+---
+
+<li class="card" data-entry={card.id} data-linked={card.href ? '' : undefined}>
+  <Picture
+    src={card.picture}
+    alt={card.pictureAlt}
+    width={1280}
+    height={720}
+    widths={[320, 480, 640, 800]}
+    sizes={sizes}
+    formats={['avif', 'webp']}
+    fallbackFormat="jpeg"
+    loading={eager ? 'eager' : 'lazy'}
+    decoding="async"
+    pictureAttributes={{ class: 'frame' }}
+  />
+  <p class="label" data-label>
+    {card.label}
+  </p>
+  <h3>
+    {card.href ? (
+      <a class="card-link" href={card.href} aria-label={card.linkName}>
+        {card.title}
+      </a>
+    ) : (
+      card.title
+    )}
+  </h3>
+  <p class="description">{card.description}</p>
+</li>

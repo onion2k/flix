@@ -12,6 +12,8 @@
   --color-text: #f4f1e8;
   --color-accent: #ffb81c;
   --color-picture-edge: #2c3d35;
+  /* Text on the accent is the ground, said by name so that it cannot drift. */
+  --color-on-accent: var(--color-ground);
 
   /*
    * Faces. The two names on the right are the variables Astro writes for the
@@ -29,4 +31,37 @@
   --size-card-title: 1.75rem;
   --gutter: 3rem;
   --gutter-phone: 1rem;
+
+  --size-mark: 2.5rem;
+  --size-mark-phone: 2rem;
+  --size-row-title-phone: 1.9rem;
+  --size-label: 1rem;
+
+  /* WCAG 2.5.5: every link and button is at least this, each way. */
+  --size-target: 2.75rem;
+  --size-ring: 3px;
+  --size-ring-offset: 3px;
+  --size-edge: 1px;
+  --size-edge-hover: 3px;
+  --size-outline-button: 2px;
+  --size-bar-width: 0.5rem;
+  --size-bar-height: 1.6rem;
+  --radius: 2px;
+
+  --space-xs: 0.25rem;
+  --space-s: 0.5rem;
+  --space-m: 0.75rem;
+  --space-l: 1.25rem;
+  --space-xl: 2.25rem;
+  --space-xxl: 2.5rem;
+  --space-button-x: 1.4rem;
+  --space-button-y: 0.8rem;
+  --space-words: 2.25rem;
+  --space-words-phone: 1.25rem;
+
+  /* A card, and how far a hover zooms a picture in its frame. */
+  --card-width: clamp(17rem, 27vw, 25rem);
+  --card-width-phone: 78vw;
+  --zoom-hover: 1.04;
+  --duration-hover: 250ms;
 }

@@ -1,0 +1,46 @@
+---
+// The featured entry: its picture beside a panel of words, stacked on a
+// phone. The picture carries no words, and loads at once and at high
+// priority, since it is the largest thing the first screen draws. Without it
+// the home page would have no first thing to look at.
+import { Picture } from 'astro:assets';
+import type { Card } from '../catalogue/rows';
+
+interface Props {
+  card: Card<ImageMetadata>;
+}
+
+const { card } = Astro.props;
+
+// The picture is seven twelfths of the window less the gutters, and the whole
+// of it less the gutters on a phone, where the grid has one column.
+const sizes =
+  '(max-width: 40rem) calc(100vw - 2rem), calc((100vw - 6rem) * 7 / 12)';
+---
+
+<section class="feature" aria-labelledby="feature-title" data-entry={card.id}>
+  <Picture
+    src={card.picture}
+    alt={card.pictureAlt}
+    width={1280}
+    height={720}
+    widths={[640, 960, 1280]}
+    sizes={sizes}
+    formats={['avif', 'webp']}
+    fallbackFormat="jpeg"
+    priority
+    pictureAttributes={{ class: 'feature-picture' }}
+  />
+  <div class="words">
+    <p class="label" data-label>
+      {card.label}
+    </p>
+    <h2 id="feature-title">{card.title}</h2>
+    <p class="description">{card.description}</p>
+    {card.href ? (
+      <a class="button" href={card.href}>
+        {card.linkName}
+      </a>
+    ) : null}
+  </div>
+</section>
