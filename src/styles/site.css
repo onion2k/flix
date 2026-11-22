@@ -292,6 +292,26 @@ p {
   object-fit: cover;
 }
 
+/* A late card's frame is a box of its own around the picture, holding its 16
+   by 9 and the panel colour until script brings the picture in, so that
+   nothing moves and no broken-image mark or alt words show meanwhile. */
+.frame[data-late] {
+  aspect-ratio: 16 / 9;
+  background: var(--color-panel);
+}
+
+.frame[data-late] picture {
+  display: block;
+}
+
+/* With script off nothing will fill the placeholder: the plain picture in the
+   noscript beside it is the one, so the placeholder is not drawn or read. */
+@media (scripting: none) {
+  .frame[data-late] > picture {
+    display: none;
+  }
+}
+
 .frame::after {
   content: '';
   position: absolute;

@@ -2,8 +2,8 @@
 // The home page: the feature, then each row in the order written. The model
 // is built by the catalogue, which refuses a catalogue that does not hold
 // together, naming the file and the id, so that a broken one stops the build;
-// this page only draws what comes back. The one script, which pages the rows,
-// is added here and nowhere else.
+// this page only draws what comes back. The page's script, which pages the
+// rows and brings in the late rows' pictures, is added here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Feature from '../components/Feature.astro';
@@ -38,4 +38,5 @@ const page = buildPage(
 
 <script>
   import '../scripts/rows';
+  import '../scripts/pictures';
 </script>

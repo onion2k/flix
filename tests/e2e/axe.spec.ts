@@ -87,3 +87,18 @@ test('the home page with a card focused has no axe violation', async ({
   await expect(page.locator('.card-link:focus')).toHaveCount(1);
   await audit(page, 'home with a card focused');
 });
+
+test('the home page has no axe violation once the late rows have loaded', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  await expect(page.locator('[aria-disabled]').first()).toBeAttached();
+  // Scroll to the foot, as a reader does, and wait for every picture to come.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(page.locator('img[data-src]')).toHaveCount(0);
+  await page.waitForFunction(() =>
+    [...document.images].every((img) => img.complete && img.naturalWidth > 0),
+  );
+  await audit(page, 'home with the late rows loaded');
+});

@@ -32,8 +32,29 @@ import { expect, test, type Page } from '@playwright/test';
  */
 const TOLERANCE = { maxDiffPixels: 20, threshold: 0.02 };
 
-/** Fonts ready, every image loaded now and decoded, with no timeout. */
+/**
+ * Fonts ready, every image loaded now and decoded, with no timeout. The late
+ * rows' pictures wait for script until their row is near, so first the page
+ * is scrolled to its foot a window at a time and back as a reader would, and
+ * every picture is waited for to have an address. A page with no late row has none to wait for.
+ */
 async function settle(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    const frames = () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => done())),
+      );
+    // A window's height at a time, so that every row is passed through: a row
+    // jumped over is not near at any moment, and so is not brought in.
+    const foot = document.documentElement.scrollHeight;
+    for (let at = 0; at < foot; at += window.innerHeight) {
+      window.scrollTo(0, at);
+      await frames();
+    }
+    window.scrollTo(0, 0);
+    await frames();
+  });
+  await expect(page.locator('img[data-src]')).toHaveCount(0);
   await page.evaluate(async () => {
     await document.fonts.ready;
     const images = [...document.images];

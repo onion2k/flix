@@ -14,6 +14,8 @@ const catalogue = readRows();
 // a desk's width shows of it), are loaded at once; every other picture waits
 // until it is near the screen.
 const EAGER_CARDS_IN_FIRST_ROW = 4;
+// Rows from this one on are late: their pictures wait for script.
+const LATE_ROWS_FROM = 2;
 
 function row(page: import('@playwright/test').Page, id: string): Locator {
   return page.locator(`section[id="${id}"]`);
@@ -194,6 +196,14 @@ test('only the first screenful of pictures is loaded at once', async ({
     const imgs = row(page, each.id).locator('img');
     const count = await imgs.count();
     expect(count).toBe(each.entries.length);
+    // A late row's pictures wait for script, not for the browser's lazy rule:
+    // late.spec.ts holds that. Here it is only marked as late.
+    if (rowAt >= LATE_ROWS_FROM) {
+      await expect(row(page, each.id)).toHaveAttribute('data-late', '');
+      reached += count;
+      continue;
+    }
+    await expect(row(page, each.id)).not.toHaveAttribute('data-late', '');
     for (let at = 0; at < count; at += 1) {
       const eager = rowAt === 0 && at < EAGER_CARDS_IN_FIRST_ROW;
       if (eager)

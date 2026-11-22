@@ -20,9 +20,31 @@ test('every card and picture is there, and no row button is shown', async ({
   );
   expect(total).toBeGreaterThan(0);
   await expect(page.locator('main [data-entry]')).toHaveCount(total + 1);
-  await expect(page.locator('main picture img')).toHaveCount(total + 1);
+  // One picture a card, and the feature's, in the accessibility tree: a late
+  // card's placeholder is hidden with script off, and its plain picture is
+  // the one in the <noscript>.
+  await expect(page.locator('main').getByRole('img')).toHaveCount(total + 1);
+  await expect(page.locator('main li.card')).toHaveCount(total);
+  for (const card of await page.locator('main li.card').all())
+    await expect(card.getByRole('img')).toHaveCount(1);
   await expect(page.getByRole('button')).toHaveCount(0);
   await expect(page.locator('button:visible')).toHaveCount(0);
+});
+
+test('every picture is drawn once it is scrolled to, late rows included', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const images = page.locator('main').getByRole('img');
+  const count = await images.count();
+  expect(count).toBeGreaterThan(catalogue.rows.length);
+  for (let at = 0; at < count; at += 1) {
+    const img = images.nth(at);
+    await img.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
+      .toBeGreaterThan(0);
+  }
 });
 
 test('a focused strip scrolls by the arrow key', async ({ page }) => {

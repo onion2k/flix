@@ -21,9 +21,22 @@ const { row, at } = Astro.props;
 // A desk's width shows three cards and the edge of a fourth, so the first row
 // loads four pictures at once. Everything below that waits until it is near.
 const EAGER_CARDS = 4;
+
+// Rows from this index on are late, which is every row after the second. A
+// desk's window shows the first row and a part of the second, and the next
+// row starts about 1550px down: Chromium's lazy loading fetched pictures that
+// far below the window, so only a script can hold them back. Without a script
+// the same pictures are in a <noscript>, and the page is whole.
+const LATE_ROWS_FROM = 2;
+const late = at >= LATE_ROWS_FROM;
 ---
 
-<section class="row" id={row.id} aria-labelledby={`${row.id}-title`}>
+<section
+  class="row"
+  id={row.id}
+  data-late={late ? '' : undefined}
+  aria-labelledby={`${row.id}-title`}
+>
   <div class="row-head">
     <h2 id={`${row.id}-title`}>{row.title}</h2>
     <div class="row-buttons">
@@ -54,7 +67,7 @@ const EAGER_CARDS = 4;
     aria-labelledby={`${row.id}-title`}
   >
     {row.cards.map((card, index) => (
-      <Card card={card} eager={at === 0 && index < EAGER_CARDS} />
+      <Card card={card} eager={at === 0 && index < EAGER_CARDS} late={late} />
     ))}
   </ul>
 </section>

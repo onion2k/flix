@@ -5,39 +5,98 @@
 // so there is one link per card and none nested; where it has none, there is
 // no link and the card is not a control, so it has no hover or focus
 // treatment. Without it each row would repeat this markup and one that
-// forgot the alt words or the link's name would be the odd one out.
-import { Picture } from 'astro:assets';
+// forgot the alt words or the link's name would be the odd one out. A late
+// card (see Row.astro) writes its picture with the addresses in data-
+// attributes, which no browser fetches, and the ordinary picture in a
+// <noscript>, so that script brings the one in and no script has the other.
+import { Picture, getImage } from 'astro:assets';
 import type { Card } from '../catalogue/rows';
 
 interface Props {
   card: Card<ImageMetadata>;
   /** True for a picture the first screen draws, which must not wait. */
   eager: boolean;
+  /** True for a picture that waits for script, with its plain one in a noscript. */
+  late: boolean;
 }
 
-const { card, eager } = Astro.props;
+const { card, eager, late } = Astro.props;
 
 // What the card's width is at each window width, as the stylesheet makes it:
 // the whole window less two gutters below 340px, 78vw on a phone, then
 // clamp(17rem, 27vw, 25rem).
 const sizes =
   '(width < 21.25rem) calc(100vw - 2rem), (max-width: 40rem) 78vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
+
+// The widths and formats of a card's picture, said once so that the late
+// picture's sources and the ordinary one cannot differ.
+const widths = [320, 480, 640, 800];
+const shared = {
+  src: card.picture,
+  width: 1280,
+  height: 720,
+  widths,
+  sizes,
+};
+// The same three files <Picture> would make (AVIF, WebP, then the JPEG that
+// is the fallback), written here so that their addresses can go in data-
+// attributes instead of src and srcset.
+const [avif, webp, jpeg] = late
+  ? await Promise.all([
+      getImage({ ...shared, format: 'avif' }),
+      getImage({ ...shared, format: 'webp' }),
+      getImage({ ...shared, format: 'jpeg' }),
+    ])
+  : [];
 ---
 
 <li class="card" data-entry={card.id} data-linked={card.href ? '' : undefined}>
-  <Picture
-    src={card.picture}
-    alt={card.pictureAlt}
-    width={1280}
-    height={720}
-    widths={[320, 480, 640, 800]}
-    sizes={sizes}
-    formats={['avif', 'webp']}
-    fallbackFormat="jpeg"
-    loading={eager ? 'eager' : 'lazy'}
-    decoding="async"
-    pictureAttributes={{ class: 'frame' }}
-  />
+  {late && avif && webp && jpeg ? (
+    <div class="frame" data-late>
+      <picture>
+        <source
+          data-srcset={avif.srcSet.attribute}
+          type="image/avif"
+          sizes={sizes}
+        />
+        <source
+          data-srcset={webp.srcSet.attribute}
+          type="image/webp"
+          sizes={sizes}
+        />
+        <img
+          data-src={jpeg.src}
+          data-srcset={jpeg.srcSet.attribute}
+          data-alt={card.pictureAlt}
+          alt=""
+          sizes={sizes}
+          width={1280}
+          height={720}
+          decoding="async"
+        />
+      </picture>
+      <noscript>
+        <Picture
+          {...shared}
+          alt={card.pictureAlt}
+          formats={['avif', 'webp']}
+          fallbackFormat="jpeg"
+          loading="lazy"
+          decoding="async"
+        />
+      </noscript>
+    </div>
+  ) : (
+    <Picture
+      {...shared}
+      alt={card.pictureAlt}
+      formats={['avif', 'webp']}
+      fallbackFormat="jpeg"
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      pictureAttributes={{ class: 'frame' }}
+    />
+  )}
   <p class="label" data-label>
     {card.label}
   </p>

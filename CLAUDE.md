@@ -69,8 +69,14 @@ commit of its own that says what it is for.
   `Footer.astro` (drawn by `Base` on every page: Privacy, the licences,
   Source); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
   `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
-  `src/scripts/rows.ts` is the one script: it works the row buttons
-  from `paging.ts` and nothing else. Building the catalogue in
+  `src/scripts/rows.ts` works the row buttons from `paging.ts`, and
+  `src/scripts/pictures.ts` brings in the pictures of the **late rows**
+  (every row after the second, `LATE_ROWS_FROM` in `Row.astro`): a late
+  card's `<picture>` holds its addresses in `data-` attributes and the
+  ordinary picture sits beside it in a `<noscript>`, and an
+  IntersectionObserver on each late row (`MARGIN`, 300px) moves them into
+  `srcset` and `src`. Both are imported by the one script block in
+  `index.astro`. Building the catalogue in
   `index.astro` is also what stops the build on a broken one.
 - `src/styles/tokens.css` says every colour, size and font once.
   `src/styles/site.css` reads them and holds no value of its own.
@@ -120,7 +126,9 @@ the same on every load.
 
 Every new thing is taken through each of these that it can reach.
 
-- With script and without it.
+- With script and without it. Late pictures arrive by script when it is on
+  and from the `<noscript>` when it is off; each must be whole, and a card
+  has exactly one picture in the accessibility tree either way.
 - By keyboard alone: order, a visible focus ring, nothing trapped.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
   zoom, and each side of every step in `site.css`: a fault can sit
@@ -152,6 +160,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
 | `tests/e2e/rows.spec.ts`            | the row buttons, at both ends, and a fitting row     |
+| `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll, link,  |
+|                                     | Tab, print, no observer; markup holds no address     |
 | `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px (card, link)  |
 | `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
 | `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
@@ -209,10 +219,13 @@ The nine points of the definition of done, as this project has them.
   dependency the project does not have. A refusal there is seen as a
   failed `npm run build`, not as a failed test.
 - **No licence or unused-dependency check.** `npm run audit` is by hand.
-- **The weight gate measures the home page alone.** Making a card picture eager
-  does not move the weight, since Chromium already loads the near lazy
-  ones: only the document's few bytes show it. Nothing here times a load
-  or an interaction.
+- **Late rows' pictures depend on script when it is on.** If
+  `pictures.ts` fails to run (an error, a blocked file) the late rows
+  keep their panel colour and no picture; the words stand and nothing
+  holds that case. `loading="lazy"` alone does not wait (Chromium fetched
+  rows 2000px down), so the weight gate is what holds the waiting, by
+  count and by the budget. It measures the home page alone and times no
+  load or interaction.
 - **The look is one machine's.** Its baselines are this Mac's Chromium,
   drawn in software (`--disable-gpu`: the GPU path drew a picture two ways)
   and were looked at by one person, once. Another GPU or font stack would
