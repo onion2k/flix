@@ -1,16 +1,16 @@
 {
   "note": "Page weight of the built home page, without scrolling, at 1440x1000 and 390x844. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. Written by npm run weight:update, only for a change meant to move it.",
   "budgets": {
-    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. KB here is 1000 bytes.",
+    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. The picture budget was 150000 until later that day, when the owner raised it to 200000 for the moving hero's full-width still, with the feature's pictures drawn at AVIF quality 40. KB here is 1000 bytes.",
     "pageWithFontsNoPicturesBytes": 60000,
-    "firstScreenPicturesDeskBytes": 150000
+    "firstScreenPicturesDeskBytes": 200000
   },
   "measured": {
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 72798,
-        "gzip": 12011
+        "bytes": 72811,
+        "gzip": 12085
       },
       "script": {
         "count": 1,
@@ -28,7 +28,7 @@
       },
       "image": {
         "count": 13,
-        "bytes": 157436
+        "bytes": 138789
       },
       "other": {
         "count": 0,
@@ -38,8 +38,8 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 72798,
-        "gzip": 12011
+        "bytes": 72811,
+        "gzip": 12085
       },
       "script": {
         "count": 1,
@@ -57,7 +57,7 @@
       },
       "image": {
         "count": 12,
-        "bytes": 85317
+        "bytes": 75301
       },
       "other": {
         "count": 0,

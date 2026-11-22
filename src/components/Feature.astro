@@ -35,6 +35,13 @@ const sizes =
 // and a late one's sources cannot differ.
 const widths = [640, 960, 1280];
 
+// The feature is the largest picture on the first screen, so it is drawn a
+// little lighter than Astro's own 50. The owner chose 40 on 2026-11-22 from
+// Aquaclysm's painted title shown both ways, enlarged, where the difference
+// was hard to see: 61,772 bytes at 960 wide became 43,125, which is what
+// keeps the first screen inside its budget (gates/weight.json).
+const quality = 40;
+
 // With a list, the three files <Picture> would make (AVIF, WebP, then the JPEG
 // that is the fallback) for each candidate, written here so that their
 // addresses can go in data- attributes instead of src and srcset.
@@ -47,6 +54,7 @@ const files = listed
           height: 720,
           widths,
           sizes,
+          quality,
         };
         const [avif, webp, jpeg] = await Promise.all([
           getImage({ ...shared, format: 'avif' }),
@@ -102,6 +110,7 @@ const files = listed
                   height={720}
                   widths={widths}
                   sizes={sizes}
+                  quality={quality}
                   formats={['avif', 'webp']}
                   fallbackFormat="jpeg"
                   priority
@@ -141,6 +150,7 @@ const files = listed
         height={720}
         widths={widths}
         sizes={sizes}
+        quality={quality}
         formats={['avif', 'webp']}
         fallbackFormat="jpeg"
         priority
