@@ -194,17 +194,23 @@ commit of its own that says what it is for.
   (`cardPauseWords`). A pause holds every card loop for the visit, kept
   nowhere. A loop that fails goes with its button and its card is not
   tried again. **The shine:** a best card carries `data-best` and an
-  `aria-hidden` `span.foil` in its frame's cell: a band of the five
-  `--color-foil-*` colours blended over the picture, a glare, and a foil
-  edge just outside the card, never under a word, from
+  `aria-hidden` `span.foil` in its frame's cell (a pale rainbow and bands
+  of light, given a hard contrast and dodged onto the picture, and a glare),
+  a reflection on its frame (`.frame::before`: a bright rainbow and glints
+  added onto the picture round the light, which is what shines on a dark
+  picture), both stronger toward the card's edges (`--foil-edge`, from
+  `hypot()`), and a foil edge just outside the card, never under a word, from
   `--shine-x`/`--shine-y` and a tilt of `.card-faces` from
   `--tilt-x`/`--tilt-y`, the four registered with `@property` in
   `tokens.css` so their first values are the resting place.
   `src/scripts/shine.ts` sets them through the CSSOM by the catalogue's rule, at most once a frame
   and only while a best card is in the window; under reduced motion it
-  sets nothing, and forced colours draw no foil. House lights (`:has()`)
+  sets nothing, and forced colours draw no foil and no reflection. The look
+  is the owner's choice of 2026-11-23 from a mock after simeydotme's pen of
+  trading cards, whose code (GPL-3.0) is not used. House lights (`:has()`)
   dim the other pictures of a row while a card is hovered by a mouse or
-  holds focus, foil and loop with them.
+  holds focus, loop and reflection with them, and the foil keeps its own
+  filter (`--foil-filter`) with the dim added.
   **The moving hero:** the feature is a band across the window
   (`.feature`, at least `--height-hero` of its height and at most
   `--height-hero-max`) with its picture filling it (`sizes` is `100vw`,
@@ -448,7 +454,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour      |
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
 | `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
-| `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still      |
+| `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still;     |
+|                                     | its two layers, dimmed with their contrast kept        |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |
@@ -594,8 +601,9 @@ The nine points of the definition of done, as this project has them.
 - **No mutation gate.** Mutations are by hand, and reported.
 - **The cards were seen in Chromium alone.** A real phone, a real touch
   flip, Safari's and Firefox's video and autoplay, anchor positioning (the
-  arrows' height; a browser without it has the 16 by 9), `@property` and the
-  foil's blend and mask are not seen elsewhere. A screen reader hearing the
+  arrows' height; a browser without it has the 16 by 9), `@property`, and
+  the foil's blends, mask, `color-mix()` and `hypot()` are not seen
+  elsewhere (a browser without `hypot()` draws the foil with no filter). A screen reader hearing the
   flip, the face away being inert and the Pause button's name is a
   person's to try; the tree is read from Chromium's own. Forced colours as
   drawn are not pictured. When the cards' Pause button has focus and its

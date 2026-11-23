@@ -11,12 +11,12 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 94613,
-        "gzip": 14204
+        "bytes": 98951,
+        "gzip": 14923
       },
       "script": {
         "count": 1,
-        "bytes": 19256,
+        "bytes": 19258,
         "gzip": 6718
       },
       "stylesheet": {
@@ -48,12 +48,12 @@
     "1440x1000 day 1": {
       "document": {
         "count": 1,
-        "bytes": 94613,
-        "gzip": 14204
+        "bytes": 98951,
+        "gzip": 14923
       },
       "script": {
         "count": 1,
-        "bytes": 19256,
+        "bytes": 19258,
         "gzip": 6718
       },
       "stylesheet": {
@@ -85,12 +85,12 @@
     "1440x1000 day 2": {
       "document": {
         "count": 1,
-        "bytes": 94613,
-        "gzip": 14204
+        "bytes": 98951,
+        "gzip": 14923
       },
       "script": {
         "count": 1,
-        "bytes": 19256,
+        "bytes": 19258,
         "gzip": 6718
       },
       "stylesheet": {
@@ -122,12 +122,12 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 94613,
-        "gzip": 14204
+        "bytes": 98951,
+        "gzip": 14923
       },
       "script": {
         "count": 1,
-        "bytes": 19256,
+        "bytes": 19258,
         "gzip": 6718
       },
       "stylesheet": {

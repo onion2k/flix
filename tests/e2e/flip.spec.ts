@@ -851,8 +851,18 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
       const card = cardAt(page, at);
       await clickFront(page, card);
       await expect(card).toHaveAttribute('data-flipped', '');
-      // Measured once the turn is over: part way, the perspective draws the
-      // nearer edge larger than the card, which is the turn and not a fault.
+      // Measured with the mouse gone and once the turn is over: part way, the
+      // perspective draws the nearer edge larger than the card, and a best card
+      // under the mouse tilts toward it (shine.spec.ts holds that), which are a
+      // turn and a tilt and not a fault of the spacing.
+      await page.mouse.move(0, 0);
+      await expect
+        .poll(() =>
+          card.evaluate((el: HTMLElement) =>
+            el.style.getPropertyValue('--tilt-y'),
+          ),
+        )
+        .toBe('');
       await settled(card);
       const found = await card.evaluate((el) => {
         const problems: string[] = [];

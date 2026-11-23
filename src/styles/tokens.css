@@ -141,33 +141,78 @@
   --space-pause-inset: 0.5rem;
 
   /*
-   * The shine of the best cards, a holographic trading card's foil. Over the
-   * picture, a band of rainbow colours at an angle, blended with the picture
-   * (color-dodge, so it lifts the picture's own light and leaves its darks
-   * dark) at the share below, and a glare of light, a circle of the size
-   * below, blended over both; round the card, front and back, an edge of the
-   * same colours. The band is larger than the picture by the factor below so
-   * that it can travel across it as the sheen moves. A card tilts, under a
-   * mouse, as seen from the depth below, and the sheen and the tilt ease after
-   * the pointer over the time below, which is short so that they follow it.
-   * None of it carries words or tells a control apart, so no contrast is
-   * asked of it; the label says "Top pick" in words.
+   * The shine of the best cards, a holographic trading card's foil, chosen by
+   * the owner on 2026-11-23 from a mock after simeydotme's pen of trading
+   * cards (its code is not used: it is GPL-3.0). Two layers over the picture.
+   * The foil: a pale rainbow running up the card, crossed by diagonal bands of
+   * light, blended by hue and hard light, darkened a little away from the
+   * light, then given a hard contrast and dodged onto the picture, so that it
+   * lights the picture's bright parts. Its brightness rises toward the card's
+   * edges, from the first figure by up to the second. The reflection, on the
+   * picture's frame: the bright rainbow and glints of light added onto the
+   * picture round the light, which lights a dark picture, where a dodge
+   * cannot; its rainbow runs across the card the factor below faster than the
+   * pointer. The glare: a soft light where the pointer is. Each grows toward
+   * the edges, from its first share by up to its second. Round the card, front
+   * and back, an edge of the bright colours. A card tilts, under a mouse, as
+   * seen from the depth below (how far is MOST_TILT, src/catalogue/shine.ts),
+   * and the sheen and the tilt ease after the pointer over the time below.
+   * None of it carries words or tells a control apart, so no contrast is asked
+   * of it; the label says "Top pick" in words.
    */
   --color-foil-rose: #ff2d75;
   --color-foil-gold: #ffc400;
   --color-foil-mint: #00f5a0;
   --color-foil-sky: #00b3ff;
   --color-foil-violet: #8a4dff;
-  --color-foil-glare: #fffaf0;
-  --share-foil: 0.5;
-  --share-foil-glare: 0.9;
+  --color-foil-glare: #ffffff;
+  --color-foil-pale-rose: #ff6f91;
+  --color-foil-pale-gold: #ffe066;
+  --color-foil-pale-green: #9bff6a;
+  --color-foil-pale-sky: #6af7ff;
+  --color-foil-pale-blue: #7a8cff;
+  --color-foil-pale-violet: #e07bff;
+  --color-foil-band-dark: #10172c;
+  --color-foil-band: #8fa8a8;
+  --color-foil-band-light: #b7dede;
+  --color-foil-shade: #000000;
   --angle-foil: 115deg;
-  --size-foil-stripe: 2.5%;
+  --angle-foil-light: 125deg;
+  --angle-foil-reflection: 100deg;
+  --size-foil-rainbow: 5%;
+  --size-foil-rainbow-across: 200%;
+  --size-foil-rainbow-up: 650%;
+  --size-foil-light-step: 1.2%;
+  --size-foil-light: 280%;
+  --size-foil-shade: 200%;
+  --size-foil-shade-near: 10%;
+  --size-foil-shade-mid: 25%;
+  --size-foil-shade-far: 110%;
+  --share-foil-shade-near: 10%;
+  --share-foil-shade-mid: 20%;
+  --share-foil-shade-far: 28%;
+  --brightness-foil: 0.52;
+  --brightness-foil-edge: 0.22;
+  --contrast-foil: 2.8;
+  --saturate-foil: 0.6;
+  --size-foil-glint: 5%;
+  --share-foil-glint: 24%;
+  --size-foil-reflection: 360%;
+  --share-foil-run: 700%;
+  --size-foil-reflection-mid: 30%;
+  --share-foil-reflection-mid: 60%;
+  --size-foil-reach: 75%;
+  --share-foil-reflection: 0.3;
+  --share-foil-reflection-edge: 0.35;
+  --size-foil-glare-mid: 22%;
+  --size-foil-glare: 55%;
+  --share-foil-glare-near: 45%;
+  --share-foil-glare-mid: 10%;
+  --share-foil-glare: 0.35;
+  --share-foil-glare-edge: 0.4;
   --size-foil-band: 300%;
-  --size-foil-reach: 70%;
-  --size-foil-glare: 45%;
   --size-foil-edge: 3px;
-  --depth-tilt: 60rem;
+  --depth-tilt: 40rem;
   --duration-shine: 150ms;
 }
 

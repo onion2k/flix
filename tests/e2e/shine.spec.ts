@@ -518,7 +518,7 @@ test('nothing is set while no best card is in the window, and the shine starts o
   await expect.poll(() => writes(page)).toBeGreaterThan(start);
 });
 
-test('where colours are forced there is no foil and no foil edge, and the card’s own borders stand', async ({
+test('where colours are forced there is no foil, no reflection and no foil edge, and the card’s own borders stand', async ({
   page,
 }) => {
   await page.emulateMedia({ forcedColors: 'active' });
@@ -534,9 +534,123 @@ test('where colours are forced there is no foil and no foil edge, and the card�
     expect(
       await card
         .locator('.frame')
+        .evaluate((el) => getComputedStyle(el, '::before').display),
+    ).toBe('none');
+    expect(
+      await card
+        .locator('.frame')
         .evaluate((el) => getComputedStyle(el, '::after').borderTopStyle),
     ).toBe('solid');
     reached += 1;
   }
   expect(reached).toBe(catalogue.best.length);
+});
+
+// The foil is made of two layers, as the owner chose from the mock of
+// 2026-11-23 (after simeydotme's pen of trading cards): over the picture a
+// rainbow and bands of light, dodged onto it with a hard contrast, which
+// lights its bright parts; and under that, on the picture's frame, a reflected
+// rainbow added onto it round the light, which lights a dark picture, where a
+// dodge cannot. Only the best cards have either, neither takes a press, the
+// reflection is the picture's size and no larger, and when another card in the
+// row is pointed at both are dimmed with the pictures and the foil keeps its
+// contrast.
+test.describe('the foil’s two layers', () => {
+  test('each best card has the dodged foil and the reflection over its picture, and no other card has either', async ({
+    page,
+  }) => {
+    await ready(page);
+    let best = 0;
+    let plain = 0;
+    for (const card of await page.locator('li.card').all()) {
+      const id = (await card.getAttribute('data-entry')) ?? '?';
+      const layers = await card.evaluate((el) => {
+        const frame = el.querySelector('.front .frame');
+        const foil = el.querySelector('.foil');
+        const reflection = frame ? getComputedStyle(frame, '::before') : null;
+        return {
+          best: el.hasAttribute('data-best'),
+          foil:
+            foil === null
+              ? null
+              : {
+                  blend: getComputedStyle(foil).mixBlendMode,
+                  filter: getComputedStyle(foil).filter,
+                },
+          reflection:
+            reflection === null
+              ? null
+              : {
+                  content: reflection.content,
+                  blend: reflection.mixBlendMode,
+                  presses: reflection.pointerEvents,
+                  image: reflection.backgroundImage,
+                  width: parseFloat(reflection.width),
+                  height: parseFloat(reflection.height),
+                },
+          frame: frame?.getBoundingClientRect().toJSON() as DOMRect | undefined,
+        };
+      });
+      if (layers.best) {
+        expect(layers.foil?.blend, id).toBe('color-dodge');
+        expect(layers.foil?.filter, id).toMatch(/contrast\(/);
+        expect(layers.foil?.filter, id).toMatch(/saturate\(/);
+        expect(layers.reflection?.content, id).not.toBe('none');
+        expect(layers.reflection?.blend, id).toBe('screen');
+        expect(layers.reflection?.presses, id).toBe('none');
+        expect(layers.reflection?.image, id).toContain('gradient');
+        expect(layers.reflection?.width ?? 0, id).toBeCloseTo(
+          layers.frame?.width ?? -1,
+          0,
+        );
+        expect(layers.reflection?.height ?? 0, id).toBeCloseTo(
+          layers.frame?.height ?? -1,
+          0,
+        );
+        best += 1;
+      } else {
+        expect(layers.foil, id).toBeNull();
+        expect(layers.reflection?.content, id).toBe('none');
+        plain += 1;
+      }
+    }
+    expect(best).toBe(catalogue.best.length);
+    expect(plain).toBeGreaterThan(10);
+  });
+
+  test('with another card of its row pointed at, both layers are dimmed with the pictures and the foil keeps its contrast', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ready(page);
+    await firstRowInView(page);
+    const plain = page
+      .locator('section.row')
+      .first()
+      .locator('li.card:not([data-best])')
+      .first();
+    const box = await plain.locator('.frame').boundingBox();
+    if (box === null) throw new Error('the picture is not drawn');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    let reached = 0;
+    for (const id of catalogue.best) {
+      const card = cardOf(page, id);
+      if ((await card.count()) === 0) continue;
+      const filters = await card.evaluate((el) => ({
+        foil: getComputedStyle(el.querySelector('.foil') as Element).filter,
+        reflection: getComputedStyle(
+          el.querySelector('.front .frame') as Element,
+          '::before',
+        ).filter,
+        picture: getComputedStyle(el.querySelector('.frame img') as Element)
+          .filter,
+      }));
+      expect(filters.picture, id).toMatch(/brightness\(0\.55\)/);
+      expect(filters.foil, id).toMatch(/contrast\(/);
+      expect(filters.foil, id).toMatch(/brightness\(0\.55\)$/);
+      expect(filters.reflection, id).toMatch(/brightness\(0\.55\)/);
+      reached += 1;
+    }
+    expect(reached).toBeGreaterThan(1);
+  });
 });

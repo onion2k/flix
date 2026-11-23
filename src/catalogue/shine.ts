@@ -12,8 +12,11 @@
 // itself, a pointer off the card could tilt it without bound, and a card out of
 // the window could send its sheen off its picture.
 
-/** The most a card tilts either way, about either axis, in degrees. */
-export const MOST_TILT = 6;
+/**
+ * The most a card tilts either way, about either axis, in degrees: twelve, as
+ * the owner chose from the mock of 2026-11-23, where six read as barely turning.
+ */
+export const MOST_TILT = 12;
 
 /** A box in the window, as getBoundingClientRect gives it. */
 export interface Box {
