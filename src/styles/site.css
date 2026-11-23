@@ -549,6 +549,15 @@ p {
   column-gap: var(--space-m);
 }
 
+/* A card's Play link is the target size with its padding and edge taken in,
+   or as tall as its one line of words and padding need, so that it is level
+   with the Close button beside it. As a plain button's least height is that
+   of its words alone, it stood 78px tall, and since the back is what sets a
+   row's height, every front in a phone's row was cropped to fill it. */
+.card .card-link {
+  box-sizing: border-box;
+}
+
 /* Without script the Play link's ::after is stretched over the whole card, so
    the card is one link and nothing in it is nested. A card that flips takes
    the stretch off (below), and its link is then the button it looks. */

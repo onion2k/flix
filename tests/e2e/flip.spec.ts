@@ -1006,6 +1006,90 @@ test.describe('a card keeps one size', () => {
           expect(card.problems, `card ${at}`).toEqual([]),
         );
       });
+
+      // The Play link is the back's tallest thing in its foot, and the back is
+      // what sets a row's height, so a Play link taller than it need be makes
+      // every card in its row taller and crops each front's picture to fill
+      // it. It is the target size, or as tall as its one line of words and
+      // its own padding and edge, whichever is more, and level with Close.
+      // The figures are the page's own computed styles, none typed here.
+      test('every flipped card’s Play link is the target size or one line of its words and padding tall, and level with Close', async ({
+        page,
+      }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await ready(page);
+        let reached = 0;
+        let looked = 0;
+        for (const card of await page.locator('main li.card').all()) {
+          looked += 1;
+          if ((await card.locator('a.card-link').count()) === 0) continue;
+          await card.locator('button.card-flip').focus();
+          await page.keyboard.press('Enter');
+          await expect(card).toHaveAttribute('data-flipped', '');
+          await settled(card);
+          const found = await card.evaluate((el) => {
+            const play = el.querySelector<HTMLElement>('a.card-link');
+            const close = el.querySelector<HTMLElement>('button.card-unflip');
+            if (!play || !close) return null;
+            const style = getComputedStyle(play);
+            const words = play.firstElementChild?.getBoundingClientRect();
+            const px = (value: string) => parseFloat(value) || 0;
+            const line = parseFloat(style.lineHeight);
+            const box = play.getBoundingClientRect();
+            const shut = close.getBoundingClientRect();
+            return {
+              target: px(getComputedStyle(close).width),
+              height: box.height,
+              width: box.width,
+              // One line of its words: the computed line height, or where
+              // that is "normal", the height its words' box is drawn.
+              need:
+                (Number.isNaN(line) ? (words?.height ?? 0) : line) +
+                px(style.paddingTop) +
+                px(style.paddingBottom) +
+                px(style.borderTopWidth) +
+                px(style.borderBottomWidth),
+              top: box.top - shut.top,
+              bottom: box.bottom - shut.bottom,
+              closeHeight: shut.height,
+            };
+          });
+          expect(found, 'Play and Close are both there').not.toBeNull();
+          if (!found) continue;
+          const what = `card ${reached}`;
+          expect(found.target, `${what}: the target size`).toBeGreaterThan(40);
+          expect(found.height, `${what} tall`).toBeGreaterThanOrEqual(
+            found.target - 0.5,
+          );
+          expect(found.width, `${what} wide`).toBeGreaterThanOrEqual(
+            found.target - 0.5,
+          );
+          expect(
+            found.height,
+            `${what} tall, against one line and its padding`,
+          ).toBeLessThanOrEqual(Math.max(found.need, found.target) + 0.5);
+          const apart = Math.abs(found.height - found.closeHeight) + 0.5;
+          expect(Math.abs(found.top), `${what}'s top`).toBeLessThanOrEqual(
+            apart,
+          );
+          expect(
+            Math.abs(found.bottom),
+            `${what}'s bottom`,
+          ).toBeLessThanOrEqual(apart);
+          await page.keyboard.press('Escape');
+          await expect(card).not.toHaveAttribute('data-flipped', '');
+          reached += 1;
+        }
+        // Every card of the catalogue was looked at, and every one with a
+        // link was measured: the cards with none have no Play to hold.
+        expect(looked).toBe(
+          catalogue.rows.reduce((sum, row) => sum + row.entries.length, 0),
+        );
+        expect(reached).toBeGreaterThan(0);
+        expect(reached).toBe(
+          await page.locator('main li.card a.card-link').count(),
+        );
+      });
     });
   }
 
