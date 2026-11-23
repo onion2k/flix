@@ -133,6 +133,8 @@ export interface Strip {
   padding: number;
   /** An arrow's width, which stands over the strip's edge. */
   arrow: number;
+  /** The narrowest a card may be drawn, which its words need; 0 for none. */
+  least?: number;
 }
 
 /**
@@ -148,7 +150,9 @@ export interface Strip {
  * narrower by that shortfall shared among the whole cards, so the last of them
  * ends just clear of the arrow and the next lies under it. A card cut off by
  * less than a pixel is counted whole, as whollyIn() counts it. The end is the
- * start mirrored, and is mended by the same width. Elsewhere it is nought, and
+ * start mirrored, and is mended by the same width. A card is never made
+ * narrower than its least: where it would be, one card fewer is whole and the
+ * cards are made wider instead (a negative trim). Elsewhere it is nought, and
  * the cards are as the stylesheet draws them. A strip it cannot measure gets
  * nought.
  */
@@ -159,6 +163,7 @@ export function trim({
   start,
   padding,
   arrow,
+  least = 0,
 }: Strip): number {
   const step = card + gap;
   const run = window - start + gap;
@@ -169,5 +174,13 @@ export function trim({
   if (whole < 1) return 0;
   const left = run - whole * step;
   const clear = arrow + Math.max(0, padding - start);
-  return left >= clear ? 0 : (clear - left) / whole;
+  if (left >= clear) return 0;
+  const narrower = (clear - left) / whole;
+  if (card - narrower >= least) return narrower;
+  // Narrower than its words allow: one card fewer is whole instead, the cards
+  // wide enough that the last of them ends just as clear, and the next is cut
+  // off under the arrow (a negative trim, which widens them). With one whole
+  // card there is none fewer to have, and the cards are left as they are.
+  if (whole < 2) return 0;
+  return card - ((run - clear) / (whole - 1) - gap);
 }

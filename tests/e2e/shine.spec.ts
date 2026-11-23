@@ -227,7 +227,16 @@ test.describe('a mouse', () => {
         '--tilt-y': '',
       });
     await still(page);
-    expect(await computed(card)).toEqual(rest);
+    // Back at the resting place: the registered first values, which the page
+    // itself carries untouched (what was read as rest above could already be
+    // a place the scroll into view set, or not yet, by a frame's luck).
+    const resting = await page.evaluate((names) => {
+      const style = getComputedStyle(document.body);
+      return Object.fromEntries(
+        names.map((name) => [name, style.getPropertyValue(name).trim()]),
+      );
+    }, PROPERTIES);
+    expect(await computed(card)).toEqual(resting);
     expect(reached).toBe(3);
   });
 
@@ -285,28 +294,50 @@ test.describe('on a touch screen at a phone’s width', () => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await countWrites(page);
     await ready(page);
-    const card = cardOf(page, 'aquaclysm');
+    // The second card: a strip at rest has a card's start at its gutter, so a
+    // strip scroll carries the first card wholly out of sight (where nothing
+    // moves its sheen), and the second card into its place.
+    const card = cardOf(page, 'tiny-slots');
     /** Waits for the sheen to be where the rule puts it for the card as it is now. */
     const followed = async (): Promise<{ x: number; y: number }> => {
       await frames(page, 3);
-      const box = await card.evaluate((el) => {
-        const r = el.getBoundingClientRect();
-        return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
-      });
-      const size = await page.evaluate(() => ({
-        width: document.documentElement.clientWidth,
-        height: document.documentElement.clientHeight,
-      }));
-      const want = inWindow(box, size);
-      if (want === null) throw new Error('the card has no size');
+      // The card's place and the sheen are read together, and again until
+      // they agree: the strip's snap can still move the card a frame after a
+      // scroll, and the sheen follows it then.
+      let want: { x: number; y: number } | null = null;
       await expect
-        .poll(async () => parseFloat((await setOn(card))['--shine-y'] ?? ''))
-        .toBeCloseTo(want.y, 2);
+        .poll(async () => {
+          const read = await card.evaluate((el: HTMLElement) => {
+            const r = el.getBoundingClientRect();
+            return {
+              box: {
+                left: r.left,
+                top: r.top,
+                right: r.right,
+                bottom: r.bottom,
+              },
+              size: {
+                width: document.documentElement.clientWidth,
+                height: document.documentElement.clientHeight,
+              },
+              x: parseFloat(el.style.getPropertyValue('--shine-x')),
+              y: parseFloat(el.style.getPropertyValue('--shine-y')),
+            };
+          });
+          want = inWindow(read.box, read.size);
+          if (want === null) return false;
+          return (
+            Math.abs(read.x - want.x) < 0.005 &&
+            Math.abs(read.y - want.y) < 0.005
+          );
+        })
+        .toBe(true);
+      if (want === null) throw new Error('the card has no size');
       const now = await setOn(card);
-      expect(parseFloat(now['--shine-x'] ?? '')).toBeCloseTo(want.x, 2);
       for (const tilt of ['--tilt-x', '--tilt-y'])
         expect(['', '0deg']).toContain(now[tilt]);
-      return { x: want.x, y: want.y };
+      const found: { x: number; y: number } = want;
+      return { x: found.x, y: found.y };
     };
     await firstRowInView(page);
     const first = await followed();

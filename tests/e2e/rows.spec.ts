@@ -758,22 +758,29 @@ test.describe('on a phone', () => {
   });
 });
 
-test.describe('below 340px, where a row stacks and does not scroll', () => {
+test.describe('at the narrowest widths, where a row once stacked', () => {
   for (const width of [320, 339]) {
-    test(`at ${width} wide there are no arrows and no marks`, async ({
+    test(`at ${width} wide, with a mouse, a row that overflows has its Next arrow and its marks`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 800 });
       await ready(page);
+      let reached = 0;
       for (const each of catalogue.rows) {
+        const overflows = await section(page, each.id)
+          .getByRole('list')
+          .evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+        if (!overflows) continue;
         await expect(
-          section(page, each.id).locator('button[data-page]:visible'),
-        ).toHaveCount(0);
+          section(page, each.id).getByRole('button', { name: /^Next/ }),
+        ).toBeVisible();
         await expect(
-          section(page, each.id).locator('.row-pages .page-mark:visible'),
-        ).toHaveCount(0);
-        await expect(words(page, each.id)).toHaveText('');
+          section(page, each.id).locator('.row-pages .page-mark'),
+        ).not.toHaveCount(0);
+        await expect(words(page, each.id)).not.toHaveText('');
+        reached += 1;
       }
+      expect(reached).toBeGreaterThan(1);
     });
   }
 });

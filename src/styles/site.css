@@ -1276,6 +1276,7 @@ main {
   :root {
     --gutter: var(--gutter-phone);
     --card-width: var(--card-width-phone);
+    --card-least: var(--card-least-phone);
   }
 
   .mark {
@@ -1296,67 +1297,120 @@ main {
     font-size: var(--size-row-title-phone);
   }
 
+  /* A phone's cards are small portrait cards, about two and a half to a row,
+     as a film service's posters are (the owner, 2026-11-23): the picture is 3
+     by 4, cropped at its sides, and the label and the title are smaller and
+     padded more tightly. The card's width grows with the reader's text
+     (tokens.css), so that a larger text gives fewer, wider cards and never a
+     word broken in two. */
+  .card .label {
+    margin-top: var(--space-s);
+    font-size: var(--size-card-label-phone);
+  }
+
   .card-title {
     font-size: var(--size-card-title-phone);
   }
 
-  /* A card's back is as tall as the row's cards are made, so a phone's narrow
-     back is kept short: a tighter edge, and the Play link beside the Close
-     button, sharing the line (its words wrap inside it before the Close
-     button wraps below it). */
+  .card[data-flips] .frame {
+    aspect-ratio: 3 / 4;
+  }
+
+  .card[data-flips] .front > :is(.label, .card-title) {
+    padding-inline: var(--space-s);
+  }
+
+  .card[data-flips] .front > .card-title {
+    padding-bottom: var(--space-s);
+  }
+
+  /* A phone card's back is a sheet at the foot of the screen, as a film
+     service's details are, and not a face of the card: in the card it made
+     every card in a row as tall as its longest description, and the fronts'
+     pictures thin slivers. Out of the card's flow, the card is as tall as its
+     front alone and stays so when it is pressed; the front does not turn, and
+     nothing about the press changes (flip.ts: focus to Play, Escape, Close,
+     a press on the sheet outside Play, another card's press). It is fixed to
+     the window, so the card's faces lose what would make them its frame of
+     reference (their perspective, a best card's tilt and lift), and it holds
+     every word the back has: the label, the title and "Play <title>". */
+  .card[data-flips] .card-faces {
+    perspective: none;
+  }
+
+  /* In rules of their own: the build's minifier merges a transform of none
+     and a scale of none written together into a transform of scale(1), which
+     is not none and frames the sheet still. */
+  .card[data-best] .card-faces {
+    transform: none;
+  }
+
+  .card[data-best]:hover .card-faces {
+    scale: none;
+  }
+
   .card[data-flips] .back {
-    padding: var(--space-m);
+    display: none;
+  }
+
+  .card[data-flips][data-flipped] .front {
+    transform: none;
+  }
+
+  .card[data-flips][data-flipped] .back {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 4;
+    display: flex;
+    max-height: var(--height-sheet);
+    overflow: auto;
+    padding: var(--space-l) var(--gutter) var(--space-xl);
+    border-width: var(--size-edge) 0 0;
+    transform: none;
+    box-shadow: 0 calc(var(--size-sheet-shadow-drop) * -1)
+      var(--size-sheet-shadow-blur)
+      color-mix(
+        in srgb,
+        var(--color-foil-shade) var(--share-sheet-shade),
+        transparent
+      );
+  }
+
+  .card[data-flips][data-flipped] .back .card-title {
+    margin: var(--space-xs) 0 var(--space-m);
+    font-size: var(--size-card-title);
   }
 
   .card[data-flips] .card-link {
     flex: 1 1 0;
     padding-inline: var(--space-m);
   }
+
+  /* Without their perspective and tilt a card's faces are no layer of their
+     own, so what is in a card (up to the Pause button's place, at 2) stands
+     on the page's own layer beside the row's arrows: the arrows are put above
+     it, as they are at a desk, and the sheet above them. */
+  .row-arrow {
+    z-index: 3;
+  }
 }
 
-/* A phone's back, and not the stack below it, where a card is the window's
-   width and has the room: the back is the tallest thing in a row and sets the
-   height of every card in it, so it does not repeat the label and the title
-   the front has just shown (out of sight and out of the tree), and the Play
-   link's drawn words are "Play" and its icon, on one line. Its name is still
-   "Play <title> (opens in a new window)", which holds the drawn word (WCAG
-   2.5.3). */
-@media (21.25rem <= width <= 40rem) {
-  .card[data-flips] [data-repeat],
-  .card[data-flips] .card-link-title {
+/* On a touch screen at a phone's width a swipe is the way along a row, and an
+   arrow would stand over half a small card; a mouse there keeps them, as it
+   has no other way along. The page marks stay. */
+@media (max-width: 40rem) and (pointer: coarse) {
+  .row-arrow {
     display: none;
   }
 
-  .card[data-flips] .card-link-words {
-    white-space: nowrap;
+  /* With no arrow to stand clear of, a card comes to rest at the gutter, and
+     the row says it has none, so rows.ts trims nothing for them. */
+  .row {
+    --row-arrows: none;
   }
-}
 
-/* Below 340px a row stops scrolling sideways and its cards stack down the
-   page (WCAG 1.4.10, reflow), and with nothing to page it has no arrows and
-   no marks: script hides them for want of an overflow, and this says so too,
-   for a window that is being narrowed between one measure and the next. */
-@media (width < 21.25rem) {
   .strip {
-    flex-direction: column;
-    overflow: visible;
-    scroll-snap-type: none;
-  }
-
-  .card {
-    flex: 0 0 auto;
-  }
-
-  /* A stacked card is the window's width less its gutters, wider than a
-     phone's card, so its title is the size it was before phones had smaller
-     cards. */
-  .card-title {
-    font-size: var(--size-card-title);
-  }
-
-  .row-arrow,
-  .row-pages {
-    display: none;
+    scroll-padding-inline: var(--gutter);
   }
 }
 
@@ -1442,6 +1496,17 @@ main {
 
   .card[data-best] .front {
     transition: box-shadow var(--duration-foil-lift) ease-out;
+  }
+
+  /* A phone card's sheet rises from the foot of the screen. */
+  @media (max-width: 40rem) {
+    .card[data-flips][data-flipped] .back {
+      transition: translate var(--duration-sheet) ease-out;
+
+      @starting-style {
+        translate: 0 100%;
+      }
+    }
   }
 
   .card[data-best][data-turns] .front {

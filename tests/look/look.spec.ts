@@ -316,10 +316,18 @@ for (const [width, height] of [
         document.getAnimations().map((each) => each.finished.catch(() => null)),
       ),
     );
-    await expect(row).toHaveScreenshot(
-      `first-row-chopdrop-flipped-${width}.png`,
-      { ...TOLERANCE },
-    );
+    // On a phone the back is a sheet at the foot of the window, not in the
+    // row, so the window is pictured, the row and the sheet over the page.
+    if (width === 390)
+      await expect(page).toHaveScreenshot(
+        `first-row-chopdrop-flipped-${width}.png`,
+        { ...TOLERANCE },
+      );
+    else
+      await expect(row).toHaveScreenshot(
+        `first-row-chopdrop-flipped-${width}.png`,
+        { ...TOLERANCE },
+      );
   });
 }
 

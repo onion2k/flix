@@ -1,7 +1,7 @@
 // Holds that the page reflows: at every width in WIDTHS, from 320 up to a
 // desk's, the document does not scroll sideways and no text is clipped, the
-// same again with the WCAG 1.4.12 text spacing laid on, and at 320 a row's
-// cards stack and its strip does not scroll (1.4.10). 640 stands in for 200%
+// same again with the WCAG 1.4.12 text spacing laid on, and at 320 a row
+// still scrolls sideways within itself (rows never stack: the owner's choice). 640 stands in for 200%
 // zoom of a 1280 window. The widths between the layout's own steps are here
 // because the first fault of this kind was at one of them: the feature's two
 // columns could not hold its title between 641 and about 780 wide, and a test of
@@ -120,10 +120,13 @@ for (const width of WIDTHS) {
   }
 }
 
-// Both ends of the stack's step (below 21.25rem, 340px), so that a phone's
-// smaller cards are seen not to have moved where the stack begins.
+// The narrowest widths, where a row once stacked its cards down the page: rows
+// never stack now (the owner, 2026-11-23, over WCAG 1.4.10; CLAUDE.md's
+// Keeps), so each row scrolls sideways within itself, its cards side by side,
+// and the page itself never does. phone.spec.ts holds the same at a phone's
+// widths and text sizes.
 for (const width of [320, 339]) {
-  test(`at ${width} wide a row stacks its cards and does not scroll sideways`, async ({
+  test(`at ${width} wide a row keeps its cards side by side and scrolls, and the page does not`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 800 });
@@ -131,24 +134,30 @@ for (const width of [320, 339]) {
     let reached = 0;
     for (const each of catalogue.rows) {
       const section = page.locator(`section[id="${each.id}"]`);
-      const list = section.getByRole('list');
-      expect(
-        await list.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
-      ).toBe(true);
       const tops = await section
         .locator('[data-entry]')
-        .evaluateAll((all) => all.map((el) => el.getBoundingClientRect().top));
+        .evaluateAll((all) =>
+          all.map((el) => Math.round(el.getBoundingClientRect().top)),
+        );
       expect(tops.length).toBe(each.entries.length);
-      tops.forEach((top, at) => {
-        if (at > 0) expect(top).toBeGreaterThan(tops[at - 1] ?? 0);
-      });
-      // No arrow: the cards' own buttons, which flip them, are the only ones.
-      await expect(
-        section.getByRole('button', { name: /^(Previous|Next) in / }),
-      ).toHaveCount(0);
-      await expect(section.locator('button.row-arrow:visible')).toHaveCount(0);
+      expect(new Set(tops).size, `${each.id}: side by side`).toBe(1);
+      if (each.entries.length > 2)
+        expect(
+          await section
+            .getByRole('list')
+            .evaluate((el) => el.scrollWidth > el.clientWidth + 1),
+          `${each.id}: scrolls`,
+        ).toBe(true);
       reached += 1;
     }
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth + 1,
+      ),
+      'the page does not scroll sideways',
+    ).toBe(true);
     expect(reached).toBe(catalogue.rows.length);
   });
 }

@@ -249,14 +249,18 @@ describe('trim', () => {
   const GAP = 1.25 * REM;
   const ARROW = 3.25 * REM;
   const TARGET = 2.75 * REM;
+  // A phone's card is max(36vw, 7.75rem), and never made narrower than 6rem,
+  // the least its words need; a desk's has no least of its own here.
+  const LEAST_PHONE = 6 * REM;
   const site = (window: number) => {
     const phone = window <= 640;
     const start = (phone ? 1 : 3) * REM;
     const card = phone
-      ? 0.58 * window
+      ? Math.max(0.36 * window, 7.75 * REM)
       : Math.min(Math.max(17 * REM, 0.27 * window), 25 * REM);
     const padding = Math.max(start, ARROW, TARGET);
-    return { window, card, gap: GAP, start, padding, arrow: ARROW };
+    const least = phone ? LEAST_PHONE : 0;
+    return { window, card, gap: GAP, start, padding, arrow: ARROW, least };
   };
 
   /** Each whole card under a showing arrow at each rest of a strip of `count` cards. */
@@ -296,8 +300,8 @@ describe('trim', () => {
 
   it('leaves the cards as they are where no whole card would rest under an arrow', () => {
     expect(trim(site(1440))).toBe(0);
-    expect(trim(site(390))).toBe(0);
     expect(trim(site(1920))).toBe(0);
+    expect(trim(site(1100))).toBe(0);
   });
 
   it('narrows the cards inside a band, by no more than the arrow and its edge over the whole cards', () => {
@@ -313,17 +317,32 @@ describe('trim', () => {
       expect(under(site(window), 0, 7).length, `${window}`).toBeGreaterThan(0);
   });
 
-  it('leaves no whole card under an arrow at any rest, at every width from 341 to 2600, for rows of 3 to 7 cards', () => {
+  it('leaves no whole card under an arrow at any rest, and no card narrower than its least, at every width from 320 to 2600, for rows of 3 to 7 cards', () => {
     let rows = 0;
     const found: string[] = [];
-    for (let window = 341; window <= 2600; window += 1)
+    for (let window = 320; window <= 2600; window += 1)
       for (const count of [3, 4, 5, 7]) {
         const figures = site(window);
-        found.push(...under(figures, trim(figures), count));
+        const cut = trim(figures);
+        found.push(...under(figures, cut, count));
+        if (figures.card - cut < figures.least - 0.5)
+          found.push(
+            `${window}: a card ${figures.card - cut}px, under its least`,
+          );
         rows += 1;
       }
     expect(found.slice(0, 10)).toEqual([]);
-    expect(rows).toBe(2260 * 4);
+    expect(rows).toBe(2281 * 4);
+  });
+
+  it('where narrowing would take a card under its least, widens the cards so that one fewer is whole', () => {
+    // 320 wide: two whole cards would need narrowing to about 94px, under the
+    // least, so one is whole and wider, and the next is cut off.
+    const figures = site(320);
+    const cut = trim(figures);
+    expect(cut).toBeLessThan(0);
+    expect(figures.card - cut).toBeGreaterThan(figures.least);
+    expect(under(figures, cut, 5)).toEqual([]);
   });
 
   it('says nothing for a strip it cannot measure', () => {

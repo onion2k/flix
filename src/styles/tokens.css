@@ -44,7 +44,16 @@
   --size-row-title-phone: 1.9rem;
   /* A card's title on a phone, smaller in step with the card, so that the
      title stays below the row's in weight and a long one keeps to two lines. */
-  --size-card-title-phone: 1.375rem;
+  --size-card-title-phone: 1.05rem;
+  --size-card-label-phone: 0.8rem;
+  /* A phone card's details sheet: at most this share of the window's height
+     (it scrolls within itself past it), its shadow up the screen, and how long
+     it takes to rise where motion is allowed. */
+  --height-sheet: 70vh;
+  --size-sheet-shadow-drop: 24px;
+  --size-sheet-shadow-blur: 48px;
+  --share-sheet-shade: 87%;
+  --duration-sheet: 220ms;
   --size-label: 1rem;
 
   /* WCAG 2.5.5: every link and button is at least this, each way. */
@@ -96,7 +105,15 @@
   --card-width: clamp(17rem, 27vw, 25rem);
   /* On a phone, one card and more than half of the next: at 390 wide, 226px,
      so a row is plainly a row that scrolls and not one column. */
-  --card-width-phone: 58vw;
+  /* A phone's card: about two and a half to a row at the default text, and
+     never narrower than the text unit below, so that a larger text gives
+     fewer, wider cards. */
+  --card-width-phone: max(36vw, 7.75rem);
+  /* The narrowest a phone card may be made to keep it clear of a row's arrows
+     (rows.ts): no word of a label or a title breaks above it, measured as
+     about 5.8rem at every text size (COINPUSHER the longest), with a little
+     room. */
+  --card-least-phone: 6rem;
   --zoom-hover: 1.04;
   --duration-hover: 250ms;
 
@@ -282,6 +299,17 @@
   syntax: '<number>';
   inherits: true;
   initial-value: 0;
+}
+
+/*
+ * The narrowest a card may be drawn, which its words need: nought at a desk,
+ * a phone's least on a phone (site.css). Registered as a length so that
+ * src/scripts/rows.ts reads it in pixels, and narrows no card past it.
+ */
+@property --card-least {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
 }
 
 @property --tilt-y {

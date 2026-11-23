@@ -387,12 +387,13 @@ test.describe('a click', () => {
 // asked for less motion, the card left the pointer before the button came
 // up, the release fell on another card, and no click came: the card was
 // brought in and never flipped. It is pressed as a person does, with a pause
-// between down and up, at a desk's width, a phone's and 800 (inside a band
-// the card after the whole ones starts under the arrow, and none of it shows
-// to be pressed).
+// between down and up, at a desk's width and at 800 (inside a band the card
+// after the whole ones starts under the arrow, and none of it shows to be
+// pressed; a phone's small cards leave too little beside the arrow, and a
+// phone's tap is phone.spec.ts's).
 test.describe('a click on a card cut off at the strip’s edge', () => {
   for (const motion of ['reduce', 'no-preference'] as const)
-    for (const width of [1440, 800, 390])
+    for (const width of [1440, 800])
       test(`at ${width} wide, motion ${motion}: flips it, brings it in, and sends focus to its Play`, async ({
         page,
       }) => {
@@ -841,7 +842,7 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
   // would refuse, so the policy is stood aside here, as reflow.spec.ts does.
   test.use({ viewport: { width: 390, height: 844 }, bypassCSP: true });
 
-  test('a flipped card holds all its words: nothing sticks out of it or is cut off, and its row is level', async ({
+  test('a flipped card holds all its words (in its sheet, at a phone’s width): nothing sticks out or is cut off, and its row is level', async ({
     page,
   }) => {
     await ready(page);
@@ -866,9 +867,20 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
       await settled(card);
       const found = await card.evaluate((el) => {
         const problems: string[] = [];
-        const card = el.getBoundingClientRect();
         const back = el.querySelector('.face.back');
         if (back === null) return { problems: ['no back'], checked: 0 };
+        // On a phone the back is a sheet at the foot of the window, and holds
+        // its words itself, scrolling within itself if it must; elsewhere the
+        // card holds them.
+        const sheet = getComputedStyle(back).position === 'fixed';
+        const holder = (sheet ? back : el).getBoundingClientRect();
+        if (
+          sheet &&
+          (holder.left < -1 ||
+            holder.right > innerWidth + 1 ||
+            holder.bottom > innerHeight + 1)
+        )
+          problems.push('the sheet sticks out of the window');
         let checked = 0;
         for (const part of [back, ...back.querySelectorAll('*')]) {
           if (part.closest('.visually-hidden') !== null) continue;
@@ -876,15 +888,23 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
           if (box.width === 0 && box.height === 0) continue;
           checked += 1;
           const name = `${part.tagName.toLowerCase()}.${part.className}`;
-          if (
-            box.left < card.left - 1 ||
-            box.right > card.right + 1 ||
-            box.top < card.top - 1 ||
-            box.bottom > card.bottom + 1
-          )
-            problems.push(`${name} sticks out of the card`);
+          const sides =
+            box.left < holder.left - 1 || box.right > holder.right + 1;
+          const ends =
+            box.top < holder.top - 1 || box.bottom > holder.bottom + 1;
+          // A sheet scrolls within itself, so its words may run past its
+          // foot and are reached by scrolling it; never past its sides.
+          if (sides || (ends && !sheet))
+            problems.push(
+              `${name} sticks out of the ${sheet ? 'sheet' : 'card'}`,
+            );
           const style = getComputedStyle(part);
+          const scrolls =
+            part === back &&
+            sheet &&
+            ['auto', 'scroll'].includes(style.overflowY);
           if (
+            !scrolls &&
             style.overflowY !== 'visible' &&
             part.scrollHeight > part.clientHeight + 1
           )
@@ -895,6 +915,10 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
       expect(found.problems, `card ${at}`).toEqual([]);
       expect(found.checked).toBeGreaterThan(4);
       reached += found.checked;
+      // Closed before the next: at a phone's width its sheet lies over the
+      // foot of the window, where the next card may be.
+      await page.keyboard.press('Escape');
+      await expect(card).not.toHaveAttribute('data-flipped', '');
     }
     // The cards of the row stand level: each as tall as the tallest.
     const heights = await firstRow(page)
@@ -1189,19 +1213,12 @@ test.describe('a card keeps one size', () => {
     });
   }
 
-  // On each side of the phone's two steps: below 21.25rem a card is the
-  // window's width and its back is as it was, repeat and all; from there to
-  // 40rem the back drops the repeat and Play says "Play"; above it the back is
-  // whole again.
-  for (const [width, short] of [
-    [320, false],
-    [339, false],
-    [341, true],
-    [390, true],
-    [640, true],
-    [641, false],
-  ] as const) {
-    test(`at ${width} wide a flipped card’s back ${short ? 'has no label or title of its own, and Play is one line with its name' : 'repeats its label and title'}`, async ({
+  // At every width a flipped card's back repeats its label and title and its
+  // Play link says "Play <title>": on a phone the back is a sheet at the foot
+  // of the screen with the room for them (phone.spec.ts holds the sheet), and
+  // at a desk it has always had it.
+  for (const width of [320, 390, 640, 641, 1440]) {
+    test(`at ${width} wide a flipped card’s back repeats its label and title, and Play says the title`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height: 844 });
@@ -1223,45 +1240,18 @@ test.describe('a card keeps one size', () => {
         const tree = (await inTree(card.locator('.face.back'))).map((each) =>
           each.toLowerCase(),
         );
-        for (const words of [label, title]) {
-          const said = tree.includes(`statictext: ${words.toLowerCase()}`);
-          expect(said, `${words} in the back's tree`).toBe(!short);
-        }
-        for (const each of await repeat.all())
-          if (short) await expect(each).toBeHidden();
-          else await expect(each).toBeVisible();
+        for (const words of [label, title])
+          expect(
+            tree.includes(`statictext: ${words.toLowerCase()}`),
+            `${words} in the back's tree`,
+          ).toBe(true);
+        for (const each of await repeat.all()) await expect(each).toBeVisible();
         const play = card.locator('a.card-link');
         if ((await play.count()) === 1) {
           await expect(play).toHaveAccessibleName(
             `Play ${title} (opens in a new window)`,
           );
-          const drawn = ((await play.innerText()) ?? '').trim();
-          if (short) {
-            expect(drawn).toBe('Play');
-            const lines = await play.evaluate((el) => {
-              const style = getComputedStyle(el);
-              const words = el.firstElementChild?.getBoundingClientRect();
-              // The box less its padding and edge: what its words take, or
-              // the least height a button is given, whichever is more.
-              const inner =
-                el.getBoundingClientRect().height -
-                parseFloat(style.paddingTop) -
-                parseFloat(style.paddingBottom) -
-                parseFloat(style.borderTopWidth) -
-                parseFloat(style.borderBottomWidth);
-              return {
-                line: parseFloat(style.lineHeight),
-                least: parseFloat(style.minHeight) || 0,
-                inner,
-                words: words?.height ?? -1,
-              };
-            });
-            expect(lines.words).toBeGreaterThan(0);
-            expect(lines.words).toBeLessThan(lines.line * 1.5);
-            expect(lines.inner).toBeLessThanOrEqual(
-              Math.max(lines.line, lines.least) + 0.5,
-            );
-          } else expect(drawn).toBe(`Play ${title}`);
+          expect(((await play.innerText()) ?? '').trim()).toBe(`Play ${title}`);
         }
         await page.keyboard.press('Escape');
         await expect(card).not.toHaveAttribute('data-flipped', '');
@@ -1283,7 +1273,9 @@ test.describe('a card keeps one size', () => {
 // arrows, with motion allowed (once the turn has finished) and under reduced
 // motion (at once).
 test.describe('a card flipped where an arrow press left it', () => {
-  for (const width of [640, 390])
+  // Above a phone's width, where the back is in the card; a phone's back is a
+  // sheet over everything (phone.spec.ts holds that nothing covers it).
+  for (const width of [800, 641])
     for (const motion of ['no-preference', 'reduce'] as const)
       test(`at ${width} wide, motion ${motion}: its words, Play and Close are clear of both arrows`, async ({
         page,

@@ -46,11 +46,13 @@ const { card, eager, late } = Astro.props;
 // plans/cards.md), and nothing reads it until then.
 const loop = card.loop === undefined ? undefined : loopFor(card.id, card.loop);
 
-// What the card's width is at each window width, as the stylesheet makes it:
-// the whole window less two gutters below 340px, 58vw on a phone, then
+// How wide the card's picture is drawn at each window width, as the
+// stylesheet makes it. On a phone the card is max(36vw, 7.75rem) and its frame
+// 3 by 4, which a 16 by 9 picture covers only when drawn about 2.4 times the
+// card's width (cropped at its sides), so a phone asks for 86vw; then
 // clamp(17rem, 27vw, 25rem).
 const sizes =
-  '(width < 21.25rem) calc(100vw - 2rem), (max-width: 40rem) 58vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
+  '(max-width: 40rem) 86vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
 
 // The widths and formats of a card's picture, said once so that the late
 // picture's sources and the ordinary one cannot differ.

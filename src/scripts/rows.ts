@@ -186,8 +186,8 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
 
   // How much narrower the row's cards are drawn, as trim() says, from the
   // strip as it is drawn now. A card's width before the trim is the width it
-  // is drawn at plus the trim it was given. A stacked row (below 340px) has
-  // no arrows and its cards are the window's width, so it is given none.
+  // is drawn at plus the trim it was given. A row in a column (none is, now
+  // that rows never stack, but the rule costs nothing) is given none.
   let cut = 0;
   const fit = () => {
     const card = strip.querySelector('li');
@@ -202,10 +202,18 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
             gap: parseFloat(style.columnGap) || 0,
             start: parseFloat(style.paddingLeft) || 0,
             padding: parseFloat(style.scrollPaddingLeft) || 0,
-            arrow: Math.max(
-              parseFloat(arrow.width) || 0,
-              parseFloat(arrow.minWidth) || 0,
-            ),
+            // The narrowest a card may be drawn, as a registered length.
+            least: parseFloat(style.getPropertyValue('--card-least')) || 0,
+            // None where the stylesheet shows no arrows (a touch screen at a
+            // phone's width says so on the row): nothing to stand clear of.
+            arrow:
+              getComputedStyle(row).getPropertyValue('--row-arrows').trim() ===
+              'none'
+                ? 0
+                : Math.max(
+                    parseFloat(arrow.width) || 0,
+                    parseFloat(arrow.minWidth) || 0,
+                  ),
           });
     if (Math.abs(wanted - cut) < 0.01) return;
     cut = wanted;

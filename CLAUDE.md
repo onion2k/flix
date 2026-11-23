@@ -13,7 +13,8 @@ it on, on 2026-11-23. How work is done is the
 guardrails kit's: this project carries no copy of it, and is held to
 `~/projects/guardrails/GUARDRAILS.md` and, as a website, to
 `~/.claude/rules/websites.md`. The bar is WCAG 2.2 AAA, less 3.1.3 to
-3.1.6.
+3.1.6, and less 1.4.10 for the rows, which scroll sideways at every width
+(the owner's choice; see Keeps).
 
 ## Commands
 
@@ -179,9 +180,24 @@ commit of its own that says what it is for.
   cell, so a card is as tall as its taller face and one size flipped or
   not; a strip stretches a row's cards level, and the front's frame takes
   the room left (never shorter than 16 by 9, the picture cropped at its
-  sides to cover it). On a phone (21.25rem to 40rem) the back draws no
-  repeat and Play draws "Play" and its icon, its name unchanged; a card is
-  `--card-width-phone` (58vw) wide. **The card most in focus:**
+  sides to cover it). **On a phone** (to 40rem) a card is a small portrait
+  card, `--card-width-phone` (`max(36vw, 7.75rem)`, so it widens with the
+  reader's text) wide, its frame 3 by 4, its label and title smaller, and
+  never trimmed narrower than `--card-least-phone` (6rem: no word breaks
+  above about 5.8rem, measured), which `rows.ts` reads as the registered
+  length `--card-least`; where clearing the arrows would take it under
+  that, `trim()` makes one card fewer whole and the cards wider instead. Its
+  back is not a face of the card but a sheet fixed to the foot of the window
+  (`--height-sheet` at most, scrolling within itself), with every word,
+  "Play <title>" and Close, so the card stays the height of its front; the
+  faces lose their perspective, and a best card its tilt and lift, so that
+  nothing frames the fixed sheet (the minifier merges `transform: none` and
+  `scale: none` written together into a transform, so they are in rules of
+  their own); a row's arrows stand above a card's parts and the sheet above
+  them. On a touch screen there the arrows are not drawn (a swipe is the way
+  along; the marks stay), the row says `--row-arrows: none` so `rows.ts`
+  trims nothing, and a strip rests at the gutter. Rows never stack, at any
+  width or text size. **The card most in focus:**
   `src/scripts/playing.ts` reads the cards' boxes on scroll, resize, hover,
   focus, a flip, an arrival and the tab hidden, counts the settle on
   `requestAnimationFrame`, and keeps one `video.card-loop` (muted, looping,
@@ -355,11 +371,14 @@ Every new thing is taken through each of these that it can reach.
   has exactly one picture in the accessibility tree either way.
 - With script a row has no scrollbar and moves by its edge arrows, with
   script off it keeps its scrollbar and has no arrows or marks (a mouse
-  with no sideways wheel has no other way along). Below 340px a row stacks
-  and has neither. At rest after an arrow press, a swipe, a wheel, a drag or
+  with no sideways wheel has no other way along). A row never stacks: at
+  320px, and at a phone's width with the reader's text 25% and 50% larger, it
+  scrolls sideways and the page does not. At rest after an arrow press, a swipe, a wheel, a drag or
   a key, with motion and without, no card wholly in the window has any of
   itself under an arrow that shows, at its very start as at every rest: try
-  each side of 40rem and 64rem, and inside the bands where `trim` narrows
+  each side of 40rem and 64rem, at 320 (where a mouse's row has one card
+  fewer and wider, `trim` never narrowing past a card's least), and inside
+  the bands where `trim` narrows
   the cards (680, 990, 1840, 2290). A mouse press on a card cut off at the
   strip's edge flips it, with motion and without.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
@@ -391,7 +410,12 @@ Every new thing is taken through each of these that it can reach.
   disconnected, none.
 - A desk's width, a phone's (390px), 320px, 640px standing in for 200%
   zoom, and each side of every step in `site.css`: a fault can sit
-  between two widths that both pass. WCAG 1.4.12 text spacing.
+  between two widths that both pass. WCAG 1.4.12 text spacing. A reader's
+  larger text (the browser's standard font size, as a phone's setting sets
+  it: `Page.setFontSizes` in `phone.spec.ts`), which moves every `rem`.
+- A phone: small cards that never stack, a card's sheet (a tap, Escape,
+  Close, a tap on the sheet, another card), no arrows on touch and arrows for
+  a mouse, a tap on a card cut off at the edge.
 - `prefers-reduced-motion`: motion exists only inside a `no-preference`
   block.
 - `forced-colors`.
@@ -457,7 +481,10 @@ Every new thing is taken through each of these that it can reach.
 |                                     | the hero and a card loop play under Permissions-Policy |
 | `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched,   |
 |                                     | no module, UTC, script off, arrows, clean console      |
-| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced    |
+| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced;   |
+|                                     | at 320 and 339 a row scrolls and the page does not     |
+| `tests/e2e/phone.spec.ts`           | a phone: never stacks at any width or text size, small |
+|                                     | portrait cards, the sheet, no arrows on touch          |
 | `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip        |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour      |
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
@@ -623,10 +650,10 @@ The nine points of the definition of done, as this project has them.
   to the page; nothing holds where it should go. A focused card at a desk's
   width is brought to its own start, which may move a row more than a
   reader expects; nothing pictures it.
-- **A phone card's picture is cropped** at its sides to fill the room its
-  row's tallest back leaves: the back's description lines and the Play
-  link set it. At 390 More to play shows 63% of each picture's width, its
-  tallest card Fruit Machine, with seven lines of description.
+- **A phone card's picture is cropped** to 3 by 4 from a 16 by 9 picture,
+  so a little under half of its width shows, and more where a long label or
+  title makes a row's cards taller. Its `sizes` asks for a file 86vw wide to
+  cover the crop sharply, which nothing measures on a real screen.
 - **In a few bands of window width a row's cards are drawn a little
   narrower than the stylesheet's width,** by script alone (`trim`, up to
   about 30px at a 680px window), so that a card just fitting does not rest
@@ -650,6 +677,12 @@ The nine points of the definition of done, as this project has them.
 ## Keeps
 
 What `/ooer-design:polish` or a reader may question, kept on purpose.
+
+- **Rows never stack, even at 320px** (the owner, 2026-11-23). WCAG 1.4.10
+  (reflow, AA) asks that content at 320 CSS px not need scrolling in two
+  directions; a row here scrolls sideways within itself inside a page that
+  scrolls down. The owner chose the sideways rows, which are what make the
+  site, over the stack that met it. The page itself never scrolls sideways.
 
 - **One theme, dark.** The pictures are the colour, and the look the owner
   chose from the mocks (`plans/first-site-look/`) is a cinema listing.
