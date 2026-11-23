@@ -789,6 +789,117 @@ p {
   box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
 }
 
+/* The shine of a best card: a foil over its picture, an edge of the same
+   colours round the card, front and back, and a tilt toward a mouse. Where the
+   sheen is and how far the card tilts are four properties registered in
+   tokens.css, whose first values are the resting place, and which
+   src/scripts/shine.ts sets on the card. The foil is laid over the picture
+   alone, never under the label, the title, the back's words or its buttons; it
+   lets every press through to the flip button, which is above it, and the
+   Pause button is above both. It is drawn over a playing loop as over the
+   still. The colours and the strength are tokens. */
+.foil {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  pointer-events: none;
+  /* A band of rainbow colours at an angle, larger than the picture so that it
+     travels across it as the sheen moves, lifting the picture's light. */
+  background-image: repeating-linear-gradient(
+    var(--angle-foil),
+    var(--color-foil-rose) 0,
+    var(--color-foil-gold) var(--size-foil-stripe),
+    var(--color-foil-mint) calc(var(--size-foil-stripe) * 2),
+    var(--color-foil-sky) calc(var(--size-foil-stripe) * 3),
+    var(--color-foil-violet) calc(var(--size-foil-stripe) * 4),
+    var(--color-foil-rose) calc(var(--size-foil-stripe) * 5)
+  );
+  background-size: var(--size-foil-band) var(--size-foil-band);
+  background-position: calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%);
+  /* Strongest where the sheen is and gone at the token's reach from it, as
+     light catches a foil, so that the picture is seen whole away from it. */
+  mask-image: radial-gradient(
+    circle at calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%),
+    var(--color-ground) 0,
+    transparent var(--size-foil-reach)
+  );
+  mix-blend-mode: hard-light;
+  opacity: var(--share-foil);
+}
+
+/* The glare: a circle of light where the sheen is, over the band. */
+.foil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%),
+    var(--color-foil-glare) 0,
+    transparent var(--size-foil-glare)
+  );
+  mix-blend-mode: overlay;
+  opacity: var(--share-foil-glare);
+}
+
+/* On a card that flips the picture is as tall as its row leaves it, so the
+   foil is laid in the frame's own cell, as the Pause button's place is, and
+   is the frame's size. */
+.card[data-flips] .foil {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  grid-area: 1 / 1;
+  place-self: stretch;
+  aspect-ratio: auto;
+}
+
+/* Each face of a best card is a group of its own, so that the foil blends with
+   the picture under it: a face that turns in depth is drawn apart from the
+   rest of the card, and a blend reaching past it found nothing to blend with
+   and drew nothing. It also keeps the front's foil on the front, out of the
+   back's way when the card is turned. */
+.card[data-best] .face {
+  isolation: isolate;
+}
+
+/* The tilt turns the two faces together, so that it composes with the flip's
+   turn of each face inside them: a flipped best card still tilts, and its back
+   is not mirrored. */
+.card[data-best] .card-faces {
+  position: relative;
+  transform: perspective(var(--depth-tilt)) rotateX(var(--tilt-x))
+    rotateY(var(--tilt-y));
+}
+
+/* The foil's edge, just outside the card, front and back: a frame of the same
+   colours, its middle cut away by a mask, so that it is never under a word. */
+.card[data-best] .card-faces::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--size-foil-edge) * -1);
+  padding: var(--size-foil-edge);
+  pointer-events: none;
+  background-image: linear-gradient(
+    var(--angle-foil),
+    var(--color-foil-rose),
+    var(--color-foil-gold),
+    var(--color-foil-mint),
+    var(--color-foil-sky),
+    var(--color-foil-violet),
+    var(--color-foil-rose)
+  );
+  background-size: var(--size-foil-band) var(--size-foil-band);
+  background-position: calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%);
+  mask:
+    linear-gradient(var(--color-ground) 0 0) content-box exclude,
+    linear-gradient(var(--color-ground) 0 0);
+}
+
 /* Hover is only for a card that is a control: a link without script, and
    every card once it flips. The picture's edge takes the accent. A card with
    no link and no script is not a control and does nothing. */
@@ -800,7 +911,7 @@ p {
 /* House lights. While a card is pointed at, or holds keyboard focus, the
    pictures of the other cards in its row are dimmed, and the words, the edges,
    the other rows and the feature are not, so that no text changes its
-   contrast. Only the img, and a loop playing over it, is filtered: a filter
+   contrast. Only the img, and a loop playing over it and a best card's foil, is filtered: a filter
    on the card would dim its words. A late frame is dimmed the same way, whether its picture has arrived
    or not: the flat panel colour it holds meanwhile is the frame's own
    background, is not a picture, and is left as it is. The dim is a state and
@@ -808,8 +919,7 @@ p {
    A browser without :has() draws none of this, which is the page as it was. */
 .strip:has(.card :focus-visible)
   .card:not(:has(:focus-visible))
-  .frame
-  :is(img, .card-loop) {
+  :is(.frame img, .frame .card-loop, .foil) {
   filter: brightness(var(--brightness-dim));
 }
 
@@ -819,8 +929,7 @@ p {
 @media (hover: hover) {
   .strip:has(.card:is([data-linked], [data-flips]):hover)
     .card:not(:hover)
-    .frame
-    :is(img, .card-loop) {
+    :is(.frame img, .frame .card-loop, .foil) {
     filter: brightness(var(--brightness-dim));
   }
 }
@@ -1032,6 +1141,12 @@ main {
   .card:is([data-linked], [data-flips]):hover .frame::after {
     border-color: Highlight;
   }
+
+  /* No foil, and no foil edge: the card's own borders stand. */
+  .foil,
+  .card[data-best] .card-faces::before {
+    display: none;
+  }
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
@@ -1066,5 +1181,20 @@ main {
      would show every back for a moment over its front. */
   .card[data-turns] .face {
     transition: transform var(--duration-flip) ease-in-out;
+  }
+
+  /* A best card's sheen and tilt ease after the pointer or the scroll, and
+     back to rest when the pointer leaves (where they are is above, and
+     tokens.css; script sets nothing for a reader who asked for less). */
+  .card[data-best] {
+    transition:
+      --shine-x var(--duration-shine) ease-out,
+      --shine-y var(--duration-shine) ease-out,
+      --tilt-x var(--duration-shine) ease-out,
+      --tilt-y var(--duration-shine) ease-out;
+  }
+
+  .foil {
+    transition: filter var(--duration-dim) ease-out;
   }
 }

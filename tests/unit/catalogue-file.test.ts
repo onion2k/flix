@@ -90,6 +90,17 @@ describe('src/content/catalogue.json', () => {
     expect(new Set(all).size).toBe(all.length);
   });
 
+  it('has a list of the best, each with a file, in a row, and none twice', () => {
+    // Which sites shine is the owner's to choose and change; that there are
+    // some, and that each would shine somewhere, is held here, so that a typo
+    // in the file fails in the quick check and not only at the build.
+    const inRows = catalogueJson.rows.flatMap((row) => row.sites);
+    expect(catalogueJson.best.length).toBeGreaterThanOrEqual(1);
+    expect(catalogueJson.best.filter((id) => !ids.includes(id))).toEqual([]);
+    expect(catalogueJson.best.filter((id) => !inRows.includes(id))).toEqual([]);
+    expect(new Set(catalogueJson.best).size).toBe(catalogueJson.best.length);
+  });
+
   it('is seen to refuse a site with no file (the check itself)', () => {
     const broken = {
       feature: 'nuclear-fishin',

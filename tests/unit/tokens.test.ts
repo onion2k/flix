@@ -33,3 +33,29 @@ describe('tokens.css colours', () => {
     });
   }
 });
+
+// The foil of the best cards (part 5 of plans/cards.md) is a decoration with no
+// words on it and no edge a control is told by, so its colours are not among
+// the plan's five and no contrast is asked of them; but each is said once, as
+// every colour is, and as a #rrggbb, so that two cannot drift apart.
+describe('tokens.css foil colours', () => {
+  const names = [
+    ...new Set(
+      [...tokens.matchAll(/^\s*(--color-foil-[\w-]+)\s*:/gim)].map(
+        (match) => match[1] ?? '',
+      ),
+    ),
+  ];
+
+  it('has foil colours, so that reading none is not a pass', () => {
+    expect(names.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('defines each foil colour exactly once, as a #rrggbb', () => {
+    for (const name of names) {
+      const found = declarations(name);
+      expect(found.length, name).toBe(1);
+      expect(found[0], name).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+});

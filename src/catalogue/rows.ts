@@ -1,9 +1,10 @@
 // Turns the entries and the catalogue file into the page's model: the feature,
-// then each row with its cards, in the order written. It also checks what no
-// single file can check alone (a row naming a site that has no file, an id said
-// twice), and refuses by file and id, and it says which sites have a file and
-// are listed nowhere, which is allowed and is how a site is left out. Without
-// it the page would hold that logic, a broken catalogue would draw a gap or a
+// then each row with its cards, in the order written, the best of them marked
+// to shine. It also checks what no single file can check alone (a row naming a
+// site that has no file, an id said twice, a best site in no row), and refuses
+// by file and id, and it says which sites have a file and are listed nowhere,
+// which is allowed and is how a site is left out. Without it the page would
+// hold that logic, a broken catalogue would draw a gap or a
 // blank card, the build would not stop, and a site left out by mistake would
 // not be seen.
 import type { CatalogueFile } from './schema';
@@ -48,6 +49,8 @@ export interface Card<Picture> {
   /** The entry's hero loop as written, where it has one: what the day's feature plays. */
   heroLoop?: string;
   label: string;
+  /** True for a row's card of one of the best sites, which shines; never for the feature. */
+  best: boolean;
   /** The name of the button that turns the card over to its back, on every card. */
   aboutName: string;
   /** The name of the button that turns it back to its front, on every card. */
@@ -82,8 +85,17 @@ export const NEW_WINDOW = '(opens in a new window)';
 
 const KIND_WORDS = { game: 'Game', toy: 'Toy' } as const;
 
-function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
+/**
+ * What the label of a best card says after its kind, where another's says
+ * whether it can be played: the words that say it shines, so that the foil is
+ * not the only thing that does (colour and sheen never say a thing alone). A
+ * draft, said here and nowhere else, for the owner to edit.
+ */
+const BEST_WORDS = 'Top pick';
+
+function cardOf<Picture>(entry: Entry<Picture>, best = false): Card<Picture> {
   const playable = entry.url !== undefined;
+  const state = best ? BEST_WORDS : playable ? 'Play now' : 'In the workshop';
   const card: Card<Picture> = {
     id: entry.id,
     title: entry.title,
@@ -91,7 +103,8 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
     description: entry.description,
     picture: entry.picture,
     pictureAlt: entry.pictureAlt,
-    label: `${KIND_WORDS[entry.kind]} · ${playable ? 'Play now' : 'In the workshop'}`,
+    label: `${KIND_WORDS[entry.kind]} · ${state}`,
+    best,
     // The words of the two buttons that flip a card, said here and nowhere
     // else, since they are drafts the owner will edit: every card flips,
     // whether or not it has a link.
@@ -120,6 +133,11 @@ export function buildPage<Picture>(
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const used = new Set<string>();
   const rowIds = new Set<string>();
+  // Read before the rows are drawn, since each card is marked as it is made;
+  // checked after them, below, since whether a best site is in a row needs
+  // the rows.
+  const best = new Set(config.best ?? []);
+  const inRows = new Set<string>();
 
   const rows = config.rows.map((row) => {
     if (rowIds.has(row.id)) {
@@ -144,7 +162,8 @@ export function buildPage<Picture>(
       }
       inThisRow.add(id);
       used.add(id);
-      return cardOf(entry);
+      inRows.add(id);
+      return cardOf(entry, best.has(id));
     });
     return { id: row.id, title: row.title, cards };
   });
@@ -182,6 +201,29 @@ export function buildPage<Picture>(
     inList.add(id);
     used.add(id);
     candidates.push(cardOf(entry));
+  }
+
+  // The best are checked in the order written. A best site in no row would
+  // shine nowhere, and a field that is ignored looks as though it works, so
+  // it is refused as a missing file is.
+  const inBest = new Set<string>();
+  for (const id of config.best ?? []) {
+    if (!byId.has(id)) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "best" names the site "${id}", and there is no ${entryFile(id)}.`,
+      );
+    }
+    if (inBest.has(id)) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "best" names the site "${id}" twice.`,
+      );
+    }
+    if (!inRows.has(id)) {
+      throw new CatalogueError(
+        `${CATALOGUE_FILE}: the field "best" names the site "${id}", which is in no row, so it would shine nowhere.`,
+      );
+    }
+    inBest.add(id);
   }
 
   // A site with a file that no row names is left out on purpose or by

@@ -150,3 +150,37 @@ test('with no preference the card settled on plays its loop, which eases into th
       .evaluate((el) => getComputedStyle(el).transitionDuration),
   ).not.toBe('0s');
 });
+
+// The best cards' shine (part 5 of plans/cards.md): its sheen and tilt ease only
+// where motion is allowed, and with less motion asked for nothing about them has
+// a transition, so the walk above has reached them as well as passed them.
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`with ${reducedMotion === 'reduce' ? 'reduced motion a best card’s sheen and tilt have no transition' : 'no preference a best card’s sheen and tilt ease'}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/');
+    const cards = page.locator('li.card[data-best]');
+    expect(await cards.count()).toBeGreaterThan(0);
+    let reached = 0;
+    for (const card of await cards.all()) {
+      const eases = await card.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const names = style.transitionProperty.split(',').map((n) => n.trim());
+        const times = style.transitionDuration
+          .split(',')
+          .map((t) => parseFloat(t));
+        return ['--shine-x', '--shine-y', '--tilt-x', '--tilt-y'].map(
+          (name) => {
+            const at = names.indexOf(name);
+            return at < 0 ? 0 : (times[at % times.length] ?? 0);
+          },
+        );
+      });
+      if (reducedMotion === 'reduce') expect(eases).toEqual([0, 0, 0, 0]);
+      else for (const time of eases) expect(time).toBeGreaterThan(0);
+      reached += 1;
+    }
+    expect(reached).toBe(await cards.count());
+  });
+}

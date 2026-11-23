@@ -93,6 +93,28 @@ test('the home page with a card focused has no axe violation', async ({
   await audit(page, 'home with a card focused');
 });
 
+test('the home page with a best card hovered, its foil moved and the card tilted, has no axe violation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
+  const card = page.locator('li.card[data-best]').first();
+  await card.scrollIntoViewIfNeeded();
+  const box = await card.boundingBox();
+  if (box === null) throw new Error('the card is not drawn');
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, {
+    steps: 4,
+  });
+  await expect
+    .poll(() =>
+      card.evaluate((el: HTMLElement) => el.style.getPropertyValue('--tilt-y')),
+    )
+    .toMatch(/deg$/);
+  await audit(page, 'home with a best card hovered');
+});
+
 test('the home page with a card flipped has no axe violation', async ({
   page,
 }) => {

@@ -140,7 +140,7 @@ test('every picture has loaded, with size, alt words and a modern source', async
   }
 });
 
-test('each card says one of the four labels, and is a link only where it can be played', async ({
+test('each card says one of the six labels, and is a link only where it can be played', async ({
   page,
 }) => {
   const cards = page.locator('main [data-entry]:not([hidden])');
@@ -154,7 +154,9 @@ test('each card says one of the four labels, and is a link only where it can be 
     expect(LABELS).toContain(label);
     const title = (await card.getByRole('heading').textContent()) ?? '';
     const links = card.getByRole('link');
-    if (label.endsWith('Play now')) {
+    // A top pick's label says it shines in place of whether it can be played,
+    // and every top pick of the catalogue can be.
+    if (label.endsWith('Play now') || label.endsWith('Top pick')) {
       playable += 1;
       await expect(links).toHaveCount(1);
       await expect(links).toHaveAccessibleName(

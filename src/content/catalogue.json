@@ -1,6 +1,7 @@
 {
   "feature": "aquaclysm",
   "features": ["ooergolf", "pushminer"],
+  "best": ["aquaclysm", "pushminer", "tiny-slots"],
   "rows": [
     {
       "id": "play-now",

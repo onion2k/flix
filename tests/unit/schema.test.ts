@@ -257,6 +257,29 @@ describe('catalogueShape', () => {
     ).toEqual(['features.1']);
   });
 
+  it('passes a file with a list of the best, an empty one, or none', () => {
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, best: ['ooergolf'] }),
+    ).toEqual([]);
+    expect(refusals(catalogueShape, { ...goodCatalogue, best: [] })).toEqual(
+      [],
+    );
+    expect(refusals(catalogueShape, goodCatalogue)).toEqual([]);
+  });
+
+  it('refuses best that is not a list of ids, at its place', () => {
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, best: 'ooergolf' }).map(
+        (f) => f.path,
+      ),
+    ).toEqual(['best']);
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, best: ['a', ''] }).map(
+        (f) => f.path,
+      ),
+    ).toEqual(['best.1']);
+  });
+
   it('refuses a file with no rows, and one with an empty list of rows', () => {
     expect(
       refusals(catalogueShape, without(goodCatalogue, 'rows')).map(

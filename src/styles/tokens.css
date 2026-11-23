@@ -139,4 +139,66 @@
    */
   --size-pause-mark: 1rem;
   --space-pause-inset: 0.5rem;
+
+  /*
+   * The shine of the best cards, a holographic trading card's foil. Over the
+   * picture, a band of rainbow colours at an angle, blended with the picture
+   * (color-dodge, so it lifts the picture's own light and leaves its darks
+   * dark) at the share below, and a glare of light, a circle of the size
+   * below, blended over both; round the card, front and back, an edge of the
+   * same colours. The band is larger than the picture by the factor below so
+   * that it can travel across it as the sheen moves. A card tilts, under a
+   * mouse, as seen from the depth below, and the sheen and the tilt ease after
+   * the pointer over the time below, which is short so that they follow it.
+   * None of it carries words or tells a control apart, so no contrast is
+   * asked of it; the label says "Top pick" in words.
+   */
+  --color-foil-rose: #ff2d75;
+  --color-foil-gold: #ffc400;
+  --color-foil-mint: #00f5a0;
+  --color-foil-sky: #00b3ff;
+  --color-foil-violet: #8a4dff;
+  --color-foil-glare: #fffaf0;
+  --share-foil: 0.5;
+  --share-foil-glare: 0.9;
+  --angle-foil: 115deg;
+  --size-foil-stripe: 2.5%;
+  --size-foil-band: 300%;
+  --size-foil-reach: 70%;
+  --size-foil-glare: 45%;
+  --size-foil-edge: 3px;
+  --depth-tilt: 60rem;
+  --duration-shine: 150ms;
+}
+
+/*
+ * The four places the shine is drawn from, registered so that their first
+ * values are the resting place (a still sheen at the upper left, the card
+ * flat) where script does not set them (script off, or less motion asked
+ * for), and so that a change of them can ease where motion is allowed.
+ * src/scripts/shine.ts sets them on a best card from src/catalogue/shine.ts,
+ * and takes them off to go back to rest.
+ */
+@property --shine-x {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.3;
+}
+
+@property --shine-y {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0.25;
+}
+
+@property --tilt-x {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@property --tilt-y {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
 }

@@ -1,6 +1,6 @@
 # Cards that flip, play and shine
 
-State: building, part 5 of 6.
+State: building, part 6 of 6.
 
 Agreed in a harness's plan file and copied here the same day; this copy is
 the one ticked. Its facts hold on commit `6c8d3aa`.
@@ -232,7 +232,7 @@ green. Headless pictures at 390 and 1440 are sent to the owner after parts
       `moving.spec.ts`, `nojs.spec.ts`.
 - [x] 4. The card most in focus plays, with Pause. `playing.test.ts`,
       `playing.spec.ts`, `weight-judging.test.ts`.
-- [ ] 5. The best cards shine. `shine.test.ts`, `shine.spec.ts`,
+- [x] 5. The best cards shine. `shine.test.ts`, `shine.spec.ts`,
       `rows.test.ts`.
 - [ ] 6. The pass: `npm run check`; look and weight baselines written again
       on purpose and every picture read; mutations; `CLAUDE.md` (Commands,

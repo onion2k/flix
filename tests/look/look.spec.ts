@@ -461,3 +461,94 @@ for (const [width, height] of [
     );
   });
 }
+
+// The best cards' shine (part 5 of plans/cards.md), as a reader with no
+// preference for less motion sees it: the first row at a desk's width with the
+// mouse held over Aquaclysm, its sheen there and the card tilted toward it, and
+// the first row at a phone's width (a touch screen) at a fixed scroll, where
+// the sheen is set by each card's place in the window. Save-Data is stood in,
+// so that no loop plays and the stills are what is pictured, and every ease is
+// waited for to end. Without these the foil would be pictured only at rest, in
+// the pictures above, which emulate reduced motion.
+test.describe('the shine', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'connection', {
+        value: { saveData: true },
+        configurable: true,
+      });
+    });
+  });
+
+  test('the first row at 1440 with the mouse held over Aquaclysm', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await settle(page);
+    const row = page.locator('section.row').first();
+    await row.evaluate((el: HTMLElement) => {
+      window.scrollTo({ top: el.offsetTop - 24, behavior: 'instant' });
+    });
+    const card = row.locator('li.card[data-entry="aquaclysm"]');
+    const box = await card.boundingBox();
+    if (box === null) throw new Error('the card is not drawn');
+    await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, {
+      steps: 4,
+    });
+    await expect
+      .poll(() =>
+        card.evaluate((el: HTMLElement) =>
+          el.style.getPropertyValue('--tilt-y'),
+        ),
+      )
+      .toMatch(/deg$/);
+    await page.evaluate(() =>
+      Promise.all(
+        document.getAnimations().map((each) => each.finished.catch(() => null)),
+      ),
+    );
+    await expect(row).toHaveScreenshot('first-row-shine-mouse-1440.png', {
+      ...TOLERANCE,
+    });
+  });
+
+  test.describe('on a touch screen', () => {
+    test.use({ hasTouch: true, isMobile: true });
+
+    test('the first row at 390 at a fixed scroll', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/');
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
+      await settle(page);
+      const row = page.locator('section.row').first();
+      await row.evaluate((el: HTMLElement) => {
+        window.scrollTo({ top: el.offsetTop - 200, behavior: 'instant' });
+      });
+      const card = row.locator('li.card[data-entry="aquaclysm"]');
+      await expect
+        .poll(() =>
+          card.evaluate((el: HTMLElement) =>
+            el.style.getPropertyValue('--shine-y'),
+          ),
+        )
+        .not.toBe('');
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .map((each) => each.finished.catch(() => null)),
+        ),
+      );
+      await expect(row).toHaveScreenshot('first-row-shine-scroll-390.png', {
+        ...TOLERANCE,
+      });
+    });
+  });
+});

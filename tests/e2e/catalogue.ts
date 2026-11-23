@@ -15,6 +15,8 @@ export interface RowsFile {
   feature: string;
   /** More sites the feature may be, after `feature`, in order. */
   features: string[];
+  /** The sites whose cards shine, wherever a row draws them. */
+  best: string[];
   rows: RowFile[];
 }
 
@@ -22,6 +24,7 @@ export interface RowsFile {
 interface CatalogueJson {
   feature: string;
   features?: string[];
+  best?: string[];
   rows: { id: string; title: string; sites: string[] }[];
 }
 
@@ -36,6 +39,7 @@ export function readRows(): RowsFile {
   return {
     feature: parsed.feature,
     features: parsed.features ?? [],
+    best: parsed.best ?? [],
     rows: parsed.rows.map((row) => ({
       id: row.id,
       title: row.title,
@@ -44,12 +48,14 @@ export function readRows(): RowsFile {
   };
 }
 
-/** The four label lines the model can make. */
+/** The six label lines the model can make. */
 export const LABELS = [
   'Game · Play now',
   'Game · In the workshop',
+  'Game · Top pick',
   'Toy · Play now',
   'Toy · In the workshop',
+  'Toy · Top pick',
 ];
 
 /** The sites the day's feature is taken from, in order: `feature`, then `features`. */

@@ -58,6 +58,9 @@ export const catalogueShape = z.strictObject({
   // More sites the feature may be, a day each in turn after `feature`. Absent
   // or empty, the page is built as it is without them.
   features: z.array(z.string().min(1)).optional(),
+  // The best of the sites, whose cards shine like a foil trading card and say
+  // so in their label, wherever a row draws them. Absent or empty, none does.
+  best: z.array(z.string().min(1)).optional(),
   rows: z
     .array(
       z.strictObject({

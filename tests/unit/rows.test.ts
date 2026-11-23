@@ -89,6 +89,7 @@ describe('buildPage', () => {
       picture: { src: '/alpha.png' },
       pictureAlt: 'A picture of alpha.',
       label: 'Game · Play now',
+      best: false,
       aboutName: 'About Title of alpha',
       closeName: 'Close Title of alpha',
       href: 'https://alpha.example.com',
@@ -333,5 +334,91 @@ describe('buildPage, with a list of features', () => {
     expect(message).toContain('src/content/catalogue.json');
     expect(message).toContain('beta');
     expect(message).toContain('"feature"');
+  });
+});
+
+describe('buildPage, with a list of the best', () => {
+  const shining: CatalogueFile = { ...config, best: ['alpha', 'delta'] };
+
+  it('marks the best cards, and no other, wherever they are drawn in the rows', () => {
+    const page = buildPage(entries, {
+      ...shining,
+      rows: [
+        ...shining.rows,
+        { id: 'again', title: 'Again', sites: ['alpha'] },
+      ],
+    });
+    const cards = page.rows.flatMap((row) => row.cards);
+    expect(cards.length).toBe(5);
+    expect(cards.filter((card) => card.best).map((card) => card.id)).toEqual([
+      'alpha',
+      'delta',
+      'alpha',
+    ]);
+    expect(cards.filter((card) => !card.best).length).toBe(2);
+  });
+
+  it('says so in a best card’s label, in words, so that the shine is not the only thing that says it', () => {
+    const page = buildPage(entries, shining);
+    const byId = new Map(
+      page.rows.flatMap((row) => row.cards).map((card) => [card.id, card]),
+    );
+    expect(byId.get('alpha')?.label).toBe('Game · Top pick');
+    expect(byId.get('delta')?.label).toBe('Toy · Top pick');
+    expect(byId.get('beta')?.label).toBe('Game · Play now');
+    expect(byId.get('gamma')?.label).toBe('Game · In the workshop');
+  });
+
+  it('leaves the feature and its candidates as they were: the shine is a row card’s', () => {
+    const page = buildPage(entries, {
+      ...shining,
+      best: ['beta', 'alpha'],
+      features: ['alpha'],
+    });
+    for (const card of page.candidates) {
+      expect(card.best, card.id).toBe(false);
+      expect(card.label, card.id).toBe('Game · Play now');
+    }
+    expect(page.rows[0]?.cards.map((card) => card.best)).toEqual([true, true]);
+  });
+
+  it('marks none with no list, or an empty one', () => {
+    for (const each of [config, { ...config, best: [] }]) {
+      const cards = buildPage(entries, each).rows.flatMap((row) => row.cards);
+      expect(cards.length).toBe(4);
+      expect(cards.filter((card) => card.best)).toEqual([]);
+    }
+  });
+
+  it('refuses a best site with no file, naming the file and the id', () => {
+    const message = refusal(entries, { ...config, best: ['nobody'] }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"best"');
+    expect(message).toContain('nobody');
+    expect(message).toContain('src/content/entries/nobody.yaml');
+  });
+
+  it('refuses a best site said twice, naming the file and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      best: ['alpha', 'delta', 'alpha'],
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"best"');
+    expect(message).toContain('alpha');
+    expect(message).toContain('twice');
+  });
+
+  it('refuses a best site that is in no row, since it would shine nowhere, naming the file and the id', () => {
+    const rows: CatalogueFile = {
+      feature: 'beta',
+      rows: [{ id: 'one', title: 'One', sites: ['alpha', 'beta'] }],
+      best: ['alpha', 'gamma'],
+    };
+    const message = refusal(entries, rows).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"best"');
+    expect(message).toContain('gamma');
+    expect(message).toContain('in no row');
   });
 });
