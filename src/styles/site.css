@@ -320,14 +320,17 @@ p {
   box-sizing: border-box;
   width: var(--size-arrow-width);
   min-width: var(--size-target);
-  height: calc(var(--card-width) * 9 / 16);
+  height: calc((var(--card-width) - var(--card-trim, 0px)) * 9 / 16);
   min-height: var(--size-target);
   /* A card that flips has a picture as tall as its row leaves it, not 16 by
      9, so the arrows take the top and the height of the row's first picture
      where the browser can anchor to it (the frame is named below), and the 16
      by 9 above where it cannot. */
   top: anchor(--row-frame top, var(--space-m));
-  height: anchor-size(--row-frame height, calc(var(--card-width) * 9 / 16));
+  height: anchor-size(
+    --row-frame height,
+    calc((var(--card-width) - var(--card-trim, 0px)) * 9 / 16)
+  );
   padding: 0;
   background: var(--color-ground);
   color: var(--color-accent);
@@ -460,7 +463,10 @@ p {
 
 .card {
   position: relative;
-  flex: 0 0 var(--card-width);
+  /* Narrowed by the row's --card-trim where rows.ts sets one: a few pixels,
+     in a band of window widths, so that no card a strip rests with wholly in
+     the window lies under an arrow (paging.ts's trim()). */
+  flex: 0 0 calc(var(--card-width) - var(--card-trim, 0px));
   min-width: 0;
   scroll-snap-align: start;
 }

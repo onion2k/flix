@@ -7,10 +7,14 @@
 // scrollbar: without script there are no arrows, and a mouse with no sideways
 // wheel would have no other way along. What it decides comes from paging();
 // this reads the strip, sets attributes and calls scrollTo, and it brings a
-// card that has keyboard focus wholly into view, as whollyIn() says. It builds no markup from a
-// string and sets no style, since the content policy refuses both, and it adds
-// three listeners and one observer to each strip, once, so nothing it keeps
-// grows. Smoothness is the stylesheet's and only where motion is allowed.
+// card that has focus wholly into view, as whollyIn() says. Where the cards'
+// own width would leave a card the strip rests with wholly in the window
+// under an arrow, it draws the row's cards narrower by what trim() says,
+// through one custom property on the row (--card-trim, set through the
+// CSSOM, which the content policy allows), worked out again whenever the
+// strip's size changes. It builds no markup from a string, and it adds four
+// listeners and one observer to each strip, and three to the document, once,
+// so nothing it keeps grows. Smoothness is the stylesheet's and only where motion is allowed.
 // The words in each row are not a live region: a glide would otherwise read
 // out a page for every frame it crossed, so they are written only when the
 // page changes and are read in their place in the row, on demand. Where an
@@ -20,9 +24,35 @@
 // key, touches it. Without it a row that
 // overflows has no arrows and keeps its scrollbar, which is the page working
 // without script, not a fault.
-import { paging, whollyIn } from '../catalogue/paging';
+import { paging, trim, whollyIn } from '../catalogue/paging';
 
 const live = document.querySelector<HTMLElement>('[data-rows-live]');
+
+// Whether a pointer is pressed and its click has not yet come. A press on a
+// card focuses its flip button, and a card brought into view at that moment
+// would leave the pointer before the button came up; where the strip jumps,
+// as it does for a reader who asked for less motion, the release then falls
+// on another card and no click comes, so the card is brought in and never
+// flipped. While a press is on, focus brings nothing in: the click flips the
+// card, the flip sends focus to its back, and that focus, with the press
+// over, brings it in. A key or a click ends it, and so does a press that is
+// let go of, so that a drag which comes to no click cannot hold it.
+let pressing = false;
+document.addEventListener(
+  'pointerdown',
+  () => {
+    pressing = true;
+  },
+  { capture: true },
+);
+for (const ends of ['click', 'keydown', 'pointercancel'])
+  document.addEventListener(
+    ends,
+    () => {
+      pressing = false;
+    },
+    { capture: true },
+  );
 
 for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
   const strip = row.querySelector<HTMLElement>('ul.strip');
@@ -137,7 +167,7 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
   // little as it can, since a tall card's title can be in the window while
   // the rest of it is not.
   strip.addEventListener('focusin', (event) => {
-    if (!(event.target instanceof Element)) return;
+    if (pressing || !(event.target instanceof Element)) return;
     const card = event.target.closest('li');
     if (card === null) return;
     // A DOMRect's edges are getters, which a spread would not copy, so they
@@ -154,8 +184,41 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
     card.scrollIntoView({ inline, block: 'nearest' });
   });
 
+  // How much narrower the row's cards are drawn, as trim() says, from the
+  // strip as it is drawn now. A card's width before the trim is the width it
+  // is drawn at plus the trim it was given. A stacked row (below 340px) has
+  // no arrows and its cards are the window's width, so it is given none.
+  let cut = 0;
+  const fit = () => {
+    const card = strip.querySelector('li');
+    const style = getComputedStyle(strip);
+    const arrow = getComputedStyle(next);
+    const wanted =
+      card === null || style.flexDirection === 'column'
+        ? 0
+        : trim({
+            window: strip.getBoundingClientRect().width,
+            card: card.getBoundingClientRect().width + cut,
+            gap: parseFloat(style.columnGap) || 0,
+            start: parseFloat(style.paddingLeft) || 0,
+            padding: parseFloat(style.scrollPaddingLeft) || 0,
+            arrow: Math.max(
+              parseFloat(arrow.width) || 0,
+              parseFloat(arrow.minWidth) || 0,
+            ),
+          });
+    if (Math.abs(wanted - cut) < 0.01) return;
+    cut = wanted;
+    if (cut === 0) row.style.removeProperty('--card-trim');
+    else row.style.setProperty('--card-trim', `${cut}px`);
+  };
+
   strip.addEventListener('scroll', update, { passive: true });
-  new ResizeObserver(update).observe(strip);
+  new ResizeObserver(() => {
+    fit();
+    update();
+  }).observe(strip);
+  fit();
   update();
   row.setAttribute('data-arrows', '');
 }

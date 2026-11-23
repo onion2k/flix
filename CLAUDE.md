@@ -77,7 +77,10 @@ commit of its own that says what it is for.
   it on a button, or leave the still) from three facts, the Pause
   button's words (`pauseWords`) and the cards' (`cardPauseWords`).
   `paging.ts` also has `whollyIn`: whether a focused card is wholly in its
-  strip's window, less the scroll padding. `moving.ts` says where an
+  strip's window, less the scroll padding; and `trim`: how much narrower a
+  row's cards are drawn so that no card a strip rests with wholly in the
+  window lies under an arrow (nought except in a few bands of window width
+  where a card's clamped width would leave one ending there). `moving.ts` says where an
   arrow-key or gamepad move lands among the cards' live controls, which
   direction a pad holds, and when a held one fires (time handed in).
   `flipping.ts` says what a press (flip, unflip, Escape) does: which card is
@@ -127,7 +130,11 @@ commit of its own that says what it is for.
   `src/scripts/rows.ts` works each row's edge arrows (its Previous and Next,
   hidden from the tree where there is nothing that way), its page marks and
   the words that say the page, from `paging.ts`, brings a focused card that
-  is not `whollyIn` its window to its own start, and marks the row
+  is not `whollyIn` its window to its own start (but not while a pointer is
+  pressed and its click has not come: a card moved then left the pointer, and
+  under reduced motion the click was lost and the card never flipped), sets
+  `--card-trim` on the row from `trim` whenever the strip's size changes
+  (`.card`'s width and the arrows' fallback height read it), and marks the row
   `data-arrows` once it has, which is what hides the strip's scrollbar and
   what specs wait on to know script has run. The arrows take the top and
   height of the row's first picture by anchor positioning (`--row-frame`),
@@ -338,8 +345,10 @@ Every new thing is taken through each of these that it can reach.
   with no sideways wheel has no other way along). Below 340px a row stacks
   and has neither. At rest after an arrow press, a swipe, a wheel, a drag or
   a key, with motion and without, no card wholly in the window has any of
-  itself under an arrow that shows, outside the bands named under What is
-  not held: try each side of 40rem and 64rem, and of a band.
+  itself under an arrow that shows, at its very start as at every rest: try
+  each side of 40rem and 64rem, and inside the bands where `trim` narrows
+  the cards (680, 990, 1840, 2290). A mouse press on a card cut off at the
+  strip's edge flips it, with motion and without.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
   press that does not move is a click.
 - By keyboard alone: order, a visible focus ring, nothing trapped. With
@@ -399,7 +408,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no           |
 |                                     | global random anywhere in `src/`                       |
 | `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes    |
-| `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`      |
+| `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`;     |
+|                                     | `trim`, every rest of every width 341 to 2600          |
 | `tests/unit/flipping.test.ts`       | every press from every state: flipped, focus           |
 | `tests/unit/playing.test.ts`        | which card plays, the hero's half, the 600ms settle    |
 | `tests/unit/shine.test.ts`          | the sheen's place and the tilt, clamped; at rest       |
@@ -418,7 +428,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line   |
 | `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows     |
 | `tests/e2e/arrows.spec.ts`          | at rest no card wholly in is under an arrow: presses   |
-|                                     | to each end and back, 341 to 1920, both motions; swipe |
+|                                     | to each end and back, 341 to 2290 and in the bands,    |
+|                                     | the very start too, both motions; swipe                |
 | `tests/e2e/drag.spec.ts`            | a mouse drag, nothing flipped; touch left alone        |
 | `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll,          |
 |                                     | address, Tab, print, no observer; no address in markup |
@@ -596,19 +607,14 @@ The nine points of the definition of done, as this project has them.
   row's tallest back leaves: the back's description lines and the Play
   link set it. At 390 More to play shows 63% of each picture's width, its
   tallest card Fruit Machine, with seven lines of description.
-- **In four bands of window width a card at rest can have an edge under an
-  arrow.** Where a desk's card is 17rem (a window under about 1070px) or
-  25rem (over about 1574px), a window whose width leaves a card ending
-  within an arrow's width of its right edge has that card wholly in and its
-  last few px, up to 55, under Next at the strip's start, at the mirror
-  place under Previous at its end, and at a rest part way. At the strip's
-  start and end the strip cannot be anywhere else, so no snap or padding
-  mends it; only the card's width or the arrows', which the owner has
-  accepted, could. Measured without a scrollbar, by setting each rest's
-  scroll from 341 to 2600: 649 to 709, 959 to 1019, 1814 to 1873 and 2260 to
-  2319 (a classic scrollbar moves each up by its width, 15px). The phone's
-  widths, 341 to 640, have none. `arrows.spec.ts` tries each side of the
-  first two (645, 715, 955, 1023) and nothing holds a band itself.
+- **In a few bands of window width a row's cards are drawn a little
+  narrower than the stylesheet's width,** by script alone (`trim`, up to
+  about 30px at a 680px window), so that a card just fitting does not rest
+  under an arrow. The bands are where a card's width sits at its clamp; the
+  unit test sweeps every width from 341 to 2600 at a 17px root, and nothing
+  tries another root size or a classic scrollbar there, though the sum reads
+  the strip as drawn. A picture's `sizes` does not know the trim, so a
+  trimmed card may fetch a file a little larger than it needs.
 
 - **A scrollbar is only seen with flags.** Headless Chromium on this Mac
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with

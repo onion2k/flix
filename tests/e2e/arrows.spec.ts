@@ -13,10 +13,13 @@
 // and the lit mark and the words name the stop the strip is at (worked out in
 // arrows.ts from the strip's widths, not from the rule under test).
 //
-// The widths are a desk's, 1920, each side of 64rem, each side of the bands
-// named in CLAUDE.md (where a strip's very start or end leaves a card wholly in
-// with an edge under an arrow, which no resting place can mend), each side of
-// the phone's step at 40rem, a phone's and 341. No scrollbar takes room here,
+// The widths are a desk's, 1920, each side of 64rem, the bands' widths and
+// each side of two of them (680, 990, 1840 and 2290 are inside one: there the
+// cards' own width would leave a card at the strip's very start or end wholly
+// in with up to 30px under an arrow, and rows.ts narrows that row's cards as
+// paging.ts's trim() says), each side of the phone's step at 40rem, a
+// phone's and 341. The strip's very start is held as well as every rest a
+// press leaves, since that is where the bands were. No scrollbar takes room here,
 // as on a phone or a Mac: rows.spec.ts is the file that draws one. Waits are on
 // a state reached (a scroll end, a strip at rest), never on a time.
 import { expect, type Locator, type Page } from '@playwright/test';
@@ -69,7 +72,10 @@ async function saysWhere(
   return at;
 }
 
-const WIDTHS = [1920, 1440, 1025, 1023, 955, 715, 645, 641, 640, 390, 341];
+const WIDTHS = [
+  2290, 1920, 1840, 1440, 1025, 1023, 990, 955, 715, 680, 645, 641, 640, 390,
+  341,
+];
 
 test.describe('where an arrow press leaves a strip', () => {
   for (const motion of ['no-preference', 'reduce'] as const)
@@ -88,6 +94,10 @@ test.describe('where an arrow press leaves a strip', () => {
           if (!(await overflows(list))) continue;
           await list.scrollIntoViewIfNeeded();
           const pages = await pagesOf(list);
+          // The strip as the page left it, at its very start, before any press.
+          const first = await cardsUnderArrows(section(page, each.id));
+          expect(first.under, `${each.id}, at its start`).toEqual([]);
+          cards += first.seen;
           for (const [arrow, end] of [
             [next, pages - 1],
             [previous, 0],

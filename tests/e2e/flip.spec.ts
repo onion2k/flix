@@ -380,6 +380,83 @@ test.describe('a click', () => {
   });
 });
 
+// A card cut off at the strip's edge is pressed where it is, on the part of
+// its picture that shows and clear of the arrow over the rest. Pressing a
+// mouse focuses the card's flip button, and the strip brings a focused card
+// in (rows.ts); where that was an instant jump, as it is for a reader who
+// asked for less motion, the card left the pointer before the button came
+// up, the release fell on another card, and no click came: the card was
+// brought in and never flipped. It is pressed as a person does, with a pause
+// between down and up, at a desk's width, a phone's and 800 (inside a band
+// the card after the whole ones starts under the arrow, and none of it shows
+// to be pressed).
+test.describe('a click on a card cut off at the strip’s edge', () => {
+  for (const motion of ['reduce', 'no-preference'] as const)
+    for (const width of [1440, 800, 390])
+      test(`at ${width} wide, motion ${motion}: flips it, brings it in, and sends focus to its Play`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.emulateMedia({ reducedMotion: motion });
+        await ready(page);
+        const row = firstRow(page);
+        await row.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+        const list = row.locator('ul.strip');
+        await atRest(list);
+        // The first card that runs past the strip's right edge, and the part
+        // of its picture left of the Next arrow.
+        const found = await row.evaluate((section) => {
+          const strip = section
+            .querySelector('ul.strip')
+            ?.getBoundingClientRect();
+          const next = section
+            .querySelector<HTMLElement>('.row-arrow[data-page="next"]')
+            ?.getBoundingClientRect();
+          const cards = [...section.querySelectorAll<HTMLElement>('li.card')];
+          const at = cards.findIndex(
+            (card) =>
+              strip !== undefined &&
+              card.getBoundingClientRect().right > strip.right + 1 &&
+              card.getBoundingClientRect().left < strip.right,
+          );
+          const frame = cards[at]
+            ?.querySelector('.frame')
+            ?.getBoundingClientRect();
+          if (frame === undefined || next === undefined) return null;
+          return {
+            at,
+            x: (frame.left + next.left) / 2,
+            y: frame.top + frame.height / 2,
+            showing: next.left - frame.left,
+          };
+        });
+        expect(
+          found,
+          'a card cut off at the strip’s right edge',
+        ).not.toBeNull();
+        expect(
+          found?.showing ?? 0,
+          'px of it showing left of Next',
+        ).toBeGreaterThan(20);
+        const card = row.locator('li.card').nth(found?.at ?? 0);
+        const place = await placeOf(card);
+        await page.mouse.click(found?.x ?? 0, found?.y ?? 0, { delay: 120 });
+        await expect(card).toHaveAttribute('data-flipped', '');
+        await expect.poll(() => focusIs(page)).toBe(`${place} play`);
+        await expect(page.locator('li.card[data-flipped]')).toHaveCount(1);
+        await atRest(list);
+        const strip = await list.boundingBox();
+        const box = await card.boundingBox();
+        expect(box?.x ?? 0, 'brought in at its left').toBeGreaterThanOrEqual(
+          (strip?.x ?? 0) - 1,
+        );
+        expect(
+          (box?.x ?? 0) + (box?.width ?? 0),
+          'brought in at its right',
+        ).toBeLessThanOrEqual((strip?.x ?? 0) + (strip?.width ?? 0) + 1);
+      });
+});
+
 test.describe('the keyboard', () => {
   /** Real Tab presses until focus is on this card's flip button. */
   async function tabToFlip(page: Page, card: Locator): Promise<void> {

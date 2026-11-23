@@ -9,7 +9,7 @@
 // cases carry the pixel of tolerance, since a browser's scrollLeft can stop a
 // fraction short of the end and leave Next live with nowhere to go.
 import { describe, expect, it } from 'vitest';
-import { paging, whollyIn } from '../../src/catalogue/paging';
+import { paging, trim, whollyIn } from '../../src/catalogue/paging';
 
 const strip = (
   scrollLeft: number,
@@ -231,5 +231,106 @@ describe('whollyIn', () => {
   it('forgives a pixel of rounding at each side', () => {
     expect(whollyIn({ left: 15.2, right: 374.8 }, view)).toBe(true);
     expect(whollyIn({ left: 14.5, right: 240 }, view)).toBe(false);
+  });
+});
+
+// trim() says how much narrower a row's cards are drawn so that no card the
+// strip rests with wholly in the window lies under an arrow. It is held here
+// by laying a strip out in numbers, as the stylesheet does, and looking at
+// every place it can rest: its start, its end, and each card's start at the
+// scroll padding (the snap is mandatory). That is worked out here from the
+// layout and not from trim()'s own sum, so a wrong sum is caught. The figures
+// are the site's, at a root of 17px: a desk's gutter of 3rem and a phone's of
+// 1rem, a gap of 1.25rem, an arrow of 3.25rem and a scroll padding as wide as
+// the widest of the gutter, the arrow and a target; a desk's card is
+// clamp(17rem, 27vw, 25rem) and a phone's 58vw.
+describe('trim', () => {
+  const REM = 17;
+  const GAP = 1.25 * REM;
+  const ARROW = 3.25 * REM;
+  const TARGET = 2.75 * REM;
+  const site = (window: number) => {
+    const phone = window <= 640;
+    const start = (phone ? 1 : 3) * REM;
+    const card = phone
+      ? 0.58 * window
+      : Math.min(Math.max(17 * REM, 0.27 * window), 25 * REM);
+    const padding = Math.max(start, ARROW, TARGET);
+    return { window, card, gap: GAP, start, padding, arrow: ARROW };
+  };
+
+  /** Each whole card under a showing arrow at each rest of a strip of `count` cards. */
+  function under(
+    figures: ReturnType<typeof site>,
+    cut: number,
+    count: number,
+  ): string[] {
+    const { window, gap, start, padding, arrow } = figures;
+    const card = figures.card - cut;
+    const lefts = Array.from(
+      { length: count },
+      (_, at) => start + at * (card + gap),
+    );
+    const width = start + count * card + (count - 1) * gap + start;
+    const most = width - window;
+    if (most <= 1) return [];
+    const rests = new Set([0, most]);
+    for (const left of lefts)
+      rests.add(Math.min(most, Math.max(0, left - padding)));
+    const found: string[] = [];
+    for (const rest of rests) {
+      for (const [at, left] of lefts.entries()) {
+        const from = left - rest;
+        const to = from + card;
+        if (from < -0.5 || to > window + 0.5) continue;
+        if (rest > 1 && from < arrow - 0.5)
+          found.push(
+            `${window}: card ${at} under Previous at ${rest.toFixed(1)}`,
+          );
+        if (rest < most - 1 && to > window - arrow + 0.5)
+          found.push(`${window}: card ${at} under Next at ${rest.toFixed(1)}`);
+      }
+    }
+    return found;
+  }
+
+  it('leaves the cards as they are where no whole card would rest under an arrow', () => {
+    expect(trim(site(1440))).toBe(0);
+    expect(trim(site(390))).toBe(0);
+    expect(trim(site(1920))).toBe(0);
+  });
+
+  it('narrows the cards inside a band, by no more than the arrow and its edge over the whole cards', () => {
+    for (const window of [680, 990, 1840, 2290]) {
+      const cut = trim(site(window));
+      expect(cut, `${window}`).toBeGreaterThan(0);
+      expect(cut, `${window}`).toBeLessThan(ARROW);
+    }
+  });
+
+  it('shows that the bands are real: untrimmed, a whole card rests under an arrow there', () => {
+    for (const window of [680, 990, 1840, 2290])
+      expect(under(site(window), 0, 7).length, `${window}`).toBeGreaterThan(0);
+  });
+
+  it('leaves no whole card under an arrow at any rest, at every width from 341 to 2600, for rows of 3 to 7 cards', () => {
+    let rows = 0;
+    const found: string[] = [];
+    for (let window = 341; window <= 2600; window += 1)
+      for (const count of [3, 4, 5, 7]) {
+        const figures = site(window);
+        found.push(...under(figures, trim(figures), count));
+        rows += 1;
+      }
+    expect(found.slice(0, 10)).toEqual([]);
+    expect(rows).toBe(2260 * 4);
+  });
+
+  it('says nothing for a strip it cannot measure', () => {
+    const figures = site(1440);
+    expect(trim({ ...figures, card: 0 })).toBe(0);
+    expect(trim({ ...figures, window: Number.NaN })).toBe(0);
+    expect(trim({ ...figures, window: 0 })).toBe(0);
+    expect(trim({ ...figures, gap: Number.POSITIVE_INFINITY })).toBe(0);
   });
 });

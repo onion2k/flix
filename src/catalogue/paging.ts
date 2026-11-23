@@ -118,3 +118,56 @@ export function whollyIn(
     card.right <= view.right - view.padding + TOLERANCE
   );
 }
+
+/** What a row is drawn with, in pixels, for trim(). */
+export interface Strip {
+  /** The strip's window: its own width. */
+  window: number;
+  /** A card's width as the stylesheet makes it, before any trim. */
+  card: number;
+  /** The gap between two cards. */
+  gap: number;
+  /** The strip's padding at its start, and at its end: the page's gutter. */
+  start: number;
+  /** The strip's scroll padding, where a card comes to rest at a snap. */
+  padding: number;
+  /** An arrow's width, which stands over the strip's edge. */
+  arrow: number;
+}
+
+/**
+ * How many pixels narrower each of a row's cards is drawn, so that no card
+ * the strip rests with wholly in the window has any part under an arrow. A
+ * card's width is a share of the window between two limits, and where it sits
+ * at a limit some windows leave a card that just fits ending under Next at the
+ * strip's start, and the card that just fits at its end starting under
+ * Previous, where the strip cannot rest anywhere else; that card's words lie
+ * there once it is flipped. Where the last whole card at the start would end
+ * less than the arrow (and the scroll padding's lead over the gutter, so that
+ * a rest at a card's start is clear too) from the edge, every card is made
+ * narrower by that shortfall shared among the whole cards, so the last of them
+ * ends just clear of the arrow and the next lies under it. A card cut off by
+ * less than a pixel is counted whole, as whollyIn() counts it. The end is the
+ * start mirrored, and is mended by the same width. Elsewhere it is nought, and
+ * the cards are as the stylesheet draws them. A strip it cannot measure gets
+ * nought.
+ */
+export function trim({
+  window,
+  card,
+  gap,
+  start,
+  padding,
+  arrow,
+}: Strip): number {
+  const step = card + gap;
+  const run = window - start + gap;
+  if (![step, run, arrow, padding].every(Number.isFinite)) return 0;
+  if (card <= 0 || run <= 0) return 0;
+  // A card cut off by less than the pixel of rounding is drawn whole.
+  const whole = Math.floor((run + TOLERANCE) / step);
+  if (whole < 1) return 0;
+  const left = run - whole * step;
+  const clear = arrow + Math.max(0, padding - start);
+  return left >= clear ? 0 : (clear - left) / whole;
+}
