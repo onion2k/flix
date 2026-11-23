@@ -197,7 +197,10 @@ for (const width of WIDTHS) {
         ).toBeGreaterThanOrEqual(3);
     });
 
-    test('the cards’ Pause button, over a playing loop, has a solid ground, and its edge, mark and ring are 3:1 or better as drawn', async ({
+    // The cards' Pause is a small, quiet mark (the owner, 2026-11-23: the
+    // button was big and in the way): a small disc of the ground with its
+    // mark on it, inside a target that is still 44 by 44 and drawn clear.
+    test('the cards’ Pause, over a playing loop, is a small disc of solid ground in a 44px target, its mark and ring 3:1 or better as drawn', async ({
       page,
     }) => {
       await page.emulateMedia({ reducedMotion: 'no-preference' });
@@ -231,24 +234,31 @@ for (const width of WIDTHS) {
           return ((high ?? 0) + 0.05) / ((low ?? 0) + 0.05);
         };
         const style = getComputedStyle(button);
+        const disc = getComputedStyle(button, '::before');
         const mark = getComputedStyle(button.querySelector('svg') as Element);
-        const ground = style.backgroundColor;
-        // The ring's gap is a shadow of the ground round the button, so that
+        const ground = disc.backgroundColor;
+        // The ring's gap is a shadow of the ground round the target, so that
         // the ring is drawn against it and not against the loop.
         const gap = /^(rgb\([^)]*\))/.exec(style.boxShadow)?.[1] ?? '';
+        const box = button.getBoundingClientRect();
         return {
           solid: ground.startsWith('rgb(') && channels(ground).length === 3,
+          clear: style.backgroundColor === 'rgba(0, 0, 0, 0)',
           gapIsGround: gap === ground,
-          edge: ratio(style.borderTopColor, ground),
           mark: ratio(mark.color, ground),
           ring: ratio(style.outlineColor, ground),
+          disc: parseFloat(disc.width),
+          target: Math.min(box.width, box.height),
         };
       });
-      expect(drawn.solid, 'the ground is solid').toBe(true);
+      expect(drawn.solid, 'the disc is solid ground').toBe(true);
+      expect(drawn.clear, 'the target round it is clear').toBe(true);
       expect(drawn.gapIsGround, 'the ring has a gap of the ground').toBe(true);
-      expect(drawn.edge).toBeGreaterThanOrEqual(3);
       expect(drawn.mark).toBeGreaterThanOrEqual(3);
       expect(drawn.ring).toBeGreaterThanOrEqual(3);
+      expect(drawn.disc, 'the disc is small').toBeLessThanOrEqual(26);
+      expect(drawn.disc).toBeGreaterThan(0);
+      expect(drawn.target, 'the target is 44px').toBeGreaterThanOrEqual(44);
     });
 
     test('the ring of every control Tab reaches is 3:1 or better against what is behind it', async ({

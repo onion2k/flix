@@ -804,12 +804,16 @@ p {
   aspect-ratio: auto;
 }
 
-/* A square with the accent edge, as Close is, and the ground behind it, as the
-   hero's button has: it is over a moving picture, so its mark and its edge are
-   held to 3:1 against a flat colour whatever the loop shows, and so is its
-   ring, which has a gap of the ground inside it. Its name is in words hidden
-   inside it. */
+/* A small, quiet mark (the owner, 2026-11-23: a square button was big and in
+   the way): a small disc of the ground with the pause or play mark on it, in
+   the accent colour, so that the mark is held to 3:1 against a flat colour
+   whatever the loop shows. Round it the button's own box is still a 44px
+   target, drawn clear, and its ring, when a keyboard is on it, goes round the
+   whole target with a gap of the ground inside it, as the hero's has. The
+   disc's edge is transparent, so it is drawn where colours are forced. Its
+   name is in words hidden inside it. */
 .card-pause {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -817,15 +821,25 @@ p {
   height: var(--size-target);
   margin: 0;
   padding: 0;
-  background: var(--color-ground);
+  background: transparent;
   color: var(--color-accent);
-  border: var(--size-outline-button) solid var(--color-accent);
-  border-radius: var(--radius);
+  border: 0;
+  border-radius: 50%;
   cursor: pointer;
   pointer-events: auto;
 }
 
+.card-pause::before {
+  content: '';
+  position: absolute;
+  inset: calc((var(--size-target) - var(--size-pause-disc)) / 2);
+  background: var(--color-ground);
+  border: var(--size-edge) solid transparent;
+  border-radius: 50%;
+}
+
 .card-pause svg {
+  position: relative;
   width: var(--size-pause-mark);
   height: var(--size-pause-mark);
 }

@@ -208,8 +208,9 @@ commit of its own that says what it is for.
   from `asked.ts`. The one Pause button (`button.card-pause` in a
   `.card-pause-place` laid over the picture) is made by script and moved
   to the front of the card in focus, after its flip button in the Tab
-  order: a 44px square with a pause or play mark and its name hidden in it
-  (`cardPauseWords`). A pause holds every card loop for the visit, kept
+  order: a small disc of the ground (`--size-pause-disc`) with a pause or
+  play mark and its name hidden in it (`cardPauseWords`), in a 44px target
+  drawn clear, at the picture's lower right. A pause holds every card loop for the visit, kept
   nowhere. A loop that fails goes with its button and its card is not
   tried again. **The shine:** a best card carries `data-best` and, in its
   frame's cell, an `aria-hidden` `span.foil` (a pale rainbow and bars of
@@ -698,9 +699,12 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
   three cards only. They are decoration and say nothing by themselves:
   "Top pick" says it beside them, in words, and replaces Play now in a best
   card's label.
-- **The cards' Pause button is a mark** with its name hidden in it, where
-  the hero's is a word: it sits on a small picture, and a word would cover
-  it.
+- **The cards' Pause is a small, quiet mark** with its name hidden in it,
+  where the hero's is a word: a small disc in a clear 44px target (the
+  owner, 2026-11-23: a square button was big and in the way). It is kept,
+  and not taken away, because card loops start by themselves and run past
+  five seconds, which WCAG 2.2.2 (level A) asks a way to pause; the owner
+  was told so and chose the small mark over removing it.
 
 ## How a change lands
 
