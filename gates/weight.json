@@ -1,10 +1,11 @@
 {
-  "note": "Page weight of the built home page, without scrolling, at 1440x1000 on each day that gives a different feature (day 0 as \"1440x1000\") and at 390x844 on day 0. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. The hero's loop is the \"media\" kind: it is asked for after the page has loaded, and has a budget of its own. Written by npm run weight:update, only for a change meant to move it.",
+  "note": "Page weight of the built home page, without scrolling, at 1440x1000 on each day that gives a different feature (day 0 as \"1440x1000\") and at 390x844 on day 0. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. The hero's loop is the \"media\" kind: it is asked for after the page has loaded, and has a budget of its own. A card's loop is the \"cardLoop\" kind, told from the hero's by its built name, and each one has a budget of its own. Written by npm run weight:update, only for a change meant to move it.",
   "budgets": {
-    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. The picture budget was 150000 until later that day, when the owner raised it to 200000 for the moving hero's full-width still, with the feature's pictures drawn at AVIF quality 40. The hero loop has a budget of its own, 450000, which the owner agreed in plans/motion.md the same day: it arrives only after the page has loaded and is neither a picture nor part of the page without pictures. KB here is 1000 bytes.",
+    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. The picture budget was 150000 until later that day, when the owner raised it to 200000 for the moving hero's full-width still, with the feature's pictures drawn at AVIF quality 40. The hero loop has a budget of its own, 450000, which the owner agreed in plans/motion.md the same day: it arrives only after the page has loaded and is neither a picture nor part of the page without pictures. KB here is 1000 bytes. Each card's loop has a budget of its own, 250000, which the owner agreed on 2026-11-23 in plans/cards.md, when the largest card loop was 218,443 bytes: one card plays at a time, and its loop is asked for only once a reader has scrolled past the hero and settled on a card, so no first screen measured here asks for one.",
     "pageWithFontsNoPicturesBytes": 60000,
     "firstScreenPicturesDeskBytes": 200000,
-    "heroLoopBytes": 450000
+    "heroLoopBytes": 450000,
+    "cardLoopBytes": 250000
   },
   "measured": {
     "1440x1000": {

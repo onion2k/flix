@@ -12,6 +12,7 @@ export const KINDS = [
   'font',
   'image',
   'media',
+  'cardLoop',
   'other',
 ] as const;
 export type Kind = (typeof KINDS)[number];
@@ -38,13 +39,32 @@ export interface Budgets {
    * budget of its own: it is neither a picture nor part of the page's text.
    */
   heroLoopBytes: number;
+  /**
+   * Each card's loop, held one at a time: one card plays at a time, and a card
+   * loop is asked for only once the reader has settled on a card.
+   */
+  cardLoopBytes: number;
+}
+
+/**
+ * What a response is, from the browser's own word for it and its path. A loop
+ * is media either way; the build names a hero loop <id>.hero.<hash>.webm and a
+ * card's <id>.<hash>.webm, so a hero loop is "media", as it has always been
+ * counted, and a card's is "cardLoop", apart from it.
+ */
+export function kindOf(resourceType: string, path: string): Kind {
+  if (resourceType === 'media')
+    return /\.hero\.[\w-]+\.webm$/.test(path) ? 'media' : 'cardLoop';
+  return (KINDS as readonly string[]).includes(resourceType)
+    ? (resourceType as Kind)
+    : 'other';
 }
 
 /** Compressed bytes of the page without its pictures. */
 export function pageWithoutPictures(weight: Weight): number {
   let total = 0;
   for (const kind of KINDS) {
-    if (kind === 'image' || kind === 'media') continue;
+    if (kind === 'image' || kind === 'media' || kind === 'cardLoop') continue;
     total += weight[kind].gzip ?? weight[kind].bytes;
   }
   return total;
@@ -63,8 +83,13 @@ export function judge(
 ): string[] {
   const found: string[] = [];
   for (const kind of KINDS) {
-    const was = baseline[kind];
+    // A baseline written before a kind was counted does not have it.
+    const was = baseline[kind] as Figures | undefined;
     const now = measured[kind];
+    if (was === undefined) {
+      found.push(`${kind} has no baseline`);
+      continue;
+    }
     if (now.count !== was.count)
       found.push(
         `${kind} count ${now.count > was.count ? 'rose' : 'fell'}: ${was.count} to ${now.count}`,
@@ -89,13 +114,16 @@ export function judge(
 
 /**
  * Each budget a measurement is over, said plainly. A desk's width is held to
- * all three; a phone's is held to the loop's alone, since the page and picture
- * budgets are the owner's figures for a desk's first screen.
+ * all four; a phone's is held to the loops' alone, since the page and picture
+ * budgets are the owner's figures for a desk's first screen. `cardLoops` is the
+ * size of each card loop the measurement saw, each held to the card loop's
+ * budget on its own.
  */
 export function overBudget(
   weight: Weight,
   budgets: Budgets,
   scope: 'desk' | 'phone' = 'desk',
+  cardLoops: readonly number[] = [],
 ): string[] {
   const found: string[] = [];
   if (scope === 'desk') {
@@ -113,5 +141,10 @@ export function overBudget(
     found.push(
       `the hero loop is ${weight.media.bytes} bytes, over its ${budgets.heroLoopBytes}`,
     );
+  for (const bytes of cardLoops)
+    if (bytes > budgets.cardLoopBytes)
+      found.push(
+        `a card loop is ${bytes} bytes, over its ${budgets.cardLoopBytes}`,
+      );
   return found;
 }

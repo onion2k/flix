@@ -7,7 +7,11 @@
 // empty table cannot pass. Without this a reader who asked for stillness could
 // be given a loop, or a button could say Pause of a video that is not playing.
 import { describe, expect, it } from 'vitest';
-import { heroStart, pauseWords } from '../../src/catalogue/hero';
+import {
+  cardPauseWords,
+  heroStart,
+  pauseWords,
+} from '../../src/catalogue/hero';
 
 describe('heroStart', () => {
   const table = [
@@ -51,5 +55,12 @@ describe('pauseWords', () => {
       const { words, name } = pauseWords('Ooergolf', playing);
       expect(name.startsWith(words)).toBe(true);
     }
+  });
+});
+
+describe('cardPauseWords', () => {
+  it('names the card videos, Pause while one plays and Play while they are held', () => {
+    expect(cardPauseWords(true)).toBe('Pause the card videos');
+    expect(cardPauseWords(false)).toBe('Play the card videos');
   });
 });

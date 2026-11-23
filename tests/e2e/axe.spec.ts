@@ -13,6 +13,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../clock';
+import { settleOnFirstRow } from './card-loop';
 
 const TAGS = [
   'wcag2a',
@@ -115,6 +116,20 @@ test('the home page with a card flipped has no axe violation', async ({
     ),
   );
   await audit(page, 'home with a card flipped');
+});
+
+test('the home page with a card’s loop playing and its Pause button focused has no axe violation', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const card = await settleOnFirstRow(page);
+  await card.locator('button.card-flip').focus();
+  await page.keyboard.press('Tab');
+  await expect(card.locator('button.card-pause')).toBeFocused();
+  await expect(card.locator('video')).toHaveCount(1);
+  await audit(page, 'home with a card loop playing');
 });
 
 test('the home page has no axe violation once the late rows have loaded', async ({

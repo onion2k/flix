@@ -4,12 +4,15 @@
 // better (4.5:1 where WCAG calls the text large); and each control that a real
 // Tab press focuses has a ring that is 3:1 or better against what is behind
 // it. The page has no text over a picture, so the nearest background is
-// always a flat token colour. Without it a rule that recoloured a link, or a
+// always a flat token colour. The cards' Pause button, over a playing loop, is
+// measured as drawn: its ground solid, its edge, its mark and its ring 3:1
+// against that ground, whatever the loop shows. Without it a rule that recoloured a link, or a
 // ring lost to a later declaration, would pass the token check, which never
 // sees the page. Each test counts what it measured, so reading nothing fails.
 import { expect } from '@playwright/test';
 import { test } from '../clock';
 import { textPieces } from './text-pieces';
+import { settleOnFirstRow } from './card-loop';
 
 const WIDTHS = [1440, 390];
 const PAGES = [
@@ -189,6 +192,60 @@ for (const width of WIDTHS) {
           each.ratio,
           `${each.what} is 3:1 or better`,
         ).toBeGreaterThanOrEqual(3);
+    });
+
+    test('the cards’ Pause button, over a playing loop, has a solid ground, and its edge, mark and ring are 3:1 or better as drawn', async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.goto('/');
+      const card = await settleOnFirstRow(page);
+      await card.locator('button.card-flip').focus();
+      await page.keyboard.press('Tab');
+      const pause = card.locator('button.card-pause');
+      await expect(pause).toBeFocused();
+      const drawn = await pause.evaluate((button) => {
+        const channels = (colour: string): number[] =>
+          colour
+            .match(/[\d.]+/g)
+            ?.map(Number)
+            .slice(0, 4) ?? [];
+        const luminance = (colour: string): number =>
+          [0.2126, 0.7152, 0.0722].reduce((sum, weight, at) => {
+            const value = (channels(colour)[at] ?? 0) / 255;
+            return (
+              sum +
+              weight *
+                (value <= 0.03928
+                  ? value / 12.92
+                  : ((value + 0.055) / 1.055) ** 2.4)
+            );
+          }, 0);
+        const ratio = (a: string, b: string): number => {
+          const [high, low] = [luminance(a), luminance(b)].sort(
+            (x, y) => y - x,
+          );
+          return ((high ?? 0) + 0.05) / ((low ?? 0) + 0.05);
+        };
+        const style = getComputedStyle(button);
+        const mark = getComputedStyle(button.querySelector('svg') as Element);
+        const ground = style.backgroundColor;
+        // The ring's gap is a shadow of the ground round the button, so that
+        // the ring is drawn against it and not against the loop.
+        const gap = /^(rgb\([^)]*\))/.exec(style.boxShadow)?.[1] ?? '';
+        return {
+          solid: ground.startsWith('rgb(') && channels(ground).length === 3,
+          gapIsGround: gap === ground,
+          edge: ratio(style.borderTopColor, ground),
+          mark: ratio(mark.color, ground),
+          ring: ratio(style.outlineColor, ground),
+        };
+      });
+      expect(drawn.solid, 'the ground is solid').toBe(true);
+      expect(drawn.gapIsGround, 'the ring has a gap of the ground').toBe(true);
+      expect(drawn.edge).toBeGreaterThanOrEqual(3);
+      expect(drawn.mark).toBeGreaterThanOrEqual(3);
+      expect(drawn.ring).toBeGreaterThanOrEqual(3);
     });
 
     test('the ring of every control Tab reaches is 3:1 or better against what is behind it', async ({

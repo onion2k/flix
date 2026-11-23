@@ -4,13 +4,16 @@
 // rules and keyframes included), so it reads what the browser holds and not
 // what the source says, and then checks the effect: with reduced motion
 // emulated a card's picture has no transition time and a strip jumps rather
-// than glides; with no preference they do, so the check cannot pass by there
-// being nothing to switch off. A page that read no rule fails, and the count
+// than glides, and the card a reader settles on shows a Play button and no
+// loop, the button with no transition of its own; with no preference they do
+// move and the loop plays, so the check cannot pass by there being nothing to
+// switch off. A page that read no rule fails, and the count
 // of rules read and of rules that set motion is attached to the report.
 // Without it a transition added outside the block would move for a visitor
 // who asked for stillness, and no other test would notice.
 import { expect } from '@playwright/test';
 import { test } from '../clock';
+import { settleOnFirstRow } from './card-loop';
 
 const PAGES = [
   { name: 'the home page', path: '/' },
@@ -106,4 +109,44 @@ test('with no preference they do move, so that the check above is not vacuous', 
   expect(
     await strip.evaluate((el) => getComputedStyle(el).scrollBehavior),
   ).toBe('smooth');
+});
+
+test('with reduced motion the card settled on shows Play and no loop, and its button does not move', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const card = await settleOnFirstRow(page, false);
+  const pause = card.locator('button.card-pause');
+  await expect(pause).toHaveAccessibleName('Play the card videos');
+  await expect(page.locator('section.row video')).toHaveCount(0);
+  for (const each of [pause, card.locator('.card-pause-place')])
+    expect(
+      await each.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return [
+          style.transitionDuration,
+          style.animationName,
+          el.getAnimations().length,
+        ];
+      }),
+    ).toEqual(['0s', 'none', 0]);
+});
+
+test('with no preference the card settled on plays its loop, which eases into the house lights', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const card = await settleOnFirstRow(page);
+  await expect(card.locator('button.card-pause')).toHaveAccessibleName(
+    'Pause the card videos',
+  );
+  expect(
+    await card
+      .locator('video')
+      .evaluate((el) => getComputedStyle(el).transitionDuration),
+  ).not.toBe('0s');
 });

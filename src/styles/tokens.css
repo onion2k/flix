@@ -130,4 +130,13 @@
   --duration-flip: 450ms;
   --depth-flip: 75rem;
   --size-close-mark: 1rem;
+
+  /*
+   * The cards' Pause button, on the playing card's picture: how large its pause
+   * or play mark is (the Close cross's size, so that the card's two square
+   * buttons read as one family), and how far it sits in from the picture's
+   * corner, kept small so that the button hides little of a phone's picture.
+   */
+  --size-pause-mark: 1rem;
+  --space-pause-inset: 0.5rem;
 }

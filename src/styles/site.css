@@ -673,6 +673,67 @@ p {
   inset: 0;
 }
 
+/* The loop of the card most in focus (src/scripts/playing.ts makes it): a
+   video over the picture, filling the frame as the picture does, under the
+   frame's edge, which is drawn after it. */
+.card-loop {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The playing card's Pause button sits at the lower right of its picture. Its
+   place is a box as large as the picture, laid over the top of the front, so
+   that the button can follow the flip button in the Tab order (it comes after
+   it in the front) and still sit on the picture; the box lets a press through
+   to the flip button, and only the button takes one. It is above the flip
+   button, so a press on it is never a flip. */
+.card-pause-place {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  aspect-ratio: 16 / 9;
+  padding: var(--space-pause-inset);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* A square with the accent edge, as Close is, and the ground behind it, as the
+   hero's button has: it is over a moving picture, so its mark and its edge are
+   held to 3:1 against a flat colour whatever the loop shows, and so is its
+   ring, which has a gap of the ground inside it. Its name is in words hidden
+   inside it. */
+.card-pause {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-target);
+  height: var(--size-target);
+  margin: 0;
+  padding: 0;
+  background: var(--color-ground);
+  color: var(--color-accent);
+  border: var(--size-outline-button) solid var(--color-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.card-pause svg {
+  width: var(--size-pause-mark);
+  height: var(--size-pause-mark);
+}
+
+.card-pause:focus-visible {
+  box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
+}
+
 /* Hover is only for a card that is a control: a link without script, and
    every card once it flips. The picture's edge takes the accent. A card with
    no link and no script is not a control and does nothing. */
@@ -684,13 +745,16 @@ p {
 /* House lights. While a card is pointed at, or holds keyboard focus, the
    pictures of the other cards in its row are dimmed, and the words, the edges,
    the other rows and the feature are not, so that no text changes its
-   contrast. Only the img is filtered: a filter on the card would dim its
-   words. A late frame is dimmed the same way, whether its picture has arrived
+   contrast. Only the img, and a loop playing over it, is filtered: a filter
+   on the card would dim its words. A late frame is dimmed the same way, whether its picture has arrived
    or not: the flat panel colour it holds meanwhile is the frame's own
    background, is not a picture, and is left as it is. The dim is a state and
    so is here and not in the motion block at the foot; only its ease is there.
    A browser without :has() draws none of this, which is the page as it was. */
-.strip:has(.card :focus-visible) .card:not(:has(:focus-visible)) .frame img {
+.strip:has(.card :focus-visible)
+  .card:not(:has(:focus-visible))
+  .frame
+  :is(img, .card-loop) {
   filter: brightness(var(--brightness-dim));
 }
 
@@ -701,7 +765,7 @@ p {
   .strip:has(.card:is([data-linked], [data-flips]):hover)
     .card:not(:hover)
     .frame
-    img {
+    :is(img, .card-loop) {
     filter: brightness(var(--brightness-dim));
   }
 }
@@ -914,6 +978,10 @@ main {
       transform var(--duration-hover) ease-out,
       filter var(--duration-dim) ease-out,
       opacity var(--duration-arrive) ease-out;
+  }
+
+  .card-loop {
+    transition: filter var(--duration-dim) ease-out;
   }
 
   .card:is([data-linked], [data-flips]):hover .frame img {

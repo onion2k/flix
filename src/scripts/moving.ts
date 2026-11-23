@@ -39,9 +39,11 @@ const KEYS: Readonly<Record<string, Move>> = {
 // the page, hidden, and a link in one of them must never be found.
 const FEATURE_LINK = 'section.feature:not([hidden]) a.button';
 // Any of a card's controls is in the grid: focus may be on Close of a flipped
-// card, which is not its stop, and an arrow from there still moves.
+// card, or on the playing card's Pause button, neither of which is its stop,
+// and an arrow from there still moves. A move never lands on either: it lands
+// on a card's live control (below).
 const CARD_CONTROL =
-  'section.row li.card :is(button.card-flip, a.card-link, button.card-unflip)';
+  'section.row li.card :is(button.card-flip, a.card-link, button.card-unflip, button.card-pause)';
 
 /**
  * The control of a card a move lands on: its flip button while it shows its

@@ -1,6 +1,7 @@
 // Holds that the page asks nothing of any other origin and says nothing wrong
 // to the console: it loads the page, scrolls to the end, works a row, and then
-// reads every request, response and console message. A script or style the
+// reads every request, response and console message; and again with a card's
+// loop playing, which comes from the site's own origin too. A script or style the
 // content policy refuses shows here as a console error, so this is also the
 // test that the policy and the script agree. It also holds what the privacy
 // page claims of the browser: after the same visit, and again after the
@@ -8,6 +9,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
+import { settleOnFirstRow } from './card-loop';
 
 const catalogue = readRows();
 
@@ -51,6 +53,42 @@ test("every request is to the page's own origin, none fails, the console is clea
   );
 
   expect(requests.length).toBeGreaterThan(5);
+  expect(requests.filter((url) => new URL(url).origin !== own)).toEqual([]);
+  expect(failed).toEqual([]);
+  expect(bad).toEqual([]);
+  expect(talk).toEqual([]);
+});
+
+test("with a card's loop playing every request is to the page's own origin, none fails, the console is clean", async ({
+  page,
+  baseURL,
+}) => {
+  const own = new URL(baseURL ?? '').origin;
+  const requests: string[] = [];
+  const failed: string[] = [];
+  const bad: string[] = [];
+  const talk: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  page.on('requestfailed', (request) => failed.push(request.url()));
+  page.on('response', (response) => {
+    if (response.status() >= 400)
+      bad.push(`${response.status()} ${response.url()}`);
+  });
+  page.on('console', (message) => {
+    if (['error', 'warning'].includes(message.type()))
+      talk.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => talk.push(`uncaught: ${error.message}`));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/');
+  const card = await settleOnFirstRow(page);
+  const loop = await card.getAttribute('data-loop');
+  expect(loop, 'the playing card names its loop').toMatch(/\.webm$/);
+  const cardLoops = requests.filter(
+    (url) => /\.webm(\?|$)/.test(url) && !/\.hero\./.test(url),
+  );
+  expect(cardLoops.map((url) => new URL(url).pathname)).toContain(loop);
   expect(requests.filter((url) => new URL(url).origin !== own)).toEqual([]);
   expect(failed).toEqual([]);
   expect(bad).toEqual([]);

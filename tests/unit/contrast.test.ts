@@ -63,6 +63,12 @@ const EDGES: [string, string, string][] = [
     'a card back’s Close button: edge, cross',
   ],
   ['--color-accent', '--color-ground', 'the Pause button edge'],
+  // The cards' Pause button has the ground behind it, over the moving picture.
+  [
+    '--color-accent',
+    '--color-ground',
+    'the cards’ Pause button: edge, mark, ring',
+  ],
   ['--color-accent', '--color-ground', 'the bar before a row title'],
   // An edge arrow sits on its own solid ground, so these are the pairs drawn.
   ['--color-accent', '--color-ground', 'an edge arrow: its edge'],

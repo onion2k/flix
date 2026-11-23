@@ -9,7 +9,9 @@
 // time. A reader who asked for less motion sees the faces swap at once. A card
 // in a late row flips before and after its picture has come, a flipped card
 // holds its words with the text spacing of WCAG 1.4.12 at a phone's width, and
-// nothing grows on a hover or a focus held past the old pause. Every control
+// nothing grows on a hover or a focus held past the old pause (a hover or a
+// focus held short of the settle time makes no card video either; what makes
+// one is playing.spec.ts's). Every control
 // is worked as a reader works it: a real click, a real tap in a context with
 // touch, a real Tab and Enter, a real Escape. Every address outside the site is
 // routed, recorded and aborted, so that no test leaves it. What is in the
@@ -817,7 +819,7 @@ test.describe('at a phone’s width with the text spacing of WCAG 1.4.12', () =>
 });
 
 test.describe('nothing grows', () => {
-  test('no grown card is ever in the page, after a mouse held on a card and a focus held on one past 600ms', async ({
+  test('no grown card is ever in the page, after a mouse held on a card and a focus held on one past 600ms, and neither makes a video short of it', async ({
     page,
   }) => {
     // Every element added to the page is looked at as it comes, so that one
@@ -835,8 +837,7 @@ test.describe('nothing grows', () => {
           for (const node of record.addedNodes)
             if (
               node instanceof Element &&
-              (node.matches('.grown, video:not(.hero-loop)') ||
-                node.querySelector('.grown') !== null)
+              (node.matches('.grown') || node.querySelector('.grown') !== null)
             )
               seen.push(node.className || node.tagName);
         }
@@ -859,7 +860,11 @@ test.describe('nothing grows', () => {
     const at = await pictureMiddle(card, true);
     await page.mouse.move(at.x, at.y);
     expect(await card.evaluate((el) => el.matches(':hover'))).toBe(true);
-    await step(800);
+    // A card's loop may play once the reader has settled on it (part 4), and
+    // never sooner: a hover alone, short of the settle time, makes no video.
+    await step(560);
+    await expect(page.locator('section.row video')).toHaveCount(0);
+    await step(240);
     await expect(page.locator('.grown')).toHaveCount(0);
     await page.mouse.move(5, 5);
     const next = cardAt(page, 2);
@@ -873,7 +878,9 @@ test.describe('nothing grows', () => {
         .locator('button.card-flip')
         .evaluate((el) => el.matches(':focus-visible')),
     ).toBe(true);
-    await step(800);
+    await step(560);
+    await expect(page.locator('section.row video')).toHaveCount(0);
+    await step(240);
     await expect(page.locator('.grown, [data-grown]')).toHaveCount(0);
     expect(
       await page.evaluate(() => Reflect.get(window, '__grown') as string[]),

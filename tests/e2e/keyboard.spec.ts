@@ -8,18 +8,25 @@
 // are hidden, ringed and uncovered, and 44 by 44 (see the last describe). Every
 // visible link and button is also at least 44 by 44 (a card's link by
 // the card, its hit area; a link inside a paragraph of running text in main
-// is exempt, see below). The home page and the privacy page are both walked,
-// the footer included. Without it a ring
+// is exempt, see below). The cards' Pause button, which shows on the card a
+// reader has settled on, is the stop straight after that card's flip button,
+// ringed, uncovered and 44 by 44 itself (see its describe); a walk that settles
+// on a card long enough for it to show reaches it there too. The home page and
+// the privacy page are both walked, the footer included. Without it a ring
 // lost in a stylesheet, a control under another, or a target too small would
 // pass every other check, since none of them presses Tab.
 import { expect, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { atRest } from './scrolling';
 import { readRows } from './catalogue';
+import { settleOnFirstRow } from './card-loop';
 
 const catalogue = readRows();
 
 const WIDTHS = [1440, 390];
+
+/** The cards' Pause button's name, which is all it says. */
+const CARD_PAUSE = /^(Pause|Play) the card videos$/;
 const PAGES = [
   { name: 'the home page', path: '/', skip: 'Skip to the games' },
   { name: 'the privacy page', path: '/privacy/', skip: 'Skip to the content' },
@@ -170,11 +177,24 @@ for (const width of WIDTHS) {
         let reached = 0;
         let arrows = 0;
         let flips = 0;
+        let pauses = 0;
         for (let step = 0; step < 500; step += 1) {
           const list = await tabbable(page);
-          const stop = list[list.findIndex((s) => s.focused) + 1];
+          const here = list.findIndex((s) => s.focused);
+          let stop = list[here + 1];
           if (stop === undefined) break;
           await page.keyboard.press('Tab');
+          // The cards' Pause button comes to the card focus has stayed on once
+          // it has settled there, which a walk in real time may do between
+          // reading the stops and pressing: it is then the stop after that
+          // card's flip button, and is walked as one.
+          const landed = await active(page);
+          if (
+            CARD_PAUSE.test(landed?.name ?? '') &&
+            !CARD_PAUSE.test(stop.name) &&
+            /^About /.test(list[here]?.name ?? '')
+          )
+            stop = { tag: 'button', name: landed?.name ?? '', focused: true };
           // A strip scrolls a card in smoothly, so wait for it to be in.
           await expect
             .poll(async () => (await active(page))?.inside, {
@@ -196,6 +216,7 @@ for (const width of WIDTHS) {
           expect(now?.covered).toBe(false);
           if (/^(Previous|Next) in /.test(stop.name)) arrows += 1;
           if (/^About /.test(stop.name)) flips += 1;
+          if (CARD_PAUSE.test(stop.name)) pauses += 1;
           reached += 1;
         }
         // Every stop that cannot go was walked, the footer's last included,
@@ -209,7 +230,7 @@ for (const width of WIDTHS) {
           );
         test.info().annotations.push({
           type: 'measured',
-          description: `${reached} stops, ${arrows} of them row arrows, ${flips} flip buttons`,
+          description: `${reached} stops, ${arrows} of them row arrows, ${flips} flip buttons, ${pauses} card Pause buttons`,
         });
       });
 
@@ -240,12 +261,15 @@ for (const width of WIDTHS) {
           // button are on its back, where the Close button's ::after covers
           // what Play does not: the card is the area each can be hit in.
           // Every other link and button is measured as drawn.
+          // The cards' Pause button is a button on the card's picture, and is
+          // measured as drawn.
           const card = target.locator(
             'xpath=ancestor::li[contains(@class,"card")]',
           );
-          const box = await (
-            (await card.count()) > 0 ? card : target
-          ).boundingBox();
+          const onCard =
+            (await card.count()) > 0 &&
+            !(await target.evaluate((el) => el.matches('.card-pause')));
+          const box = await (onCard ? card : target).boundingBox();
           const name = (await target.textContent()) ?? '';
           expect(box?.width, `${name} is wide enough`).toBeGreaterThanOrEqual(
             44,
@@ -360,3 +384,58 @@ test.describe('the edge arrows at a desk', () => {
     expect(stops.every((stop) => !stop)).toBe(true);
   });
 });
+
+// The cards' Pause button, by a real Tab. It shows only on the card a reader
+// has settled on, so the first row is put in the middle of the window and the
+// button waited for (the settle is the page's own, in real time here; it is
+// stepped in playing.spec.ts). Then focus is put on that card's flip button and
+// Tab pressed once.
+for (const width of WIDTHS) {
+  test.describe(`the cards’ Pause button at ${width} wide`, () => {
+    test.use({ viewport: { width, height: width > 800 ? 1000 : 844 } });
+
+    test('is the stop after its card’s flip button, seen, ringed, uncovered and 44 by 44, and Tab goes on to the next card', async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.goto('/');
+      const card = await settleOnFirstRow(page);
+      const pause = card.locator('button.card-pause');
+      const flip = card.locator('button.card-flip');
+      await flip.focus();
+      await page.keyboard.press('Tab');
+      const now = await active(page);
+      expect(now?.tag).toBe('button');
+      expect(now?.name).toMatch(CARD_PAUSE);
+      expect(now?.inside).toBe(true);
+      expect(now?.covered).toBe(false);
+      expect(now?.outlineStyle).not.toBe('none');
+      expect(now?.outlineWidth).toBeGreaterThanOrEqual(2);
+      expect(now?.ringSeen).toBe(true);
+      expect(await pause.evaluate((el) => el.matches(':focus-visible'))).toBe(
+        true,
+      );
+      const box = await pause.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+      // It sits on the picture, at its lower right.
+      const frame = await card.locator('.frame').boundingBox();
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(
+        (frame?.x ?? 0) + (frame?.width ?? 0),
+      );
+      expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
+        (frame?.y ?? 0) + (frame?.height ?? 0),
+      );
+      expect(box?.x ?? 0).toBeGreaterThan(
+        (frame?.x ?? 0) + (frame?.width ?? 0) / 2,
+      );
+      expect(box?.y ?? 0).toBeGreaterThan(
+        (frame?.y ?? 0) + (frame?.height ?? 0) / 2,
+      );
+      // And Tab goes on to the next card's flip button.
+      await page.keyboard.press('Tab');
+      const after = await active(page);
+      expect(after?.name).toMatch(/^About /);
+    });
+  });
+}

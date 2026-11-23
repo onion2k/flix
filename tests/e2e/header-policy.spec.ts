@@ -26,6 +26,7 @@ import { join, relative } from 'node:path';
 import { expect, type Page, type Route } from '@playwright/test';
 import { noonOf, test } from '../clock';
 import { candidatesOf, readRows } from './catalogue';
+import { settleOnFirstRow } from './card-loop';
 
 const DIST = join(import.meta.dirname, '../../dist');
 
@@ -460,6 +461,31 @@ test.describe('the moving hero, under both headers, as a browser enforces them',
       await clean(page, watched);
     });
   }
+});
+
+test.describe('a card’s loop, under both headers, as a browser enforces them', () => {
+  test('the card settled on plays its loop under the content policy and the Permissions-Policy, and nothing is refused or said', async ({
+    page,
+  }) => {
+    const permissions = permissionsPolicy();
+    const watched = await enforce(page, headerFile().policy, {
+      'permissions-policy': permissions,
+    });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    const card = await settleOnFirstRow(page);
+    await expect(card.locator('button.card-pause')).toHaveAccessibleName(
+      'Pause the card videos',
+    );
+    // Its marks are made with DOM calls, which Trusted Types allow; a mark
+    // written from a string would be refused, and show here.
+    await card.locator('button.card-pause').click();
+    await expect(card.locator('button.card-pause')).toHaveAccessibleName(
+      'Play the card videos',
+    );
+    await expect(card.locator('button.card-pause svg')).toHaveCount(1);
+    await clean(page, watched);
+  });
 });
 
 test.describe('the header is what is enforced: two controls', () => {

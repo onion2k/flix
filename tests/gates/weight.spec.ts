@@ -1,7 +1,7 @@
 // Holds the page's weight: what the built home page asks for, without
 // scrolling, at a desk's width (1440x1000) and a phone's (390x844), counted
-// by kind (document, script, stylesheet, font, picture, and the hero's loop as
-// media) in requests and in
+// by kind (document, script, stylesheet, font, picture, the hero's loop as
+// media, and a card's loop apart from it) in requests and in
 // bytes, with the text kinds also gzipped since the preview does not compress.
 // The figures are held to gates/weight.json both ways: a count must be equal,
 // bytes equal to within TOLERANCE, and a drop fails as surely as a rise so
@@ -25,6 +25,7 @@ import {
   KINDS,
   TEXT_KINDS,
   judge,
+  kindOf,
   overBudget,
   type Budgets,
   type Kind,
@@ -47,9 +48,11 @@ const TOLERANCE = 0;
  * "1440x1000"), and a phone's on day 0. The day changes the feature's still
  * and its loop, so each day's weight is its own: the owner's budgets are held
  * to every one. What is not measured: a phone's width on the other days, a
- * reader who scrolls (the loop is the hero's alone and is asked for once),
- * reduced motion or Save-Data (which ask for none), and anything after the
- * network has gone quiet.
+ * reader who scrolls (the hero's loop is asked for once, and a card's only
+ * once a reader has scrolled past the hero and settled on a card, so on every
+ * first screen measured here the count of card loops is none), reduced motion
+ * or Save-Data (which ask for none), and anything after the network has gone
+ * quiet.
  */
 const PLACES = candidatesOf(readRows()).length;
 const VIEWPORTS = [
@@ -80,24 +83,32 @@ function empty(): Weight {
   ) as Weight;
 }
 
+/** What one first screen asked for: by kind, and each card loop's size. */
+interface Measured {
+  weight: Weight;
+  cardLoops: number[];
+}
+
 async function measure(
   page: Page,
   width: number,
   height: number,
-): Promise<Weight> {
+): Promise<Measured> {
   const weight = empty();
+  const cardLoops: number[] = [];
   const reads: Promise<void>[] = [];
   page.on('response', (response) => {
-    const type = response.request().resourceType();
-    const kind: Kind = (KINDS as readonly string[]).includes(type)
-      ? (type as Kind)
-      : 'other';
+    const kind: Kind = kindOf(
+      response.request().resourceType(),
+      new URL(response.url()).pathname,
+    );
     reads.push(
       response.body().then((body) => {
         const figures = weight[kind];
         figures.count += 1;
         figures.bytes += body.length;
         if (figures.gzip !== undefined) figures.gzip += gzipSync(body).length;
+        if (kind === 'cardLoop') cardLoops.push(body.length);
       }),
     );
   });
@@ -105,7 +116,7 @@ async function measure(
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await Promise.all(reads);
-  return weight;
+  return { weight, cardLoops };
 }
 
 test('the page weight is the baseline, within the budgets', async ({
@@ -113,16 +124,22 @@ test('the page weight is the baseline, within the budgets', async ({
 }) => {
   const baseline = JSON.parse(readFileSync(FILE, 'utf8')) as BaselineFile;
   const measured: Record<string, Weight> = {};
+  const cardLoops: Record<string, number[]> = {};
   for (const { name, width, height, place } of VIEWPORTS) {
     const context = await browser.newContext();
     await holdClock(
       context,
       place === 0 ? undefined : noonOf(dayAt(place, PLACES)),
     );
-    measured[name] = await measure(await context.newPage(), width, height);
+    const got = await measure(await context.newPage(), width, height);
     await context.close();
+    measured[name] = got.weight;
+    cardLoops[name] = got.cardLoops;
     expect(measured[name]?.document.count, `${name} documents`).toBe(1);
   }
+  // The figures as measured, in the test's output, so that they can be read
+  // without writing the baseline.
+  console.log(JSON.stringify({ measured, cardLoops }, null, 2));
 
   if (process.env['WEIGHT_UPDATE'] === '1') {
     writeFileSync(
@@ -150,6 +167,7 @@ test('the page weight is the baseline, within the budgets', async ({
           weight,
           baseline.budgets,
           width > 800 ? 'desk' : 'phone',
+          cardLoops[name],
         ).map((line) => `${name}: ${line}`),
       );
   }

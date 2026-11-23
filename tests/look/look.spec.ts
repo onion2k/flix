@@ -1,8 +1,9 @@
 // Takes the pictures the look is held to: the built home page at a desk's
 // width, a phone's and 320px, the 404 at a desk's, the privacy page at a desk's
 // width and a phone's, the first row with its second card focused by a real
-// Tab, the first row with a card flipped at a desk's width and a phone's, and
-// the moving hero with its loop held. Reduced motion is emulated so that
+// Tab, the first row with a card flipped at a desk's width and a phone's, the
+// moving hero with its loop held, and the first row with its card in focus
+// playing its loop, held, at a desk's width and a phone's. Reduced motion is emulated so that
 // nothing is mid-glide, fonts are ready and every picture has decoded before
 // a shot, and nothing waits on a timeout. Without this a colour gone muddy, a
 // title that wraps, or a ring lost would pass every other check, since none of
@@ -386,3 +387,77 @@ test('the top of the home page at 1440 with the hero’s loop held at 2.0 second
     ...TOLERANCE,
   });
 });
+
+// The first row in the middle of the window, as a reader who has settled on it
+// sees it, with no wish for less motion: the card in focus plays its loop over
+// its picture and carries the Pause button at its picture's lower right. A
+// playing loop is a different frame every time, so it is held as the hero's
+// is: paused by the reader's own control, set to 2.0 seconds and waited for to
+// have drawn that frame (`seeked`), and the button therefore shows its play
+// mark, which is what a held card loop shows. The mouse is off the row, so that
+// no card is hovered and none of the others is dimmed.
+for (const [width, height] of [
+  [1440, 1000],
+  [390, 844],
+] as const) {
+  test(`the first row at ${width} with its card in focus playing, held at 2.0 seconds`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await settle(page);
+    const row = page.locator('section.row').first();
+    await row.evaluate((el: HTMLElement) => {
+      const frame = el.querySelector('li.card .frame');
+      const box = frame?.getBoundingClientRect();
+      if (box === undefined) throw new Error('no card');
+      window.scrollTo({
+        top: scrollY + box.top + box.height / 2 - innerHeight / 2,
+        behavior: 'instant',
+      });
+    });
+    await page.mouse.move(2, 2);
+    const video = row.locator('video');
+    await expect(video).toHaveCount(1);
+    await expect
+      .poll(() =>
+        video.evaluate(
+          (el: HTMLVideoElement) => !el.paused && el.currentTime > 0.3,
+        ),
+      )
+      .toBe(true);
+    const pause = row.locator('button.card-pause');
+    await pause.click();
+    await page.mouse.move(2, 2);
+    await video.evaluate(async (el: HTMLVideoElement) => {
+      const seeked = new Promise((done) =>
+        el.addEventListener('seeked', done, { once: true }),
+      );
+      el.currentTime = 2;
+      await seeked;
+    });
+    expect(
+      await video.evaluate((el: HTMLVideoElement) => ({
+        paused: el.paused,
+        at: el.currentTime,
+      })),
+    ).toEqual({ paused: true, at: 2 });
+    await expect(pause).toHaveAccessibleName('Play the card videos');
+    // The click left focus on the button; a mouse press shows no ring, and
+    // the picture is of the row as a reader looking at it sees it.
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.evaluate(() =>
+      Promise.all(
+        document.getAnimations().map((each) => each.finished.catch(() => null)),
+      ),
+    );
+    await expect(row).toHaveScreenshot(
+      `first-row-card-loop-held-${width}.png`,
+      { ...TOLERANCE },
+    );
+  });
+}
