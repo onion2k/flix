@@ -20,8 +20,8 @@ html {
 }
 
 /* The browser's `hidden` loses to any rule that sets display, and the row
-   buttons and the Surprise me button are hidden by the attribute, so it is
-   made to win here. */
+   arrows and the hero's button are hidden by the attribute, so it is made to
+   win here. */
 [hidden] {
   display: none !important;
 }
@@ -64,9 +64,7 @@ a {
 
 .site-header {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-s) var(--space-xxl);
   padding: var(--space-l) var(--gutter) var(--space-m);
 }
 
@@ -83,22 +81,6 @@ a {
   letter-spacing: 0.01em;
   text-decoration: none;
   color: var(--color-accent);
-}
-
-.site-header nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-l);
-}
-
-.site-header nav a {
-  display: inline-flex;
-  align-items: center;
-  min-width: var(--size-target);
-  min-height: var(--size-target);
-  justify-content: center;
-  text-underline-offset: 0.3em;
-  text-decoration-thickness: 2px;
 }
 
 /* Words that must never run past their box, whatever they say or however
@@ -373,7 +355,6 @@ p {
   box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
 }
 
-.surprise-button,
 .hero-button {
   min-width: var(--size-target);
   min-height: var(--size-target);
@@ -794,10 +775,6 @@ main {
   :root {
     --gutter: var(--gutter-phone);
     --card-width: var(--card-width-phone);
-  }
-
-  .site-header {
-    gap: 0 var(--space-l);
   }
 
   .mark {

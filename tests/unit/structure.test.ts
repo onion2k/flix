@@ -6,7 +6,7 @@
 // moved folder is a failure and not a pass over nothing, and it tries its own
 // reading on sources that do import wrongly, so that a pattern that matched
 // nothing would be seen. It also holds that the language's own global random
-// is named nowhere in src/, since all chance comes from catalogue/chance.ts.
+// is named nowhere in src/, since the page has no chance in it.
 import { describe, expect, it } from 'vitest';
 
 // Vite reads every file in the folder as text, as the build would find them,
@@ -71,11 +71,11 @@ describe('src/catalogue', () => {
   }
 });
 
-// Chance has one source, the seeded one in catalogue/chance.ts, so that a
-// seed handed in by a test gives the same page every time. A call to the
-// language's global random anywhere in the page, a script or a component
-// would pass every other unit test and make the end-to-end ones differ from
-// run to run. The files are read as text, .astro and .ts alike.
+// The page has no chance in it: the same build and the same clock give the
+// same page every time. A call to the language's global random anywhere in
+// the page, a script or a component would pass every other unit test and make
+// the end-to-end ones differ from run to run. Chance that is wanted again
+// comes from one seeded source, handed in, and never from this. The files are read as text, .astro and .ts alike.
 const everything = import.meta.glob<string>('../../src/**/*.{ts,astro}', {
   query: '?raw',
   import: 'default',
@@ -99,7 +99,10 @@ describe('src', () => {
 
   it('has files to read, so that a moved folder is not a pass', () => {
     expect(read.length).toBeGreaterThan(20);
-    expect(read.some(([file]) => file.endsWith('/catalogue/chance.ts'))).toBe(
+    expect(read.some(([file]) => file.endsWith('/catalogue/rows.ts'))).toBe(
+      true,
+    );
+    expect(read.some(([file]) => file.endsWith('/pages/index.astro'))).toBe(
       true,
     );
   });

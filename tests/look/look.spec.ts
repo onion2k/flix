@@ -122,14 +122,10 @@ for (const [width, height] of [
     await openWhole(page, '/', width, height, async (opened) => {
       // Script has run once the rows have been given their arrows (the mark
       // is set at every width, a stacked row's included, though it draws
-      // none); and the header's Surprise me button is shown by the same
-      // script, at every width.
+      // none).
       await expect(
         opened.locator('section.row[data-arrows]').first(),
       ).toBeAttached();
-      await expect(
-        opened.getByRole('button', { name: 'Surprise me' }),
-      ).toBeVisible();
     });
     await expect(page).toHaveScreenshot(`home-${width}.png`, TOLERANCE);
   });

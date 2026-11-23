@@ -5,8 +5,8 @@
 // that has one, from the feature to the first row and back, passing over the
 // row that has no link; a move puts real focus on the link, ringed and in the
 // window, brings a late row's pictures in, and stops the key's own scrolling.
-// Where it must not apply, it does not: a strip itself still scrolls, a nav
-// link is left alone, and a held modifier leaves the key to the browser. The
+// Where it must not apply, it does not: a strip itself still scrolls, a link
+// outside the grid (the footer's) is left alone, and a held modifier leaves the key to the browser. The
 // gamepad is stood in for, since there is no controller in a test: a
 // navigator.getGamepads that returns what the test sets, with the standard
 // mapping, 17 buttons and four axes, and the page's clock held by Playwright's
@@ -411,17 +411,19 @@ test.describe('keys', () => {
     expect(await keysPrevented(page)).toEqual([false]);
   });
 
-  test('a nav link, a row arrow and the page are left to the browser', async ({
+  test('a link outside the grid, a row arrow and the page are left to the browser', async ({
     page,
   }) => {
     await ready(page);
-    const nav = page.getByRole('navigation').getByRole('link').first();
-    await nav.focus();
+    const outside = page
+      .getByRole('contentinfo')
+      .getByRole('link', { name: 'Privacy', exact: true });
+    await outside.focus();
     await recordKeys(page);
     for (const key of ['ArrowRight', 'ArrowDown', 'Home']) {
       await page.keyboard.press(key);
     }
-    await expect(nav).toBeFocused();
+    await expect(outside).toBeFocused();
     const button = page
       .locator('section.row')
       .first()

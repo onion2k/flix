@@ -55,7 +55,7 @@ function dayAt(place: number): number {
   return base - (base % COUNT) + place;
 }
 
-/** Opens the home page on a day, with script run and the Surprise me shown. */
+/** Opens the home page on a day. */
 async function openOn(page: Page, reading: number): Promise<void> {
   await page.clock.setFixedTime(reading);
   await page.goto('/');
@@ -203,9 +203,11 @@ test.describe('before the page module runs', () => {
     const place = COUNT - 1;
     await openOn(page, noonOf(dayAt(place)));
     expect(aborted, 'the module was asked for and refused').toBeGreaterThan(0);
-    // The module is what shows Surprise me, so that it stayed hidden is the
-    // proof that no script of the page's own ran.
-    await expect(page.locator('button[data-surprise]')).toBeHidden();
+    // The module is what marks a row as having its arrows, so that none is
+    // marked is the proof that no script of the page's own ran. The rows are
+    // there, so that this reaches something.
+    await expect(page.locator('section.row').first()).toBeAttached();
+    await expect(page.locator('section.row[data-arrows]')).toHaveCount(0);
     await expect(shown(page)).toHaveCount(1);
     await expect(shown(page)).toHaveAttribute(
       'data-entry',
@@ -452,7 +454,9 @@ test.describe('the content policy', () => {
         .locator('img')
         .evaluate((el: HTMLImageElement) => el.complete),
     ).resolves.toBe(true);
-    await expect(page.locator('button[data-surprise]')).toBeVisible();
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
     expect(heard).toEqual([]);
 
     // The policy allows the inline script by its hash and no more.

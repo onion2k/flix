@@ -594,31 +594,6 @@ test.describe('the keyboard', () => {
     await opens(page, landed);
     expect((await open(page)).count).toBe(1);
   });
-
-  test('Surprise me lands on a card that then grows', async ({ page }) => {
-    await page.addInitScript('window.ooerflixSeed = 7;');
-    await page.clock.install({ time: DAY_ZERO });
-    await page.goto('/');
-    await expect(
-      page.getByRole('button', { name: 'Surprise me' }),
-    ).toBeVisible();
-    await page.clock.pauseAt(DAY_ZERO + 1000);
-    await page.getByRole('button', { name: 'Surprise me' }).click();
-    const landed = await page.evaluate(
-      () =>
-        document.activeElement?.closest<HTMLElement>('li.card')?.dataset[
-          'entry'
-        ] ?? '',
-    );
-    expect(landed, 'a card has focus').not.toBe('');
-    // The glide that brings a card into view is real time: wait for it.
-    await expect
-      .poll(async () => {
-        await step(page, 100);
-        return (await open(page)).ids;
-      })
-      .toEqual([landed]);
-  });
 });
 
 test.describe('only one, and what closes it', () => {

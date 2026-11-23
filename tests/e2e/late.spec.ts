@@ -1,8 +1,8 @@
 // Holds that the pictures of every row after the second wait until their row
 // is scrolled near: at a desk's width and a phone's, once the page has loaded
 // and gone idle, nothing has been asked for any of them while the first two
-// rows' and the feature's pictures have; scrolling to a row, following its nav
-// link and Tabbing into it each bring its pictures in and drawn; a browser with
+// rows' and the feature's pictures have; scrolling to a row, going to its
+// address and Tabbing into it each bring its pictures in and drawn; a browser with
 // no IntersectionObserver, and printing, bring them all in at once; and the
 // markup itself holds no address a browser could fetch from, with the plain
 // picture beside it in a <noscript>. Without this a lazy attribute that
@@ -130,17 +130,15 @@ for (const size of SIZES) {
       await drawn(page, seen, last.entries);
     });
 
-    test('following a late row’s link in the nav loads it', async ({
-      page,
-    }) => {
+    // A row's id is an address that has been given out, and going to it is
+    // how a link from anywhere reaches the row now that the header has none.
+    test('going to a late row’s address loads it', async ({ page }) => {
       const seen = watch(page);
       await idle(page);
       const row = late[0];
       if (row === undefined) throw new Error('no late row');
-      await page
-        .getByRole('navigation')
-        .getByRole('link', { name: row.title, exact: true })
-        .click();
+      expect(fetched(seen, row.entries)).toEqual([]);
+      await page.goto(`/#${row.id}`);
       await drawn(page, seen, row.entries);
     });
 

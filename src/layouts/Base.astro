@@ -1,11 +1,11 @@
 ---
 // The document every page is drawn in: the head (title, description, address,
 // social card, icon, the self-hosted fonts and the two stylesheets), the skip
-// link, the header with the wordmark, the row links and the Surprise me
-// button (hidden until script shows it), the main that the
-// page's content goes in, and the footer every page ends in. Without it each page would repeat the head, and one
-// that forgot the viewport tag, the canonical link or the skip link would be
-// the odd one out. Every absolute address is made here from Astro's `site`,
+// link, the header (the wordmark alone, the owner's choice: the rows are
+// reached by scrolling, and each keeps its id as an address), the main that
+// the page's content goes in, and the footer every page ends in. Without it
+// each page would repeat the head, and one that forgot the viewport tag, the
+// canonical link or the skip link would be the odd one out. Every absolute address is made here from Astro's `site`,
 // which astro.config.mjs says once.
 import { Font, getImage } from 'astro:assets';
 import Footer from '../components/Footer.astro';
@@ -16,8 +16,6 @@ interface Props {
   title: string;
   /** True on the home page, where the wordmark is the h1 and no link. */
   home?: boolean;
-  /** The rows to link to from the header, in order. */
-  rows?: { id: string; title: string }[];
   /** The picture the social card shows, and what it shows, in words. */
   card?: { picture: ImageMetadata; alt: string };
   skipLabel?: string;
@@ -31,7 +29,6 @@ interface Props {
 const {
   title,
   home = false,
-  rows = [],
   card,
   skipLabel = 'Skip to the games',
   description = 'Games and toys to play in a browser.',
@@ -99,19 +96,6 @@ const cardImage = card
           ooerflix
         </a>
       )}
-      {rows.length > 0 ? (
-        <nav aria-label="Jump to a row">
-          {rows.map((row) => (
-            <a href={`#${row.id}`}>{row.title}</a>
-          ))}
-          {/* Hidden until script shows it, which it does only where there are
-              two or more cards to choose between: with no script it would do
-              nothing. It is in the nav so that it wraps with the links. */}
-          <button type="button" class="surprise-button" data-surprise hidden>
-            Surprise me
-          </button>
-        </nav>
-      ) : null}
     </header>
     <main id="main">
       <slot />

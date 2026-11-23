@@ -66,38 +66,6 @@ test('a row that overflows keeps its scrollbar', async ({ page }) => {
   expect(reached).toBeGreaterThan(0);
 });
 
-test('the Surprise me button is in the markup, hidden, and neither seen nor in the accessibility tree', async ({
-  page,
-}) => {
-  await page.goto('/');
-  // It is there, so that this reaches something: a button that was never
-  // written would pass "not seen" in silence.
-  const surprise = page.locator('.site-header nav button[data-surprise]');
-  await expect(surprise).toHaveCount(1);
-  await expect(surprise).toHaveAttribute('hidden', '');
-  await expect(surprise).toBeHidden();
-  await expect(surprise).toHaveText('Surprise me');
-  await expect(page.getByRole('button', { name: 'Surprise me' })).toHaveCount(
-    0,
-  );
-  await expect(
-    page.getByRole('button', { name: 'Surprise me', includeHidden: true }),
-  ).toHaveCount(1);
-  // Tab does not stop on it: after the last row link comes the page's own.
-  const rows = catalogue.rows.length;
-  expect(rows).toBeGreaterThan(0);
-  for (let stop = 0; stop < rows + 1; stop += 1)
-    await page.keyboard.press('Tab');
-  const name = await page.evaluate(
-    () => document.activeElement?.textContent?.trim() ?? '',
-  );
-  expect(name).toBe(catalogue.rows[rows - 1]?.title);
-  await page.keyboard.press('Tab');
-  expect(
-    await page.evaluate(() => document.activeElement?.textContent?.trim()),
-  ).not.toBe('Surprise me');
-});
-
 test('every picture is drawn once it is scrolled to, late rows included', async ({
   page,
 }) => {

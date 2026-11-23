@@ -228,10 +228,11 @@ for (let place = 0; place < COUNT; place += 1) {
         await page.clock.setFixedTime(noonOf(dayAt(place)));
         await page.goto('/', { waitUntil: 'commit' });
         await page.waitForLoadState('domcontentloaded');
-        // The page's own script has run once Surprise me is shown.
+        // The page's own script has run once a row is marked as having its
+        // arrows.
         await expect(
-          page.getByRole('button', { name: 'Surprise me' }),
-        ).toBeVisible();
+          page.locator('section.row[data-arrows]').first(),
+        ).toBeAttached();
         await frames(page);
         expect(
           await page.evaluate(() => document.readyState),

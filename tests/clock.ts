@@ -10,8 +10,9 @@
 // frames and performance.now keep running, so a spec that waits for a frame
 // still gets one. A spec that wants to step all of them, as moving.spec.ts
 // does, installs Playwright's clock itself, which takes the place of this
-// reading. A spec that sets a time of its own (surprise.spec.ts seeds chance
-// from the clock) sets it after this and wins, which is what it means to.
+// reading. A spec that sets a time of its own (today.spec.ts and hero.spec.ts
+// open the page on other days) sets it after this and wins, which is what it
+// means to.
 //
 // tests/unit/fixture-used.test.ts holds that no spec imports `test` from
 // anywhere but here.

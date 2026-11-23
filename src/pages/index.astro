@@ -4,8 +4,8 @@
 // together, naming the file and the id, so that a broken one stops the build;
 // this page only draws what comes back. The page's script, which pages the
 // rows, brings in the late rows' pictures, lets a mouse drag a strip, moves
-// focus by arrow key and gamepad, works the Surprise me button, grows a card that is
-// pointed at and plays the hero's loop, is added here and nowhere else.
+// focus by arrow key and gamepad, grows a card that is pointed at and plays
+// the hero's loop, is added here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Feature from '../components/Feature.astro';
@@ -44,7 +44,6 @@ if (page.notListed.length > 0) {
 <Base
   title="ooerflix"
   home
-  rows={page.rows}
   card={{ picture: page.feature.picture, alt: page.feature.pictureAlt }}
 >
   <Feature cards={page.candidates} />
@@ -59,7 +58,6 @@ if (page.notListed.length > 0) {
   import '../scripts/pictures';
   import '../scripts/drag';
   import '../scripts/moving';
-  import '../scripts/surprise';
   import '../scripts/grow';
   import '../scripts/hero';
 </script>

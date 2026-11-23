@@ -27,17 +27,15 @@ for (const width of WIDTHS) {
         page,
       }) => {
         await page.goto(path);
-        // The home page's button is shown by script, so it is waited for and
-        // its words are among those measured.
+        // The home page's rows draw their page words by script, so it is
+        // waited for and they are among those measured.
         if (path === '/')
           await expect(
-            page.getByRole('button', { name: 'Surprise me' }),
-          ).toBeVisible();
+            page.locator('section.row[data-arrows]').first(),
+          ).toBeAttached();
         await page.evaluate(() => document.fonts.ready);
         const pieces = await textPieces(page);
         expect(pieces.length, 'text nodes measured').toBeGreaterThan(3);
-        if (path === '/')
-          expect(pieces.map((piece) => piece.text)).toContain('Surprise me');
         const short = pieces.filter(
           (piece) => piece.ratio < (piece.large ? 4.5 : 7),
         );
@@ -200,9 +198,6 @@ for (const width of WIDTHS) {
       await expect(
         page.locator('section.row[data-arrows]').first(),
       ).toBeAttached();
-      await expect(
-        page.getByRole('button', { name: 'Surprise me' }),
-      ).toBeVisible();
       const stops = await page.evaluate(
         () =>
           [
@@ -269,7 +264,8 @@ for (const width of WIDTHS) {
         rings.push(seen?.label ?? '');
       }
       expect(rings.length).toBe(stops);
-      expect(rings.some((ring) => ring.startsWith('Surprise me'))).toBe(true);
+      // A control that script shows was reached: a row's Next arrow.
+      expect(rings.some((ring) => ring.startsWith('Next'))).toBe(true);
     });
   });
 }

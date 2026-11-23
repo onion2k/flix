@@ -292,9 +292,11 @@ test.describe('under the header, as a browser enforces it', () => {
         )
         .toBe(true);
 
-      // The page's script has run: Surprise me is shown, and a row's Next
-      // arrow has been given its place.
-      await expect(page.locator('button[data-surprise]')).toBeVisible();
+      // The page's script has run: a row is marked as having its arrows, and
+      // a row's Next arrow has been given its place.
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
       const first = catalogue.rows[0];
       expect(first, 'a row was read').toBeDefined();
       await expect(
@@ -474,8 +476,10 @@ test.describe('the header is what is enforced: two controls', () => {
     await expect
       .poll(() => watched.violations.some((each) => /^script-src/.test(each)))
       .toBe(true);
-    // The page's script was refused, so its button is not shown.
-    await expect(page.locator('button[data-surprise]')).toBeHidden();
+    // The page's script was refused, so no row is marked as having its
+    // arrows. The rows are there, so that this reaches something.
+    await expect(page.locator('section.row').first()).toBeAttached();
+    await expect(page.locator('section.row[data-arrows]')).toHaveCount(0);
   });
 
   test('a header without the hashes of the styles written before the meta tag refuses them', async ({

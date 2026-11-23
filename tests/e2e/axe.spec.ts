@@ -58,10 +58,6 @@ for (const width of WIDTHS) {
       await expect(
         page.locator('section.row[data-arrows]').first(),
       ).toBeAttached();
-      // The button is shown by script, so the audit reads it.
-      await expect(
-        page.getByRole('button', { name: 'Surprise me' }),
-      ).toBeVisible();
       await audit(page, `home at ${width}`);
     });
 
@@ -83,7 +79,6 @@ test('the home page with a card focused has no axe violation', async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  await expect(page.getByRole('button', { name: 'Surprise me' })).toBeVisible();
   // Tab for real until a card's link has focus, as a keyboard user would.
   for (let press = 0; press < 30; press += 1) {
     await page.keyboard.press('Tab');
@@ -102,7 +97,6 @@ test('the home page with a card grown has no axe violation', async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  await expect(page.getByRole('button', { name: 'Surprise me' })).toBeVisible();
   const card = page
     .locator('section.row')
     .first()

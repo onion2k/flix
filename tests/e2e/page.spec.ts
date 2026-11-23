@@ -1,8 +1,8 @@
 // Holds what the home page says: one h1 and no skipped heading, the feature,
 // every row and every card in the order written, each picture drawn with its
 // size, alt words and a modern source, each card a link or not as its label
-// says, the lazy-loading rule, and the head, robots.txt, sitemap and 404 all
-// made from the one site address. Each test counts what it reached, so a page
+// says, the lazy-loading rule, the header that is the wordmark alone, and the
+// head, robots.txt, sitemap and 404 all made from the one site address. Each test counts what it reached, so a page
 // that drew nothing fails and does not pass over nothing.
 import { expect, type Locator } from '@playwright/test';
 import { test } from '../clock';
@@ -86,18 +86,14 @@ test('the feature picture is loaded at once and at high priority', async ({
   await expect(img).toHaveAttribute('fetchpriority', 'high');
 });
 
-test('every row is there in order, with its link in the nav', async ({
+test('every row is there in order, under its heading, at its own address', async ({
   page,
 }) => {
   const ids = await page
     .locator('main section[id]')
     .evaluateAll((all) => all.map((each) => each.id));
   expect(ids).toEqual(catalogue.rows.map((each) => each.id));
-  const links = page.getByRole('navigation').getByRole('link');
-  await expect(links).toHaveCount(catalogue.rows.length);
-  for (const [at, each] of catalogue.rows.entries()) {
-    await expect(links.nth(at)).toHaveText(each.title);
-    await expect(links.nth(at)).toHaveAttribute('href', `#${each.id}`);
+  for (const each of catalogue.rows) {
     await expect(
       row(page, each.id).getByRole('heading', { level: 2 }),
     ).toHaveText(each.title);
@@ -270,6 +266,47 @@ test('robots.txt and the sitemap answer and name the address', async ({
   expect(listed).toContain(`<loc>${SITE}/</loc>`);
   expect(listed).toContain(`<loc>${SITE}/privacy/</loc>`);
 });
+
+// Part 1 of plans/cards.md: the header is the wordmark alone, on every page and
+// at a desk's width and a phone's. The markup is read as well as the tree, so
+// that a hidden button or an empty list left in it still fails; the rows keep
+// their ids as addresses, which the late rows' spec reaches them by.
+for (const { name, path, home } of [
+  { name: 'the home page', path: '/', home: true },
+  { name: 'the 404', path: '/nowhere-here/', home: false },
+  { name: 'the privacy page', path: '/privacy/', home: false },
+]) {
+  for (const width of [1440, 390]) {
+    test(`${name} at ${width}px has a header that is the wordmark alone`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(path);
+      const header = page.getByRole('banner');
+      await expect(header).toHaveCount(1);
+      await expect(header).toHaveText('ooerflix');
+      await expect(header.getByRole('navigation')).toHaveCount(0);
+      await expect(header.getByRole('list')).toHaveCount(0);
+      await expect(
+        header.getByRole('button', { includeHidden: true }),
+      ).toHaveCount(0);
+      // The wordmark is the one link, and only off the home page.
+      await expect(header.getByRole('link')).toHaveCount(home ? 0 : 1);
+      const markup = await page
+        .locator('header.site-header')
+        .evaluate((el) => ({
+          children: [...el.children].map((child) => child.className),
+          controls: el.querySelectorAll('nav, ul, ol, button, a').length,
+        }));
+      expect(markup).toEqual({ children: ['mark'], controls: home ? 0 : 1 });
+      // Nothing on the page is a navigation landmark: the header's was the
+      // only one, and the footer is contentinfo.
+      await expect(
+        page.getByRole('navigation', { includeHidden: true }),
+      ).toHaveCount(0);
+    });
+  }
+}
 
 // Spec 1 of plans/before-public.md: every page ends in the same footer. Each
 // page is reached and each of its parts counted, so a page with none fails.

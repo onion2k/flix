@@ -2,8 +2,8 @@
 // on a card's link or the feature's link, Left, Right, Up, Down, Home and End
 // move it as moveTo() says, and the key's own scrolling is stopped, so that a
 // press moves focus and never also scrolls the strip. Where focus is anywhere
-// else (a strip, a nav link, a row arrow) and with Alt, Ctrl, Meta or Shift
-// held, the key is the browser's. A gamepad is read only while one is
+// else (a strip, the footer's links, a row arrow) and with Alt, Ctrl, Meta or
+// Shift held, the key is the browser's. A gamepad is read only while one is
 // connected: gamepadconnected starts one read a frame, which turns the d-pad
 // or the left stick into a held direction, fires it as repeating() says, and
 // follows the focused link on the first button (see follow()), which opens a

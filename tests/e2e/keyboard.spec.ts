@@ -112,9 +112,6 @@ for (const width of WIDTHS) {
           await expect(
             page.locator('section.row[data-arrows]').first(),
           ).toBeAttached();
-          await expect(
-            page.getByRole('button', { name: 'Surprise me' }),
-          ).toBeVisible();
         }
       });
 
@@ -139,16 +136,13 @@ for (const width of WIDTHS) {
         const expected = await tabbable(page);
         expect(expected.length).toBeGreaterThan(3);
         expect(expected[0]?.name).toBe(skip);
-        // The home page's header ends with the Surprise me button, after the
-        // row links, so the walk below reaches it and checks its ring.
-        const surprise = expected.findIndex((s) => s.name === 'Surprise me');
+        // The header is the wordmark alone: on the home page it is the h1 and
+        // no stop, so the feature's Play link comes straight after the skip
+        // link; elsewhere the wordmark is the one stop between them.
         if (path === '/') {
-          expect(surprise).toBeGreaterThan(1);
-          expect(expected[surprise]?.tag).toBe('button');
-          expect(expected.slice(1, surprise).every((s) => s.tag === 'a')).toBe(
-            true,
-          );
-        } else expect(surprise).toBe(-1);
+          expect(expected[1]?.tag).toBe('a');
+          expect(expected[1]?.name).toMatch(/^Play /);
+        } else expect(expected[1]?.name).toBe('ooerflix');
         // The hero's Pause button is a stop of its own on the home page, the
         // very next after the feature's Play link, and so is walked below.
         if (path === '/') {
