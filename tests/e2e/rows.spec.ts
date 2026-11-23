@@ -6,7 +6,8 @@
 // Previous and Next in the row's heading gone, and the page marks and the
 // words that say which page the strip is on. A mark is a stop, a place the
 // arrows take the strip, and the one live region for the rows says where an
-// arrow press has landed, and says nothing for any other scroll. The stops and
+// arrow press has landed, and says nothing for any other scroll. On a phone a
+// row still scrolls, and its second card shows at least half of itself. The stops and
 // the place of the lit mark are worked out here from the strip's own widths
 // and a card's and not from the rule under test. Waits are on a state reached (a scroll end, a
 // position), never on a time.
@@ -752,6 +753,43 @@ test.describe('where a row has three stops or more', () => {
     }
     // Every stop was lit in turn, the middle ones included.
     expect(lit).toEqual(Array.from({ length: pages - 1 }, (_, i) => i + 1));
+  });
+});
+
+// Part 2 of plans/cards.md: a phone keeps its sideways rows, with cards small
+// enough that the next one is plainly there. At 78vw the second card showed
+// 50px of 304, which read as one column; the bar is half of it, measured
+// against the window and not the strip, at the strip's start.
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('every row scrolls sideways, and its second card shows at least half of itself', async ({
+    page,
+  }) => {
+    await ready(page);
+    let reached = 0;
+    for (const each of catalogue.rows) {
+      if (each.entries.length < 2) continue;
+      const list = strip(page, each.id);
+      expect(await overflows(list), `${each.id} scrolls sideways`).toBe(true);
+      expect(await left(list)).toBe(0);
+      const seen = await list.evaluate((el) => {
+        const second = el.querySelectorAll('li')[1];
+        if (second === undefined) return null;
+        const box = second.getBoundingClientRect();
+        const inside =
+          Math.min(box.right, window.innerWidth) - Math.max(box.left, 0);
+        return { inside, width: box.width };
+      });
+      expect(seen, `${each.id} has a second card`).not.toBeNull();
+      expect(seen?.width ?? 0).toBeGreaterThan(0);
+      expect(
+        (seen?.inside ?? 0) / (seen?.width ?? 1),
+        `${each.id}'s second card is half in the window`,
+      ).toBeGreaterThanOrEqual(0.5);
+      reached += 1;
+    }
+    expect(reached).toBeGreaterThan(0);
   });
 });
 

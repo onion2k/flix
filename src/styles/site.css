@@ -794,6 +794,10 @@ main {
   .row h2 {
     font-size: var(--size-row-title-phone);
   }
+
+  .card h3 {
+    font-size: var(--size-card-title-phone);
+  }
 }
 
 /* Below 340px a row stops scrolling sideways and its cards stack down the
@@ -809,6 +813,13 @@ main {
 
   .card {
     flex: 0 0 auto;
+  }
+
+  /* A stacked card is the window's width less its gutters, wider than a
+     phone's card, so its title is the size it was before phones had smaller
+     cards. */
+  .card h3 {
+    font-size: var(--size-card-title);
   }
 
   .row-arrow,

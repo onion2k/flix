@@ -9,7 +9,7 @@
 // cases carry the pixel of tolerance, since a browser's scrollLeft can stop a
 // fraction short of the end and leave Next live with nowhere to go.
 import { describe, expect, it } from 'vitest';
-import { paging } from '../../src/catalogue/paging';
+import { paging, whollyIn } from '../../src/catalogue/paging';
 
 const strip = (
   scrollLeft: number,
@@ -207,5 +207,29 @@ describe('paging', () => {
         }
       }
     });
+  });
+});
+
+// Whether a focused card is wholly inside its strip's window, less the scroll
+// padding at each side; one that is not is brought in to its start, which is
+// a snap point, since a smaller move is pulled back by the strip's snapping
+// on a phone, where the window holds a card and a half.
+describe('whollyIn', () => {
+  const view = { left: 0, right: 390, padding: 16 };
+  it('says a card inside the padded window is wholly in', () => {
+    expect(whollyIn({ left: 16, right: 242 }, view)).toBe(true);
+    expect(whollyIn({ left: 148, right: 374 }, view)).toBe(true);
+  });
+  it('says a card cut off at either side is not', () => {
+    expect(whollyIn({ left: 258, right: 484 }, view)).toBe(false);
+    expect(whollyIn({ left: -100, right: 126 }, view)).toBe(false);
+  });
+  it('says a card under the padding at either side is not', () => {
+    expect(whollyIn({ left: 10, right: 236 }, view)).toBe(false);
+    expect(whollyIn({ left: 150, right: 380 }, view)).toBe(false);
+  });
+  it('forgives a pixel of rounding at each side', () => {
+    expect(whollyIn({ left: 15.2, right: 374.8 }, view)).toBe(true);
+    expect(whollyIn({ left: 14.5, right: 240 }, view)).toBe(false);
   });
 });

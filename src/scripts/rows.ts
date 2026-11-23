@@ -7,7 +7,7 @@
 // scrollbar: without script there are no arrows, and a mouse with no sideways
 // wheel would have no other way along. What it decides comes from paging();
 // this reads the strip, sets attributes and calls scrollTo, and it brings a
-// card that has keyboard focus wholly into view. It builds no markup from a
+// card that has keyboard focus wholly into view, as whollyIn() says. It builds no markup from a
 // string and sets no style, since the content policy refuses both, and it adds
 // three listeners and one observer to each strip, once, so nothing it keeps
 // grows. Smoothness is the stylesheet's and only where motion is allowed.
@@ -20,7 +20,7 @@
 // key, touches it. Without it a row that
 // overflows has no arrows and keeps its scrollbar, which is the page working
 // without script, not a fault.
-import { paging } from '../catalogue/paging';
+import { paging, whollyIn } from '../catalogue/paging';
 
 const live = document.querySelector<HTMLElement>('[data-rows-live]');
 
@@ -131,13 +131,27 @@ for (const row of document.querySelectorAll<HTMLElement>('section.row')) {
 
   // A browser scrolls a focused card into view only when none of it shows, so
   // one half cut off at the strip's edge would keep its ring cut off. This
-  // brings the whole card in, as little as it can (and as far as the strip's
-  // scroll padding says), and does nothing for a card already wholly in.
+  // brings the whole card in: sideways to its own start (a snap point, so the
+  // strip's snapping keeps it there, and as far as the scroll padding says)
+  // unless it is wholly in already, as whollyIn() says, and up or down as
+  // little as it can, since a tall card's title can be in the window while
+  // the rest of it is not.
   strip.addEventListener('focusin', (event) => {
     if (!(event.target instanceof Element)) return;
-    event.target
-      .closest('li')
-      ?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+    const card = event.target.closest('li');
+    if (card === null) return;
+    // A DOMRect's edges are getters, which a spread would not copy, so they
+    // are named.
+    const { left, right } = strip.getBoundingClientRect();
+    const padding = parseFloat(getComputedStyle(strip).scrollPaddingLeft) || 0;
+    const inline = whollyIn(card.getBoundingClientRect(), {
+      left,
+      right,
+      padding,
+    })
+      ? 'nearest'
+      : 'start';
+    card.scrollIntoView({ inline, block: 'nearest' });
   });
 
   strip.addEventListener('scroll', update, { passive: true });

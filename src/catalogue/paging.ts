@@ -1,7 +1,8 @@
 // Says, from where a row's strip is scrolled, whether it overflows, whether
 // the Previous and Next arrows are live and where each would take it, and how
 // where the row's stops are: its pages, which are the places the arrows take
-// it, the marks that are drawn and the lit one. It is numbers in and numbers out, with no page in it, so
+// it, the marks that are drawn and the lit one; and whether a focused card is
+// wholly in its strip's window. It is numbers in and numbers out, with no page in it, so
 // that the end cases are tried in a unit test. Without it the rule would live
 // in the script that works the arrows, and an arrow live at an end with
 // nowhere to go, or a page mark that said the wrong page, would be found only
@@ -93,4 +94,27 @@ export function paging({
       to: ahead ?? furthest,
     },
   };
+}
+
+/** A card's two edges, or a strip's window and its scroll padding, in pixels. */
+export interface Edges {
+  left: number;
+  right: number;
+}
+
+/**
+ * Whether a card is wholly inside its strip's window, less the scroll padding
+ * at each side, forgiving the browser's pixel of rounding. A card that is not
+ * is brought in to its own start by the script, which is a snap point: a
+ * smaller move, to the nearest edge, is pulled back out by the strip's
+ * snapping where the window holds only a card and a half, as on a phone.
+ */
+export function whollyIn(
+  card: Edges,
+  view: Edges & { padding: number },
+): boolean {
+  return (
+    card.left >= view.left + view.padding - TOLERANCE &&
+    card.right <= view.right - view.padding + TOLERANCE
+  );
 }

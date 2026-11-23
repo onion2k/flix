@@ -120,30 +120,34 @@ for (const width of WIDTHS) {
   }
 }
 
-test('at 320 wide a row stacks its cards and does not scroll sideways', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto('/');
-  let reached = 0;
-  for (const each of catalogue.rows) {
-    const section = page.locator(`section[id="${each.id}"]`);
-    const list = section.getByRole('list');
-    expect(
-      await list.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
-    ).toBe(true);
-    const tops = await section
-      .locator('[data-entry]')
-      .evaluateAll((all) => all.map((el) => el.getBoundingClientRect().top));
-    expect(tops.length).toBe(each.entries.length);
-    tops.forEach((top, at) => {
-      if (at > 0) expect(top).toBeGreaterThan(tops[at - 1] ?? 0);
-    });
-    await expect(section.getByRole('button')).toHaveCount(0);
-    reached += 1;
-  }
-  expect(reached).toBe(catalogue.rows.length);
-});
+// Both ends of the stack's step (below 21.25rem, 340px), so that a phone's
+// smaller cards are seen not to have moved where the stack begins.
+for (const width of [320, 339]) {
+  test(`at ${width} wide a row stacks its cards and does not scroll sideways`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/');
+    let reached = 0;
+    for (const each of catalogue.rows) {
+      const section = page.locator(`section[id="${each.id}"]`);
+      const list = section.getByRole('list');
+      expect(
+        await list.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+      ).toBe(true);
+      const tops = await section
+        .locator('[data-entry]')
+        .evaluateAll((all) => all.map((el) => el.getBoundingClientRect().top));
+      expect(tops.length).toBe(each.entries.length);
+      tops.forEach((top, at) => {
+        if (at > 0) expect(top).toBeGreaterThan(tops[at - 1] ?? 0);
+      });
+      await expect(section.getByRole('button')).toHaveCount(0);
+      reached += 1;
+    }
+    expect(reached).toBe(catalogue.rows.length);
+  });
+}
 
 // Preflight stands in for 200% zoom by zooming the root with CSS at 1280
 // wide, which halves the room and leaves the desk's layout in place: no

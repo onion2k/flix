@@ -42,6 +42,9 @@
   --size-mark: 2.5rem;
   --size-mark-phone: 2rem;
   --size-row-title-phone: 1.9rem;
+  /* A card's title on a phone, smaller in step with the card, so that the
+     title stays below the row's in weight and a long one keeps to two lines. */
+  --size-card-title-phone: 1.375rem;
   --size-label: 1rem;
 
   /* WCAG 2.5.5: every link and button is at least this, each way. */
@@ -91,7 +94,9 @@
 
   /* A card, and how far a hover zooms a picture in its frame. */
   --card-width: clamp(17rem, 27vw, 25rem);
-  --card-width-phone: 78vw;
+  /* On a phone, one card and more than half of the next: at 390 wide, 226px,
+     so a row is plainly a row that scrolls and not one column. */
+  --card-width-phone: 58vw;
   --zoom-hover: 1.04;
   --duration-hover: 250ms;
 
