@@ -1,6 +1,6 @@
 # Cards that flip, play and shine
 
-State: building, part 3 of 6.
+State: building, part 4 of 6.
 
 Agreed in a harness's plan file and copied here the same day; this copy is
 the one ticked. Its facts hold on commit `6c8d3aa`.
@@ -218,7 +218,7 @@ green. Headless pictures at 390 and 1440 are sent to the owner after parts
 
 - [x] 1. The header is the wordmark alone. `page.spec.ts`, `late.spec.ts`.
 - [x] 2. Phone rows have smaller cards. `reflow.spec.ts`, `rows.spec.ts`.
-- [ ] 3. A card flips and nothing grows. `flipping.test.ts`, `flip.spec.ts`,
+- [x] 3. A card flips and nothing grows. `flipping.test.ts`, `flip.spec.ts`,
       `moving.spec.ts`, `nojs.spec.ts`.
 - [ ] 4. The card most in focus plays, with Pause. `playing.test.ts`,
       `playing.spec.ts`, `weight-judging.test.ts`.

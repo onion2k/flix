@@ -79,37 +79,42 @@ test('the home page with a card focused has no axe violation', async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  // Tab for real until a card's link has focus, as a keyboard user would.
+  // Tab for real until a card's flip button has focus, as a keyboard user
+  // would.
   for (let press = 0; press < 30; press += 1) {
     await page.keyboard.press('Tab');
     const onCard = await page.evaluate(
-      () => document.activeElement?.matches('.card-link') ?? false,
+      () => document.activeElement?.matches('.card-flip') ?? false,
     );
     if (onCard) break;
   }
-  await expect(page.locator('.card-link:focus')).toHaveCount(1);
+  await expect(page.locator('.card-flip:focus')).toHaveCount(1);
   await audit(page, 'home with a card focused');
 });
 
-test('the home page with a card grown has no axe violation', async ({
+test('the home page with a card flipped has no axe violation', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  const card = page
-    .locator('section.row')
-    .first()
-    .locator('li.card[data-linked][data-loop]')
-    .first();
-  await card.hover();
-  // The pause is the page's own time, so the state is waited for and not a
-  // number of milliseconds.
-  await expect(page.locator('.grown')).toHaveCount(1);
+  // Flipped by a real Tab and Enter, so that focus is on its Play link.
+  for (let press = 0; press < 30; press += 1) {
+    await page.keyboard.press('Tab');
+    const onCard = await page.evaluate(
+      () => document.activeElement?.matches('.card-flip') ?? false,
+    );
+    if (onCard) break;
+  }
+  await page.keyboard.press('Enter');
+  await expect(page.locator('li.card[data-flipped]')).toHaveCount(1);
+  await expect(page.locator('li.card[data-flipped] .card-link')).toBeFocused();
   await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((each) => each.finished)),
+    Promise.all(
+      document.getAnimations().map((each) => each.finished.catch(() => null)),
+    ),
   );
-  await audit(page, 'home with a card grown');
+  await audit(page, 'home with a card flipped');
 });
 
 test('the home page has no axe violation once the late rows have loaded', async ({

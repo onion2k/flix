@@ -1,5 +1,5 @@
-// Says where a move by arrow key or gamepad lands in the grid of links (the
-// feature's, then each row's), which direction a pad is holding, and when a
+// Says where a move by arrow key or gamepad lands in the grid of stops (the
+// feature's link, then each row's cards), which direction a pad is holding, and when a
 // held direction fires, with the time handed in as a number. It is numbers
 // and names in and out, with no page, no clock and no navigator in it, so that
 // every row end, every passed-over row, every tie and every delay is tried in
@@ -24,8 +24,8 @@ export type Held = 'left' | 'right' | 'up' | 'down' | null;
 /**
  * Where a move from `from` lands: the id of a stop, or null where nothing
  * moves. `rows` is the grid from the top, the feature first as a row of one,
- * each row holding only its linked cards, so that a row with none is an empty
- * list and is passed over. Left and right stop at a row's ends and do not
+ * each row holding the stops it has (every card, now that every card flips),
+ * so that a row with none is an empty list and is passed over. Left and right stop at a row's ends and do not
  * wrap, since a wrap would make the end of a row impossible to find by
  * feel. Up and down take the stop whose centre is nearest sideways to the
  * one moved from, and the earlier one on a tie, so that the result does not

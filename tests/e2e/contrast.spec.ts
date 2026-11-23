@@ -204,7 +204,11 @@ for (const width of WIDTHS) {
             ...document.querySelectorAll<HTMLElement>(
               'a[href], button, [tabindex="0"]',
             ),
-          ].filter((el) => el.checkVisibility()).length,
+            // A card's face that is turned away is inert: it is drawn (its
+            // back hidden) but nothing in it is a stop.
+          ].filter(
+            (el) => el.checkVisibility() && el.closest('[inert]') === null,
+          ).length,
       );
       expect(stops).toBeGreaterThan(3);
       const rings: string[] = [];
@@ -264,8 +268,10 @@ for (const width of WIDTHS) {
         rings.push(seen?.label ?? '');
       }
       expect(rings.length).toBe(stops);
-      // A control that script shows was reached: a row's Next arrow.
+      // Controls that script shows were reached: a row's Next arrow and a
+      // card's flip button, whose ring is drawn round its card.
       expect(rings.some((ring) => ring.startsWith('Next'))).toBe(true);
+      expect(rings.some((ring) => ring.startsWith('About '))).toBe(true);
     });
   });
 }

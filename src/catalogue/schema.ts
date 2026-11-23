@@ -21,8 +21,9 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
     picture,
     pictureAlt: z.string().min(1),
     // A short silent recording of the game being played, a path to a .webm
-    // file relative to this entry's own file, which the card plays when it
-    // grows. Absent, the card grows with its picture. Only the kind of file is
+    // file relative to this entry's own file, which the card will play when it
+    // is the one most in view (part 4 of plans/cards.md; nothing plays it
+    // now). Absent, the card keeps its picture. Only the kind of file is
     // held here, since the catalogue knows no file system; that the file is
     // there is checked by the build (src/build/loop-address.ts), naming the entry.
     loop: z

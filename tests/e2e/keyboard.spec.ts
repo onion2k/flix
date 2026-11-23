@@ -1,7 +1,9 @@
 // Holds the page to being worked by keyboard alone, with real Tab presses:
 // the skip link is the first stop, visible, and takes focus into main; then
-// every link, button and strip in reading order, each one inside the window,
-// ringed by an outline of at least 2px, and not covered by anything else.
+// every link, button and strip in reading order (a card's flip button among
+// them, and nothing on the face of a card that is turned away, which is
+// inert), each one inside the window, ringed by an outline of at least 2px,
+// and not covered by anything else.
 // A row's edge arrows are stops where they are shown and not stops where they
 // are hidden, ringed and uncovered, and 44 by 44 (see the last describe). Every
 // visible link and button is also at least 44 by 44 (a card's link by
@@ -43,19 +45,24 @@ async function tabbable(page: Page): Promise<Stop[]> {
       const style = getComputedStyle(el);
       return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
     };
-    return [
-      ...document.querySelectorAll<HTMLElement>(
-        'a[href], button, [tabindex="0"]',
-      ),
-    ]
-      .filter(visible)
-      .map((el) => ({
-        tag: el.tagName.toLowerCase(),
-        name: (el.getAttribute('aria-label') ?? el.textContent ?? '')
-          .trim()
-          .slice(0, 60),
-        focused: el === document.activeElement,
-      }));
+    return (
+      [
+        ...document.querySelectorAll<HTMLElement>(
+          'a[href], button, [tabindex="0"]',
+        ),
+      ]
+        .filter(visible)
+        // A card's face that is turned away is inert: it is drawn, with its
+        // back hidden, and nothing in it is a stop.
+        .filter((el) => el.closest('[inert]') === null)
+        .map((el) => ({
+          tag: el.tagName.toLowerCase(),
+          name: (el.getAttribute('aria-label') ?? el.textContent ?? '')
+            .trim()
+            .slice(0, 60),
+          focused: el === document.activeElement,
+        }))
+    );
   });
 }
 
@@ -69,9 +76,10 @@ function active(page: Page) {
       box.left + box.width / 2,
       box.top + box.height / 2,
     );
-    // A card's link keeps a transparent outline of its own and the ring is
-    // drawn round the whole card, so the ring that is seen is the first
-    // outline, on the element or on its card, whose colour is not clear.
+    // A card's flip button keeps a transparent outline of its own and the
+    // ring is drawn round the whole card, so the ring that is seen is the
+    // first outline, on the element or on its card, whose colour is not
+    // clear.
     const seen = [el, el.closest('li')]
       .filter((each): each is Element => each !== null)
       .map((each) => getComputedStyle(each))
@@ -161,6 +169,7 @@ for (const width of WIDTHS) {
         );
         let reached = 0;
         let arrows = 0;
+        let flips = 0;
         for (let step = 0; step < 500; step += 1) {
           const list = await tabbable(page);
           const stop = list[list.findIndex((s) => s.focused) + 1];
@@ -186,15 +195,21 @@ for (const width of WIDTHS) {
           );
           expect(now?.covered).toBe(false);
           if (/^(Previous|Next) in /.test(stop.name)) arrows += 1;
+          if (/^About /.test(stop.name)) flips += 1;
           reached += 1;
         }
         // Every stop that cannot go was walked, the footer's last included,
         // and the walk ended there and not at the loop's cap.
         expect(reached).toBeGreaterThanOrEqual(fixed.length);
         expect(reached).toBeLessThan(500);
+        // Every card is a stop, by its flip button, linked or not.
+        if (path === '/')
+          expect(flips).toBe(
+            catalogue.rows.reduce((sum, row) => sum + row.entries.length, 0),
+          );
         test.info().annotations.push({
           type: 'measured',
-          description: `${reached} stops, ${arrows} of them row arrows`,
+          description: `${reached} stops, ${arrows} of them row arrows, ${flips} flip buttons`,
         });
       });
 
@@ -221,9 +236,10 @@ for (const width of WIDTHS) {
             exempt += 1;
             continue;
           }
-          // A card's link is only its title in size, and is hit through a
-          // stretched ::after over the whole card, so the card is the area it
-          // can be hit in. Every other link and button is measured as drawn.
+          // A card's flip button is its front, and its Play link and Close
+          // button are on its back, where the Close button's ::after covers
+          // what Play does not: the card is the area each can be hit in.
+          // Every other link and button is measured as drawn.
           const card = target.locator(
             'xpath=ancestor::li[contains(@class,"card")]',
           );

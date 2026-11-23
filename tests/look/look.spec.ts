@@ -1,7 +1,8 @@
 // Takes the pictures the look is held to: the built home page at a desk's
 // width, a phone's and 320px, the 404 at a desk's, the privacy page at a desk's
 // width and a phone's, the first row with its second card focused by a real
-// Tab, and the moving hero with its loop held. Reduced motion is emulated so that
+// Tab, the first row with a card flipped at a desk's width and a phone's, and
+// the moving hero with its loop held. Reduced motion is emulated so that
 // nothing is mid-glide, fonts are ready and every picture has decoded before
 // a shot, and nothing waits on a timeout. Without this a colour gone muddy, a
 // title that wraps, or a ring lost would pass every other check, since none of
@@ -15,7 +16,7 @@
 //
 // The wobble was measured before the tolerance was chosen: see TOLERANCE.
 import { expect, type Page } from '@playwright/test';
-import { DAY_ZERO, noonOf, test } from '../clock';
+import { noonOf, test } from '../clock';
 import { candidatesOf, readRows } from '../e2e/catalogue';
 
 /** The entries of the rows after the second, which wait for script. */
@@ -164,9 +165,9 @@ test('the first row at 1440 with its second card focused by keyboard', async ({
   const second = row.locator('.card').nth(1);
   for (let press = 0; press < 30; press += 1) {
     await page.keyboard.press('Tab');
-    if (await second.locator('.card-link:focus').count()) break;
+    if (await second.locator('.card-flip:focus').count()) break;
   }
-  await expect(second.locator('.card-link:focus')).toHaveCount(1);
+  await expect(second.locator('.card-flip:focus')).toHaveCount(1);
   await expect(row).toHaveScreenshot('first-row-second-card-focused.png', {
     ...TOLERANCE,
   });
@@ -261,83 +262,65 @@ test('the top of the home page at 1440 on a day that shows another feature', asy
   });
 });
 
-// The first row at 1440 with Chopdrop's card grown, as a reader with a mouse
-// sees it. Motion is asked for, since the card does not grow without it; the
-// clock is held and stepped a frame at a time past the pause, so the card opens
-// when the test says; the strip and the page are scrolled by jumps (never a
-// glide) to put the card where it is the same every run; and the card's loop
-// is held still at 2.0 seconds, which is the one thing about it that is not the
-// page's to say: the video is paused, set to that time and waited for to have
-// drawn that frame (`seeked`, then the picture's own wait for a steady frame),
-// so the frame is the same every run. Every fade has finished, asked of the
-// document's animations. The window is the picture, so what is held is the
-// grown card, the row's other cards dimmed under it and the row below.
-test('the first row at 1440 with Chopdrop grown, its loop held at 2.0 seconds', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.clock.install({ time: DAY_ZERO });
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/');
-  await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  // Settled before the clock is held, since settling asks the page for frames.
-  await settle(page);
-  await page.clock.pauseAt(DAY_ZERO + 1000);
-  const row = page.locator('section.row').first();
-  const chopdrop = row.locator('li.card[data-entry="chopdrop"]');
-  await row.evaluate((el: HTMLElement, id) => {
-    const strip = el.querySelector<HTMLElement>('.strip');
-    const card = el.querySelector<HTMLElement>(`li.card[data-entry="${id}"]`);
-    if (strip === null || card === null) throw new Error('no row or card');
-    // The card is made the second in the window, with the first beside it.
-    strip.scrollTo({ left: card.offsetLeft - 480, behavior: 'instant' });
-    window.scrollTo({ top: el.offsetTop - 24, behavior: 'instant' });
-  }, 'chopdrop');
-  await expect
-    .poll(() =>
-      row
-        .locator('li.card img')
-        .evaluateAll((all) =>
-          all.every(
-            (img) =>
-              (img as HTMLImageElement).complete &&
-              (img as HTMLImageElement).naturalWidth > 0,
-          ),
+// The first row with Chopdrop's card flipped, at a desk's width and a phone's,
+// as a reader sees it once they have pressed it: its back on the panel colour,
+// with its label, title, description, Play link and Close button, beside the
+// fronts of the row's other cards. Reduced motion is emulated (as for every
+// picture here), so the faces swap at once and nothing is part way through its
+// turn. The strip and the page are put where the card is the same every run by
+// jumps, never a glide, and the card is flipped by a real click on its
+// picture. The mouse is then taken off the row, so that no card is hovered and
+// none of the others is dimmed.
+for (const [width, height] of [
+  [1440, 1000],
+  [390, 844],
+] as const) {
+  test(`the first row at ${width} with Chopdrop flipped`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await settle(page);
+    const row = page.locator('section.row').first();
+    const chopdrop = row.locator('li.card[data-entry="chopdrop"]');
+    await row.evaluate((el: HTMLElement, id) => {
+      const strip = el.querySelector<HTMLElement>('.strip');
+      const card = el.querySelector<HTMLElement>(`li.card[data-entry="${id}"]`);
+      if (strip === null || card === null) throw new Error('no row or card');
+      // The card is put at the strip's start, one of its snap points, so that
+      // the snap leaves it there.
+      strip.scrollTo({
+        left: card.offsetLeft - strip.offsetLeft,
+        behavior: 'instant',
+      });
+      window.scrollTo({ top: el.offsetTop - 24, behavior: 'instant' });
+    }, 'chopdrop');
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done())),
         ),
-    )
-    .toBe(true);
-  await chopdrop.hover();
-  for (let done = 0; done < 700; done += 16) await page.clock.runFor(16);
-  const copy = page.locator('.grown[data-for="chopdrop"]');
-  await expect(copy).toHaveCount(1);
-  // The loop is held still at 2.0 seconds, drawn.
-  await copy.locator('video').evaluate(async (video: HTMLVideoElement) => {
-    video.pause();
-    if (video.readyState < 2)
-      await new Promise((done) =>
-        video.addEventListener('loadeddata', done, { once: true }),
-      );
-    const seeked = new Promise((done) =>
-      video.addEventListener('seeked', done, { once: true }),
     );
-    video.currentTime = 2;
-    await seeked;
+    const box = await chopdrop.locator('.frame').boundingBox();
+    expect(box, 'the picture is drawn').not.toBeNull();
+    await page.mouse.click(
+      (box?.x ?? 0) + (box?.width ?? 0) / 2,
+      (box?.y ?? 0) + (box?.height ?? 0) / 2,
+    );
+    await expect(chopdrop).toHaveAttribute('data-flipped', '');
+    await page.mouse.move(2, 2);
+    await page.evaluate(() =>
+      Promise.all(
+        document.getAnimations().map((each) => each.finished.catch(() => null)),
+      ),
+    );
+    await expect(row).toHaveScreenshot(
+      `first-row-chopdrop-flipped-${width}.png`,
+      { ...TOLERANCE },
+    );
   });
-  expect(
-    await copy.locator('video').evaluate((video: HTMLVideoElement) => ({
-      paused: video.paused,
-      at: video.currentTime,
-    })),
-  ).toEqual({ paused: true, at: 2 });
-  await page.evaluate(() =>
-    Promise.all(
-      document.getAnimations().map((each) => each.finished.catch(() => null)),
-    ),
-  );
-  await expect(page).toHaveScreenshot('first-row-chopdrop-grown-1440.png', {
-    ...TOLERANCE,
-  });
-});
+}
 
 // The top of the home page at 1440 as a reader with no wish for less motion
 // sees it: the moving hero, its loop playing over the still, the day-0

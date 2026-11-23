@@ -3,11 +3,12 @@
 // does. On the home page, the privacy page and the 404, every a[href] whose
 // address is on another origin has target="_blank", a rel holding noopener, an
 // accessible name that ends "(opens in a new window)", and the icon that says it
-// by sight: inside the link, or for a card in its label line, hidden from the
+// by sight inside the link (a card's Play link among them), hidden from the
 // accessibility tree and no shorter than the text's x-height. No link to the
 // site's own origin or to a # has a target. Then it follows links as a user does,
-// with a real click and a real Enter: each opens one new page at the card's
-// address and leaves this page where it was, and the request is stopped at a
+// with a real click and a real Enter (a card's Play link is on its back, so the
+// card is flipped first, by the same click or Enter): each opens one new page at
+// the card's address and leaves this page where it was, and the request is stopped at a
 // route on the whole context so that no test leaves the site. Each test counts
 // what it reached, so that finding no links fails. Without it a link that lost
 // its target, its rel or its words would pass every other spec, since none of
@@ -117,11 +118,30 @@ for (const each of PAGES) {
       page,
     }) => {
       const own = new URL(page.url()).origin;
+      // A card's Play link is on its back, which is turned away (and drawn
+      // mirrored, out of sight) until the card is flipped, so each card is
+      // flipped before its link is measured, as a reader would see it. The
+      // faces swap at once with reduced motion, so nothing is measured part
+      // way through a turn.
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      if (each.path === '/')
+        await expect(
+          page.locator('li.card[data-flips]').first(),
+        ).toBeAttached();
       const shown = page.locator('a[href]:visible');
       const total = await shown.count();
       let reached = 0;
+      let flipped = 0;
       for (let at = 0; at < total; at += 1) {
         const link = shown.nth(at);
+        const turned = link.locator(
+          'xpath=ancestor::li[contains(@class,"card")][not(@data-flipped)]',
+        );
+        if ((await turned.count()) > 0) {
+          await turned.locator('button.card-flip').click();
+          await expect(turned).toHaveCount(0);
+          flipped += 1;
+        }
         const href = (await link.getAttribute('href')) ?? '';
         if (new URL(href, page.url()).origin === own) {
           // The icon is for a link that leaves, and no other has one.
@@ -168,18 +188,20 @@ for (const each of PAGES) {
         await expect(link).toHaveAccessibleName(
           new RegExp(`\\S ${WORDS.replace(/[()]/g, '\\$&')}$`),
         );
-        // A card's icon is in its label line; every other link holds its own.
+        // Every link that leaves holds its own icon, a card's Play link too:
+        // the card's label line has none.
         const card = link.locator(
           'xpath=ancestor::li[contains(@class,"card")]',
         );
-        const home =
-          (await card.count()) > 0 ? card.locator('[data-label]') : link;
-        await expect(home.locator('svg')).toHaveCount(1);
-        const icon = home.locator('svg');
+        if ((await card.count()) > 0)
+          await expect(card.locator('[data-label] svg')).toHaveCount(0);
+        await expect(link.locator('svg')).toHaveCount(1);
+        const icon = link.locator('svg');
         await expect(icon).toHaveAttribute('aria-hidden', 'true');
         await expect(icon).toBeVisible();
       }
       expect(reached).toBeGreaterThan(FOOTER - 1);
+      if (each.path === '/') expect(flipped).toBeGreaterThan(0);
     });
 
     test('the icon is out of the accessibility tree and at least as tall as the text’s x-height', async ({
@@ -239,16 +261,25 @@ test.describe('following a link opens one new window and leaves this page where 
         page.locator('section.row[data-arrows]').first(),
       ).toBeAttached();
       const asked = await stopOutside(page);
-      const link = page.locator('li.card[data-linked] a.card-link').first();
+      const card = page.locator('li.card[data-linked]').first();
+      const link = card.locator('a.card-link');
+      const flip = card.locator('button.card-flip');
       const href = new URL((await link.getAttribute('href')) ?? '').href;
       const before = page.url();
-      await link.scrollIntoViewIfNeeded();
-      const opened = context.waitForEvent('page');
-      if (how === 'a real click') await link.click();
+      await card.scrollIntoViewIfNeeded();
+      // The Play link is on the card's back: the card is turned over by the
+      // same means first, which opens nothing, and then Play is pressed.
+      if (how === 'a real click') await flip.click();
       else {
-        await link.focus();
+        await flip.focus();
         await page.keyboard.press('Enter');
       }
+      await expect(card).toHaveAttribute('data-flipped', '');
+      await expect(link).toBeFocused();
+      expect(context.pages().length, 'the flip opened nothing').toBe(1);
+      const opened = context.waitForEvent('page');
+      if (how === 'a real click') await link.click();
+      else await page.keyboard.press('Enter');
       const popup = await opened;
       await expect.poll(() => asked).toEqual([href]);
       expect(context.pages().length).toBe(2);

@@ -70,7 +70,7 @@ async function ready(page: Page): Promise<void> {
 
 /**
  * Moves a strip part way along with the mouse's wheel, over the empty band
- * below its cards (so that no card is pointed at and none grows), and waits
+ * below its cards (so that no card is pointed at and none is lit), and waits
  * for it to stop: a scroll that is not an arrow's, as a trackpad makes it.
  */
 async function toMiddle(page: Page, list: Locator): Promise<void> {

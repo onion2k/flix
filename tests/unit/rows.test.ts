@@ -1,5 +1,6 @@
 // Holds buildPage to spec 1 and 2 (order, the kind-and-state line, a link only
-// where there is an address) and to the refusals of spec 8 that the schemas
+// where there is an address), to the names of the two buttons that flip every
+// card (said once here, as drafts the owner will edit), and to the refusals of spec 8 that the schemas
 // cannot make because they look across files: a row naming a site that has no
 // file, a feature naming nothing, an id said twice. A site that has a file and
 // is in no row is not a refusal: it is returned as not listed, and the build
@@ -88,10 +89,25 @@ describe('buildPage', () => {
       picture: { src: '/alpha.png' },
       pictureAlt: 'A picture of alpha.',
       label: 'Game · Play now',
+      aboutName: 'About Title of alpha',
+      closeName: 'Close Title of alpha',
       href: 'https://alpha.example.com',
       linkText: 'Play Title of alpha',
       linkName: 'Play Title of alpha (opens in a new window)',
     });
+  });
+
+  it('names the two buttons that flip every card, linked or not, from its title', () => {
+    const page = buildPage(entries, config);
+    const cards = page.rows.flatMap((row) => row.cards);
+    expect(cards.length).toBe(4);
+    for (const card of [...cards, page.feature]) {
+      expect(card.aboutName, card.id).toBe(`About ${card.title}`);
+      expect(card.closeName, card.id).toBe(`Close ${card.title}`);
+    }
+    // Both kinds were reached: a card with a link and a card with none.
+    expect(cards.some((card) => card.href === undefined)).toBe(true);
+    expect(cards.some((card) => card.href !== undefined)).toBe(true);
   });
 
   it('says in one constant that a link opens in a new window, and ends a card’s name with it', () => {

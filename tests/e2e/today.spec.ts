@@ -380,7 +380,7 @@ test.describe('arrow keys', () => {
     await page
       .locator('section.row')
       .first()
-      .locator('a.card-link')
+      .locator('button.card-flip')
       .first()
       .focus();
     await page.keyboard.press('ArrowUp');
@@ -402,7 +402,7 @@ test.describe('arrow keys', () => {
     await page.keyboard.press('ArrowDown');
     expect(
       await page.evaluate(() =>
-        document.activeElement?.matches('section.row a.card-link'),
+        document.activeElement?.matches('section.row button.card-flip'),
       ),
     ).toBe(true);
   });

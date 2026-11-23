@@ -48,6 +48,10 @@ export interface Card<Picture> {
   /** The entry's hero loop as written, where it has one: what the day's feature plays. */
   heroLoop?: string;
   label: string;
+  /** The name of the button that turns the card over to its back, on every card. */
+  aboutName: string;
+  /** The name of the button that turns it back to its front, on every card. */
+  closeName: string;
   href?: string;
   /** What the link says to a sighted reader, where there is a link. */
   linkText?: string;
@@ -88,6 +92,11 @@ function cardOf<Picture>(entry: Entry<Picture>): Card<Picture> {
     picture: entry.picture,
     pictureAlt: entry.pictureAlt,
     label: `${KIND_WORDS[entry.kind]} · ${playable ? 'Play now' : 'In the workshop'}`,
+    // The words of the two buttons that flip a card, said here and nowhere
+    // else, since they are drafts the owner will edit: every card flips,
+    // whether or not it has a link.
+    aboutName: `About ${entry.title}`,
+    closeName: `Close ${entry.title}`,
   };
   if (entry.loop !== undefined) card.loop = entry.loop;
   if (entry.heroLoop !== undefined) card.heroLoop = entry.heroLoop;

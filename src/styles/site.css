@@ -307,8 +307,9 @@ p {
 /* An arrow on a row's edge, over the cut-off card: as tall as the pictures
    and level with them, on a solid ground of its own so that its chevron and
    edge are 3:1 whatever is behind, with the accent edge of the page's other
-   buttons. It is above the strip's cards and below a grown card (which is 2),
-   and shown by script only where there is more that way. */
+   buttons. It is above the strip's cards (a card that flips keeps what it
+   holds in a stacking context of its own, which its perspective makes), and is
+   shown by script only where there is more that way. */
 .row-arrow {
   position: absolute;
   top: var(--space-m);
@@ -506,7 +507,7 @@ p {
   margin-top: var(--space-m);
 }
 
-.card h3 {
+.card-title {
   margin: var(--space-xs) 0;
   font-family: var(--font-display);
   font-weight: 800;
@@ -520,149 +521,189 @@ p {
   margin: 0;
 }
 
-/* The link is the title; its ::after is stretched over the whole card, so the
-   card is one link and nothing in it is nested. It has no height or padding of
-   its own: the 44px rule is met by the card, which is where it can be hit, and
-   a title's spacing must be the same whether or not the card is a link. */
-.card-link {
-  display: block;
-  text-decoration: none;
+/* The back's repeat of the label and the title is for a card that flips, whose
+   front is then turned away: without script, and until it runs, the two faces
+   flow one under the other and the front already says them, so the repeat is
+   neither drawn nor in the accessibility tree. */
+.card:not([data-flips]) [data-repeat] {
+  display: none;
 }
 
+/* The Play link and the Close button, in a line that wraps where the card is
+   too narrow for both. */
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-m);
+}
+
+/* Without script the Play link's ::after is stretched over the whole card, so
+   the card is one link and nothing in it is nested. A card that flips takes
+   the stretch off (below), and its link is then the button it looks. */
 .card-link::after {
   content: '';
   position: absolute;
   inset: 0;
 }
 
-/* The ring for a card is drawn round the whole card, by :has, since an outline
-   on the link would only go round its words. The link keeps an outline of its
-   own, transparent, so that it still has one where colours are forced. */
-.card-link:focus-visible {
+/* The ring for a card is drawn round the whole card, by :has, when its flip
+   button or (without script) its stretched link has keyboard focus, since an
+   outline on either would go round a box the reader does not see as the
+   control. Each keeps an outline of its own, transparent, so that it still has
+   one where colours are forced. On a flipped card the Play link and the Close
+   button are buttons a reader sees, and keep their own ring inside the card's,
+   so that it is plain which of the two has focus. */
+.card-flip:focus-visible,
+.card:not([data-flips]) .card-link:focus-visible {
   outline-color: transparent;
 }
 
-.card:has(.card-link:focus-visible) {
+.card:has(:is(.card-flip, .card-link, .card-unflip):focus-visible) {
   outline: var(--size-ring) solid var(--color-accent);
   outline-offset: var(--size-ring-offset);
 }
 
-/* Hover is only for a card that is a link: the picture's edge takes the
-   accent. A card with no link is not a control and does nothing. */
-.card[data-linked]:hover .frame::after {
+/* A card that flips (script marks it): its two faces are stacked in one cell
+   of a grid, so that the card is as tall as its taller face, a strip (which
+   stretches its cards) keeps a row level, and no word is clipped at any text
+   size. Each face turns on its own and hides its back, and the turned-away one
+   is inert (script sets it), so that a press goes through it to the face the
+   reader sees. The perspective is the depth the turn is seen from, and makes
+   the faces a stacking context of their own, below a row's arrows. */
+/* The one column is the card's width and no wider: an auto column would grow
+   to the longest word of a title, which would then push out of the card in
+   place of breaking. */
+.card[data-flips],
+.card[data-flips] .card-faces {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.card[data-flips] .card-faces {
+  perspective: var(--depth-flip);
+}
+
+.card[data-flips] .face {
+  position: relative;
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+}
+
+/* The back: the panel colour with the picture's edge, its words at 7:1 on it,
+   and its Play link and Close button at its foot, level along a row. */
+.card[data-flips] .back {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-l);
+  background: var(--color-panel);
+  border: var(--size-edge) solid var(--color-picture-edge);
+  transform: rotateY(180deg);
+}
+
+.card[data-flips] .back .label {
+  margin-top: 0;
+}
+
+.card[data-flips] .card-actions {
+  margin-top: auto;
+}
+
+.card[data-flipped] .front {
+  transform: rotateY(-180deg);
+}
+
+.card[data-flipped] .back {
+  transform: none;
+}
+
+/* On a card that flips the Play link is above the Close button's cover of the
+   back, so that a press on it is Play. */
+.card[data-flips] .card-link {
+  position: relative;
+  z-index: 1;
+}
+
+.card[data-flips] .card-link::after {
+  content: none;
+}
+
+/* The front's button is the whole of the front, over the picture and the
+   words, so that a press anywhere on it is the flip; its name is in words
+   hidden inside it. */
+.card-flip {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* Close: a square button with the accent edge of the page's other buttons, at
+   the end of the back's foot, its name in words hidden inside it. Its ::after
+   covers the whole back, under the Play link, so that a press on the back
+   outside Play is a press of it. */
+.card-unflip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-target);
+  height: var(--size-target);
+  margin: var(--space-m) 0 0 auto;
+  padding: 0;
+  background: var(--color-panel);
+  color: var(--color-accent);
+  border: var(--size-outline-button) solid var(--color-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.card-unflip svg {
+  width: var(--size-close-mark);
+  height: var(--size-close-mark);
+}
+
+.card-unflip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+/* Hover is only for a card that is a control: a link without script, and
+   every card once it flips. The picture's edge takes the accent. A card with
+   no link and no script is not a control and does nothing. */
+.card:is([data-linked], [data-flips]):hover .frame::after {
   border-color: var(--color-accent);
   border-width: var(--size-edge-hover);
 }
 
-/* House lights. While a linked card is pointed at, the pictures of the other
-   cards in its row are dimmed, and the words, the edges, the other rows and
-   the feature are not, so that no text changes its contrast. Only the img is
-   filtered: a filter on the card would dim its words. A late frame is dimmed
-   the same way, whether its picture has arrived or not: the flat panel colour
-   it holds meanwhile is the frame's own background, is not a picture, and is
-   left as it is. The dim is a state and so is here and not in the motion
-   block at the foot; only its ease is there. A browser without :has() draws
-   none of this, which is the page as it was. */
-.strip:has(.card-link:focus-visible)
-  .card:not(:has(.card-link:focus-visible))
-  .frame
-  img {
-  filter: brightness(var(--brightness-dim));
-}
-
-/* While a card is grown (script marks it) its copy is over it, so the pointer
-   is on the copy and not the card, and the card is no longer :hover. The
-   others stay dim all the same, and the grown card's own picture, under its
-   copy, is not one of them. */
-.strip:has(.card[data-grown]) .card:not([data-grown]) .frame img {
+/* House lights. While a card is pointed at, or holds keyboard focus, the
+   pictures of the other cards in its row are dimmed, and the words, the edges,
+   the other rows and the feature are not, so that no text changes its
+   contrast. Only the img is filtered: a filter on the card would dim its
+   words. A late frame is dimmed the same way, whether its picture has arrived
+   or not: the flat panel colour it holds meanwhile is the frame's own
+   background, is not a picture, and is left as it is. The dim is a state and
+   so is here and not in the motion block at the foot; only its ease is there.
+   A browser without :has() draws none of this, which is the page as it was. */
+.strip:has(.card :focus-visible) .card:not(:has(:focus-visible)) .frame img {
   filter: brightness(var(--brightness-dim));
 }
 
 /* Hover only where there is a mouse: a tap on a touch screen leaves its hover
-   stuck, and would leave a row dimmed with nothing to undo it. A card with no
-   link is not a control, so hovering it starts nothing. */
+   stuck, and would leave a row dimmed with nothing to undo it. A card that is
+   not a control starts nothing. */
 @media (hover: hover) {
-  .strip:has(.card[data-linked]:hover) .card:not(:hover) .frame img {
+  .strip:has(.card:is([data-linked], [data-flips]):hover)
+    .card:not(:hover)
+    .frame
+    img {
     filter: brightness(var(--brightness-dim));
   }
-}
-
-/* A card that has grown: an enlarged copy of it over its row, placed in the
-   document by script, which gives it its width, left and top. It is a picture
-   of the card, so the whole of it is the click that follows the card's link,
-   and its words cannot be selected by the click. The accent edge is drawn
-   over the picture as a border, as a card's edge is, so that nothing in the
-   picture covers it. The ring is on the copy while the real link has
-   keyboard focus (script marks it), since the card itself is under it. */
-.grown {
-  position: absolute;
-  z-index: 2;
-  box-sizing: border-box;
-  background: var(--color-panel);
-  border: var(--size-edge) solid var(--color-picture-edge);
-  transform-origin: 50% 20%;
-  cursor: pointer;
-  user-select: none;
-}
-
-.grown[data-focused] {
-  outline: var(--size-ring) solid var(--color-accent);
-  outline-offset: var(--size-ring-offset);
-}
-
-.grown-frame {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  background: var(--color-ground);
-}
-
-.grown-frame img,
-.grown-frame video {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.grown-frame::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: var(--size-edge-hover) solid var(--color-accent);
-  pointer-events: none;
-}
-
-.grown-words {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-s);
-  padding: var(--space-l) var(--space-l) var(--space-xl);
-}
-
-.grown-words .label {
-  margin-top: 0;
-}
-
-.grown-words h3 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--size-grown-title);
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-}
-
-.grown-words .description {
-  margin: 0;
-}
-
-/* The Play link's look, on a span: it is not a link. */
-.grown-play {
-  margin-top: var(--space-s);
 }
 
 .lost {
@@ -795,8 +836,21 @@ main {
     font-size: var(--size-row-title-phone);
   }
 
-  .card h3 {
+  .card-title {
     font-size: var(--size-card-title-phone);
+  }
+
+  /* A card's back is as tall as the row's cards are made, so a phone's narrow
+     back is kept short: a tighter edge, and the Play link beside the Close
+     button, sharing the line (its words wrap inside it before the Close
+     button wraps below it). */
+  .card[data-flips] .back {
+    padding: var(--space-m);
+  }
+
+  .card[data-flips] .card-link {
+    flex: 1 1 0;
+    padding-inline: var(--space-m);
   }
 }
 
@@ -818,7 +872,7 @@ main {
   /* A stacked card is the window's width less its gutters, wider than a
      phone's card, so its title is the size it was before phones had smaller
      cards. */
-  .card h3 {
+  .card-title {
     font-size: var(--size-card-title);
   }
 
@@ -829,31 +883,27 @@ main {
 }
 
 /* Where the page's colours are taken away, an edge is still drawn round the
-   picture, the buttons and the focused card, since those are borders and
-   outlines and not backgrounds. Nothing here needs a colour of its own. */
+   picture, a card's back, the buttons and the focused card, since those are
+   borders and outlines and not backgrounds. Nothing here needs a colour of its
+   own. */
 @media (forced-colors: active) {
-  .frame::after {
+  .frame::after,
+  .card[data-flips] .back {
     border-color: CanvasText;
   }
 
-  .card[data-linked]:hover .frame::after {
-    border-color: Highlight;
-  }
-
-  .grown {
-    border-color: CanvasText;
-  }
-
-  .grown-frame::after {
+  .card:is([data-linked], [data-flips]):hover .frame::after {
     border-color: Highlight;
   }
 }
 
 /* Motion exists only here, and only for a visitor who has not asked for less:
-   the strip glides when a button or a key moves it, the picture of a linked
-   card eases to a slight zoom inside its own frame, and the pictures of its
-   row's other cards ease to their dim (the dim itself is above), and a late
-   picture eases in from its frame's colour (the transparency is above). */
+   the strip glides when a button or a key moves it, the picture of a card
+   that is a control eases to a slight zoom inside its own frame, the pictures
+   of its row's other cards ease to their dim (the dim itself is above), a late
+   picture eases in from its frame's colour (the transparency is above), and a
+   card's faces turn over (where they end is above, so that a reader who asked
+   for less sees them swap at once). */
 @media (prefers-reduced-motion: no-preference) {
   .strip {
     scroll-behavior: smooth;
@@ -866,23 +916,14 @@ main {
       opacity var(--duration-arrive) ease-out;
   }
 
-  .card[data-linked]:hover .frame img {
+  .card:is([data-linked], [data-flips]):hover .frame img {
     transform: scale(var(--zoom-hover));
   }
 
-  /* A card grows from the size of its card to its own, and no sooner: with
-     the starting style the browser draws its first frame from the smaller
-     one. A reader who asked for less never sees it open at all (script does
-     not make it), and one whose browser does not know @starting-style sees it
-     open at once. */
-  .grown {
-    transition:
-      transform var(--duration-grow) ease-out,
-      opacity var(--duration-grow) ease-out;
-
-    @starting-style {
-      transform: scale(var(--grow-from));
-      opacity: 0;
-    }
+  /* Only on a card that has been pressed (script marks it): when script first
+     marks a card as one that flips, its back is turned away, and a turn then
+     would show every back for a moment over its front. */
+  .card[data-turns] .face {
+    transition: transform var(--duration-flip) ease-in-out;
   }
 }

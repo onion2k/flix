@@ -1,11 +1,12 @@
-// Holds part 1 of plans/effects.md, "house lights": while a linked card is
-// hovered with a mouse, or its link holds keyboard focus, the pictures of the
-// other cards in the same row dim, and nothing else does. The hovered or
+// Holds part 1 of plans/effects.md, "house lights": while a card is hovered
+// with a mouse, or one of its controls holds keyboard focus, the pictures of
+// the other cards in the same row dim, and nothing else does. The hovered or
 // focused card's own picture, every picture in another row or in the feature,
 // and every card's words stay as they were, so that text contrast is not
-// touched. An unlinked card is not a control and triggers nothing. Hover is
-// for a mouse only: a tap on a touch screen leaves a stuck hover, and that
-// dims nothing. The dim is a state, so it stays under reduced motion, where
+// touched. Every card is a control once script has run, since every card
+// flips, so a card with no link lights its row like the rest (with script off
+// it is not a control, and nothing here runs). Hover is for a mouse only: a
+// tap on a touch screen leaves a stuck hover, and that dims nothing. The dim is a state, so it stays under reduced motion, where
 // only its ease is gone. Without this a rule that dimmed the whole card (its
 // words with it), the card that is the one pointed at, a stuck touch hover or
 // an ease outside the no-preference block would pass every other test, since
@@ -160,12 +161,15 @@ test('the words of a dimmed card are as they were', async ({ page }) => {
   const words = async () =>
     row.locator('.card').evaluateAll((cards) =>
       cards.flatMap((card) =>
-        [card, ...card.querySelectorAll('.label, h3, h3 a, .description')].map(
-          (el) => {
-            const style = getComputedStyle(el);
-            return `${el.className || el.tagName} ${style.color} ${style.opacity} ${style.filter}`;
-          },
-        ),
+        [
+          card,
+          ...card.querySelectorAll(
+            '.label, .card-title, .description, .card-link, .card-unflip',
+          ),
+        ].map((el) => {
+          const style = getComputedStyle(el);
+          return `${el.className || el.tagName} ${style.color} ${style.opacity} ${style.filter}`;
+        }),
       ),
     );
   await page.mouse.move(2, 2);
@@ -178,7 +182,7 @@ test('the words of a dimmed card are as they were', async ({ page }) => {
   expect(await words()).toEqual(before);
 });
 
-test('Tab to a card link dims the other pictures in its row and no others', async ({
+test('Tab to a card’s flip button dims the other pictures in its row and no others', async ({
   page,
 }) => {
   await ready(page);
@@ -186,9 +190,9 @@ test('Tab to a card link dims the other pictures in its row and no others', asyn
   const lit = row.locator('.card').nth(1);
   for (let press = 0; press < 40; press += 1) {
     await page.keyboard.press('Tab');
-    if ((await lit.locator('.card-link:focus-visible').count()) > 0) break;
+    if ((await lit.locator('.card-flip:focus-visible').count()) > 0) break;
   }
-  await expect(lit.locator('.card-link:focus-visible')).toHaveCount(1);
+  await expect(lit.locator('.card-flip:focus-visible')).toHaveCount(1);
   // The mouse is nowhere near: this is focus alone.
   expect(await page.locator('.card:hover').count()).toBe(0);
   const checked = await expectLights(page, row, lit, await dimmed(page));
@@ -198,8 +202,21 @@ test('Tab to a card link dims the other pictures in its row and no others', asyn
     description: `${checked} pictures checked while focused`,
   });
 
-  // Tab on: the next link is the lit one.
+  // Tab on: the next card's flip button is the lit one.
   await page.keyboard.press('Tab');
+  await expectLights(
+    page,
+    row,
+    row.locator('.card').nth(2),
+    await dimmed(page),
+  );
+
+  // Flipped by Enter, focus is on its Play link, inside it: it stays lit.
+  await page.keyboard.press('Enter');
+  await expect(row.locator('.card').nth(2)).toHaveAttribute('data-flipped', '');
+  await expect(
+    row.locator('.card').nth(2).locator('.card-link:focus-visible'),
+  ).toHaveCount(1);
   await expectLights(
     page,
     row,
@@ -208,7 +225,7 @@ test('Tab to a card link dims the other pictures in its row and no others', asyn
   );
 });
 
-test('an unlinked card is not a control: hovering it dims nothing, and it dims with the rest', async ({
+test('an unlinked card flips, so it is a control: hovering it dims the others, and it dims with the rest', async ({
   page,
 }) => {
   await ready(page);
@@ -220,23 +237,16 @@ test('an unlinked card is not a control: hovering it dims nothing, and it dims w
   const linked = row.locator('.card').nth(1);
   await bare.evaluate((card) => {
     card.removeAttribute('data-linked');
-    const link = card.querySelector('.card-link');
-    if (link) link.replaceWith(...link.childNodes);
+    card.querySelector('.card-link')?.remove();
   });
   await expect(bare.locator('.card-link')).toHaveCount(0);
+  await expect(bare).toHaveAttribute('data-flips', '');
   const filter = await dimmed(page);
 
-  // Hovering the unlinked card: no picture dims.
+  // Hovering the unlinked card: the others dim, as for any card.
   const barePoint = await centre(bare);
   await page.mouse.move(barePoint.x, barePoint.y);
-  await quiet(page);
-  await expect(bare).toHaveJSProperty('tagName', 'LI');
-  expect(await bare.evaluate((el) => el.matches(':hover'))).toBe(true);
-  const hoverFilters = await row
-    .locator(PICTURE)
-    .evaluateAll((all) => all.map((el) => getComputedStyle(el).filter));
-  expect(hoverFilters.length, 'pictures read').toBeGreaterThan(5);
-  expect(hoverFilters.filter((each) => each !== 'none')).toEqual([]);
+  await expectLights(page, row, bare, filter);
 
   // Hovering a linked card beside it: the unlinked card's picture dims too.
   const point = await centre(linked);
@@ -307,9 +317,10 @@ test.describe('on a touch screen', () => {
     await card.scrollIntoViewIfNeeded();
     const box = await card.boundingBox();
     expect(box).not.toBeNull();
-    // Taps the picture, which is not the link's own words, so that a tap
-    // that follows the link is not the thing under test: the click is
-    // stopped from navigating, since only the hover state is looked at.
+    // Taps the picture, which flips the card and opens nothing; the click is
+    // stopped from going further all the same, since only the hover state
+    // (and the focus the flip moves, which a tap does not make visible) is
+    // looked at.
     await page.evaluate(() =>
       document.addEventListener(
         'click',

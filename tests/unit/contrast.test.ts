@@ -47,14 +47,21 @@ function ratio(foreground: string, background: string): number {
 const TEXT: [string, string, string][] = [
   ['--color-text', '--color-ground', 'body text, titles, cards'],
   ['--color-text', '--color-panel', 'the feature title and description'],
+  ['--color-text', '--color-panel', 'a card back’s title and description'],
   ['--color-accent', '--color-ground', 'the mark, card labels'],
   ['--color-accent', '--color-panel', 'the feature label'],
+  ['--color-accent', '--color-panel', 'a card back’s label'],
   ['--color-on-accent', '--color-accent', 'the Play button, the skip link'],
 ];
 
 const EDGES: [string, string, string][] = [
   ['--color-accent', '--color-ground', 'the focus ring round a card or link'],
   ['--color-accent', '--color-panel', 'the focus ring round the Play button'],
+  [
+    '--color-accent',
+    '--color-panel',
+    'a card back’s Close button: edge, cross',
+  ],
   ['--color-accent', '--color-ground', 'the Pause button edge'],
   ['--color-accent', '--color-ground', 'the bar before a row title'],
   // An edge arrow sits on its own solid ground, so these are the pairs drawn.

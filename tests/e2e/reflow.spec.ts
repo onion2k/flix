@@ -142,7 +142,11 @@ for (const width of [320, 339]) {
       tops.forEach((top, at) => {
         if (at > 0) expect(top).toBeGreaterThan(tops[at - 1] ?? 0);
       });
-      await expect(section.getByRole('button')).toHaveCount(0);
+      // No arrow: the cards' own buttons, which flip them, are the only ones.
+      await expect(
+        section.getByRole('button', { name: /^(Previous|Next) in / }),
+      ).toHaveCount(0);
+      await expect(section.locator('button.row-arrow:visible')).toHaveCount(0);
       reached += 1;
     }
     expect(reached).toBe(catalogue.rows.length);

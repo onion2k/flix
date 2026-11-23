@@ -1,5 +1,7 @@
 // Holds that the page is whole without script: in a context with JavaScript
-// off every card and picture is there, the rows' edge arrows and page marks
+// off every card and picture is there, each card shows each of its words once
+// and a card with an address is one link over the whole of it (no card flips,
+// and its buttons are not shown), the rows' edge arrows and page marks
 // are not shown (they would do nothing), each row that overflows keeps its
 // scrollbar (a mouse with no sideways wheel has no other way along), and a
 // focused strip scrolls by the arrow key. Without it a change that drew cards
@@ -8,6 +10,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
+import { inTree } from './tree';
 
 const catalogue = readRows();
 
@@ -94,7 +97,79 @@ test('a focused strip scrolls by the arrow key', async ({ page }) => {
     .toBeGreaterThan(0);
 });
 
-test('no card grows, no loop is fetched and the page holds no video, though cards carry their loops’ addresses', async ({
+test('every card shows each of its words once, and a card with an address is one link over the whole of it', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const cards = page.locator('main li.card');
+  const total = await cards.count();
+  expect(total).toBeGreaterThan(catalogue.rows.length);
+  let linked = 0;
+  let points = 0;
+  for (let at = 0; at < total; at += 1) {
+    const card = cards.nth(at);
+    await card.scrollIntoViewIfNeeded();
+    // Script never ran: the card is not marked as one that flips, and its two
+    // buttons, which would do nothing, are neither seen nor in the tree.
+    await expect(card).not.toHaveAttribute('data-flips', '');
+    await expect(card.getByRole('button')).toHaveCount(0);
+    await expect(card.locator('button:visible')).toHaveCount(0);
+    // The label, the title and the description are each drawn once: the
+    // back's repeat of the label and the title waits for a flip.
+    await expect(card.locator('.label:visible')).toHaveCount(1);
+    await expect(card.locator('.card-title:visible')).toHaveCount(1);
+    await expect(card.locator('.card-title:visible')).toHaveText(
+      (await card.locator('h3').textContent()) ?? '',
+    );
+    await expect(card.locator('.description:visible')).toHaveCount(1);
+    await expect(card.getByRole('heading')).toHaveCount(1);
+    const label = ((await card.locator('[data-label]').textContent()) ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const tree = await inTree(card);
+    expect(tree.filter((each) => each === `StaticText: ${label}`)).toEqual([
+      `StaticText: ${label}`,
+    ]);
+    if ((await card.getAttribute('data-linked')) === null) {
+      await expect(card.getByRole('link')).toHaveCount(0);
+      continue;
+    }
+    linked += 1;
+    await expect(card.getByRole('link')).toHaveCount(1);
+    expect(tree.filter((each) => each.startsWith('link:')).length).toBe(1);
+    // Wherever the card is pressed, its picture, its label, its title or its
+    // description, the press is on its link: the link's stretch covers it.
+    const hits = await card.evaluate((el) => {
+      const link = el.querySelector('a.card-link');
+      return ['.frame', '[data-label]', 'h3', '.description'].map((part) => {
+        const box = el.querySelector(part)?.getBoundingClientRect();
+        if (box === undefined) return `${part}: missing`;
+        const hit = document.elementFromPoint(
+          box.left + box.width / 2,
+          box.top + box.height / 2,
+        );
+        return hit !== null && link !== null && link.contains(hit)
+          ? `${part}: link`
+          : `${part}: ${hit?.tagName ?? 'nothing'}`;
+      });
+    });
+    expect(hits).toEqual([
+      '.frame: link',
+      '[data-label]: link',
+      'h3: link',
+      '.description: link',
+    ]);
+    points += hits.length;
+  }
+  expect(linked).toBeGreaterThan(0);
+  expect(linked).toBeLessThan(total);
+  test.info().annotations.push({
+    type: 'measured',
+    description: `${total} cards, ${linked} links, ${points} points pressed`,
+  });
+});
+
+test('no loop is fetched and the page holds no video, though cards carry their loops’ addresses', async ({
   page,
 }) => {
   const urls: string[] = [];
@@ -105,11 +180,10 @@ test('no card grows, no loop is fetched and the page holds no video, though card
   // in silence; they are only attributes, which no browser fetches.
   const looped = page.locator('li.card[data-loop]');
   expect(await looped.count()).toBeGreaterThan(0);
-  // A real mouse on one, as long as a reader would hold it, grows nothing.
+  // A real mouse on one, as long as a reader would hold it, makes nothing.
   const card = looped.first();
   await card.scrollIntoViewIfNeeded();
   await card.hover();
-  await expect(page.locator('.grown')).toHaveCount(0);
   await expect(page.locator('video')).toHaveCount(0);
   expect(urls.filter((url) => /\.webm(\?|$)/.test(url))).toEqual([]);
   // Each card keeps the one picture it had.

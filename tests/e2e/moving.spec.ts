@@ -1,10 +1,12 @@
-// Holds moving about the page by arrow keys and by a gamepad. With focus on a
-// card's link or the feature's link, with real key presses: Right and Left go
-// to the next and previous linked card and stop at a row's ends; Home and End
-// go to the ends; Down and Up go to the nearest linked card of the next row
-// that has one, from the feature to the first row and back, passing over the
-// row that has no link; a move puts real focus on the link, ringed and in the
-// window, brings a late row's pictures in, and stops the key's own scrolling.
+// Holds moving about the page by arrow keys and by a gamepad. A card's stop is
+// its live control: its flip button while it shows its front (every card,
+// linked or not, since every card flips) and its Play link (or Close, with no
+// link) while it is flipped. With focus on a card's control or the feature's
+// link, with real key presses: Right and Left go to the next and previous card
+// and stop at a row's ends; Home and End go to the ends; Down and Up go to the
+// nearest card of the next row, from the feature to the first row and back; a
+// move puts real focus on the card's live control, ringed and in the window,
+// brings a late row's pictures in, and stops the key's own scrolling.
 // Where it must not apply, it does not: a strip itself still scrolls, a link
 // outside the grid (the footer's) is left alone, and a held modifier leaves the key to the browser. The
 // gamepad is stood in for, since there is no controller in a test: a
@@ -54,12 +56,15 @@ function where(page: Page): Promise<Where> {
         tag: 'a',
       };
     const card = el.closest<HTMLElement>('li.card');
-    if (card !== null && el.matches('a.card-link'))
+    if (
+      card !== null &&
+      el.matches('a.card-link, button.card-flip, button.card-unflip')
+    )
       return {
         kind: 'card',
         row: rows.indexOf(card.closest('section.row') as Element),
         entry: card.dataset['entry'] ?? '',
-        tag: 'a',
+        tag: el.tagName.toLowerCase(),
       };
     if (el.matches('ul.strip'))
       return {
@@ -88,13 +93,13 @@ async function rowsOnPage(
   );
 }
 
-/** Tab, as a user does, until focus is on a card's link. */
+/** Tab, as a user does, until focus is on a card's flip button. */
 async function tabToCard(page: Page): Promise<void> {
   for (let pressed = 0; pressed < 60; pressed += 1) {
     await page.keyboard.press('Tab');
     if ((await where(page)).kind === 'card') return;
   }
-  throw new Error('Tab never reached a card link');
+  throw new Error('Tab never reached a card');
 }
 
 /**
@@ -184,7 +189,7 @@ function keysPrevented(page: Page): Promise<boolean[]> {
 }
 
 test.describe('keys', () => {
-  test('the catalogue has a row of linked cards, and a row with a card that is not linked', async ({
+  test('the catalogue has linked cards and cards with no link, and every one of them is a stop by its flip button', async ({
     page,
   }) => {
     await ready(page);
@@ -193,13 +198,13 @@ test.describe('keys', () => {
       catalogue.rows.map((row) => row.entries),
     );
     expect(rows[0]?.linked.length).toBeGreaterThan(3);
-    // By shape and not by the owner's order: a row holding a card with no
-    // link, so that an arrow key has one to pass over. (The catalogue once had
-    // a row of none; since the reorder of 2026-11-22 none is wholly unlinked.)
+    // By shape and not by the owner's order: a card with no link, which an
+    // arrow key once passed over and now lands on, since it flips.
     expect(rows.some((row) => row.linked.length < row.all.length)).toBe(true);
-    expect(rows.filter((row) => row.linked.length > 0).length).toBeGreaterThan(
-      2,
-    );
+    const flips = await page
+      .locator('section.row li.card button.card-flip:not([hidden])')
+      .count();
+    expect(flips).toBe(rows.reduce((sum, row) => sum + row.all.length, 0));
   });
 
   test('Right walks the first row card by card, stops at its end, and Left walks back', async ({
@@ -209,31 +214,31 @@ test.describe('keys', () => {
     const first = (await rowsOnPage(page))[0];
     if (first === undefined) throw new Error('no rows');
     await tabToCard(page);
-    await landed(page, 0, first.linked[0] ?? '');
+    await landed(page, 0, first.all[0] ?? '');
     await recordKeys(page);
     let reached = 1;
-    for (const entry of first.linked.slice(1)) {
+    for (const entry of first.all.slice(1)) {
       await page.keyboard.press('ArrowRight');
       await landed(page, 0, entry);
       reached += 1;
     }
-    expect(reached).toBe(first.linked.length);
+    expect(reached).toBe(first.all.length);
     // At the end nothing moves, and the key is still the grid's.
     await still(page);
     await page.keyboard.press('ArrowRight');
     await still(page);
-    await landed(page, 0, first.linked.at(-1) ?? '');
+    await landed(page, 0, first.all.at(-1) ?? '');
     const presses = await keysPrevented(page);
-    expect(presses.length).toBe(first.linked.length);
+    expect(presses.length).toBe(first.all.length);
     expect(presses.every(Boolean)).toBe(true);
-    for (const entry of first.linked.slice(0, -1).reverse()) {
+    for (const entry of first.all.slice(0, -1).reverse()) {
       await page.keyboard.press('ArrowLeft');
       await landed(page, 0, entry);
     }
     await still(page);
     await page.keyboard.press('ArrowLeft');
     await still(page);
-    await landed(page, 0, first.linked[0] ?? '');
+    await landed(page, 0, first.all[0] ?? '');
   });
 
   test('Home and End go to the ends of the row', async ({ page }) => {
@@ -244,11 +249,11 @@ test.describe('keys', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('End');
-    await landed(page, 0, first.linked.at(-1) ?? '');
+    await landed(page, 0, first.all.at(-1) ?? '');
     await page.keyboard.press('Home');
-    await landed(page, 0, first.linked[0] ?? '');
+    await landed(page, 0, first.all[0] ?? '');
     await page.keyboard.press('End');
-    await landed(page, 0, first.linked.at(-1) ?? '');
+    await landed(page, 0, first.all.at(-1) ?? '');
   });
 
   test('a Right press does not also scroll the strip by the key’s own amount, nor the window sideways', async ({
@@ -272,20 +277,22 @@ test.describe('keys', () => {
     ).toBe(true);
   });
 
-  test('Down and Up go to the nearest linked card of the next row that has one, through every row and back to the feature', async ({
+  test('Down and Up go to the nearest card of the next row, through every row and back to the feature', async ({
     page,
   }) => {
     await ready(page);
     const rows = await rowsOnPage(page);
-    const withLinks = rows
-      .map((row, at) => ({ at, linked: row.linked }))
-      .filter((row) => row.linked.length > 0);
+    // Every card is a stop, so every row with a card is one to land in.
+    const withStops = rows
+      .map((row, at) => ({ at, stops: row.all }))
+      .filter((row) => row.stops.length > 0);
+    expect(withStops.length).toBe(rows.length);
     await tabToCard(page);
     // From the row's far end, so that the nearest is not the first card.
     await page.keyboard.press('End');
     await still(page);
 
-    /** The linked card of `row` nearest sideways to the focused one, from the page. */
+    /** The card of `row` nearest sideways to the focused one, from the page. */
     const nearest = (row: number) =>
       page.evaluate((target) => {
         const centre = (el: Element) => {
@@ -298,8 +305,7 @@ test.describe('keys', () => {
         const cards = [
           ...(document
             .querySelectorAll('section.row')
-            [target]?.querySelectorAll<HTMLElement>('li.card[data-linked]') ??
-            []),
+            [target]?.querySelectorAll<HTMLElement>('li.card') ?? []),
         ];
         let best = '';
         let gap = Infinity;
@@ -315,23 +321,22 @@ test.describe('keys', () => {
 
     let nearestNotFirst = 0;
     let reached = 0;
-    for (const row of withLinks.slice(1)) {
+    for (const row of withStops.slice(1)) {
       await still(page);
       const expected = await nearest(row.at);
       expect(expected).not.toBe('');
-      if (expected !== row.linked[0]) nearestNotFirst += 1;
+      if (expected !== row.stops[0]) nearestNotFirst += 1;
       await page.keyboard.press('ArrowDown');
       await landed(page, row.at, expected);
       reached += 1;
     }
-    expect(reached).toBe(withLinks.length - 1);
+    expect(reached).toBe(withStops.length - 1);
     // The nearest and the first differed somewhere, or this proved nothing.
     expect(nearestNotFirst).toBeGreaterThan(0);
 
-    // Down from the last row with a link moves nothing: the unlinked row below
-    // it is never landed on.
+    // Down from the last row moves nothing, and the key is still the grid's.
     await recordKeys(page);
-    const last = withLinks.at(-1);
+    const last = withStops.at(-1);
     const stood = await where(page);
     await still(page);
     await page.keyboard.press('ArrowDown');
@@ -341,7 +346,7 @@ test.describe('keys', () => {
     expect(await keysPrevented(page)).toEqual([true]);
 
     // And back up, each time to the nearest, to the feature's link.
-    for (const row of withLinks.slice(0, -1).reverse()) {
+    for (const row of withStops.slice(0, -1).reverse()) {
       await still(page);
       const expected = await nearest(row.at);
       await page.keyboard.press('ArrowUp');
@@ -360,7 +365,7 @@ test.describe('keys', () => {
       expect((await where(page)).kind).toBe('feature');
     }
     // Down from the feature goes to the first row's nearest card.
-    const firstRow = withLinks[0];
+    const firstRow = withStops[0];
     const expected = await nearest(firstRow?.at ?? 0);
     await page.keyboard.press('ArrowDown');
     await landed(page, firstRow?.at ?? 0, expected);
@@ -369,7 +374,7 @@ test.describe('keys', () => {
   test('moving into a late row loads its pictures', async ({ page }) => {
     await ready(page);
     const rows = await rowsOnPage(page);
-    const late = rows.findIndex((row, at) => at >= 2 && row.linked.length > 0);
+    const late = rows.findIndex((row, at) => at >= 2 && row.all.length > 0);
     expect(late).toBeGreaterThan(1);
     const pictures = page.locator('section.row').nth(late).locator('li.card');
     const total = await pictures.count();
@@ -551,11 +556,22 @@ async function step(page: Page, ms: number): Promise<void> {
   for (let done = 0; done < ms; done += FRAME) await page.clock.runFor(FRAME);
 }
 
-/** The place of the focused card among its row's linked cards. */
+/** The place of the focused card among its row's cards. */
 async function place(page: Page): Promise<number> {
   const here = await where(page);
   const rows = await rowsOnPage(page);
-  return rows[here.row]?.linked.indexOf(here.entry) ?? -1;
+  return rows[here.row]?.all.indexOf(here.entry) ?? -1;
+}
+
+/**
+ * The pad's first button pressed and let go, a frame each: on a card's flip
+ * button that turns the card over and sends focus to its Play link.
+ */
+async function flipByPad(page: Page): Promise<void> {
+  await hold(page, { buttons: [0] });
+  await step(page, FRAME);
+  await hold(page, {});
+  await step(page, FRAME);
 }
 
 test.describe('a gamepad', () => {
@@ -662,7 +678,7 @@ test.describe('a gamepad', () => {
     expect((await where(page)).row).toBe(0);
   });
 
-  test('the first button opens the focused link in a new window, once a press and not again while held', async ({
+  test('the first button turns the focused card over, and on its Play link opens it in a new window, once a press and not again while held', async ({
     page,
   }) => {
     // window.open is stood in for, so that the page stays to be read and each
@@ -680,13 +696,20 @@ test.describe('a gamepad', () => {
         given.push(window);
         return window as unknown as Window;
       };
-      // A click must not be the way it goes: that is the browser's own, for
-      // a key and a mouse, and the pad does not borrow it.
-      Reflect.set(window, '__clicks', 0);
+      // A link is not clicked to be followed: a click is the browser's own,
+      // for a key and a mouse, and the pad does not borrow it for a link. (A
+      // button is clicked: that is how the flip is pressed.)
+      Reflect.set(window, '__linkClicks', 0);
       document.addEventListener(
         'click',
         (event) => {
-          Reflect.set(window, '__clicks', Reflect.get(window, '__clicks') + 1);
+          if (!(event.target instanceof Element)) return;
+          if (event.target.closest('a') === null) return;
+          Reflect.set(
+            window,
+            '__linkClicks',
+            Reflect.get(window, '__linkClicks') + 1,
+          );
           event.preventDefault();
         },
         true,
@@ -702,6 +725,16 @@ test.describe('a gamepad', () => {
     await step(page, FRAME);
 
     await tabToCardByKeys(page);
+    const card = await where(page);
+    expect(card.tag).toBe('button');
+    // On the flip button: the card turns over, focus goes to Play, and
+    // nothing is opened.
+    await flipByPad(page);
+    expect(await where(page)).toEqual({ ...card, tag: 'a' });
+    expect(
+      await page.locator('li.card[data-flipped]').getAttribute('data-entry'),
+    ).toBe(card.entry);
+    expect(await opened()).toEqual([]);
     const href = await page.evaluate(
       () => (document.activeElement as HTMLAnchorElement).href,
     );
@@ -729,19 +762,42 @@ test.describe('a gamepad', () => {
       ),
     ).toEqual([null, null]);
     expect(
-      await page.evaluate(() => Reflect.get(window, '__clicks') as number),
+      await page.evaluate(() => Reflect.get(window, '__linkClicks') as number),
     ).toBe(0);
   });
 
-  test('the first button opens a new window at the card’s address, and this page stays where it was', async ({
+  test('a direction from a flipped card’s Play link moves to the next card’s flip button', async ({
+    page,
+  }) => {
+    await connected(page);
+    await tabToCardByKeys(page);
+    const start = await place(page);
+    await flipByPad(page);
+    expect((await where(page)).tag).toBe('a');
+    await hold(page, { buttons: [15] });
+    await step(page, FRAME);
+    expect(await place(page)).toBe(start + 1);
+    expect((await where(page)).tag).toBe('button');
+    // And back onto the flipped card: its live control is Play.
+    await hold(page, {});
+    await step(page, FRAME);
+    await hold(page, { buttons: [14] });
+    await step(page, FRAME);
+    expect(await place(page)).toBe(start);
+    expect((await where(page)).tag).toBe('a');
+  });
+
+  test('the first button on a flipped card’s Play link opens a new window at the card’s address, and this page stays where it was', async ({
     page,
     context,
   }) => {
     await connected(page);
     await tabToCardByKeys(page);
+    await flipByPad(page);
     const href = await page.evaluate(
       () => (document.activeElement as HTMLAnchorElement).href,
     );
+    expect(href).toMatch(/^https:\/\//);
     const before = page.url();
     const asked: string[] = [];
     await context.route(href, (route) => {
@@ -767,9 +823,11 @@ test.describe('a gamepad', () => {
   }) => {
     await connected(page);
     await tabToCardByKeys(page);
+    await flipByPad(page);
     const href = await page.evaluate(
       () => (document.activeElement as HTMLAnchorElement).href,
     );
+    expect(href).toMatch(/^https:\/\//);
     // A browser that refuses a window nothing asked for gives back null.
     await page.evaluate(() => {
       window.open = () => null;

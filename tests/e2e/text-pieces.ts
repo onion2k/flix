@@ -2,7 +2,7 @@
 // colour and the nearest background that is not transparent, and the ratio
 // WCAG works out from them, worked out here and not by the browser. It is
 // said once so that the contrast spec, which measures a whole page, and the
-// grown card's spec, which measures one card's words, use one measure and
+// hero's spec, which measures the feature's panel, use one measure and
 // cannot come to differ. Without it each would carry a copy, and a fix to one
 // would be a fault in the other.
 import type { Page } from '@playwright/test';

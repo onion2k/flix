@@ -1,9 +1,10 @@
 // Holds part 3 of plans/effects.md, "drag to scroll": with a real mouse,
 // pressing on a strip and moving more than a few pixels drags it, the strip's
 // scrollLeft following the pointer, and on release it settles on a card
-// through the scroll snap it already has. A drag follows no link and its click
-// is swallowed once; a press that does not move, or moves under the threshold,
-// is an ordinary click. Touch and pen are left to the browser. A row that fits
+// through the scroll snap it already has. A drag flips no card and follows no
+// link, and its click is swallowed once; a press that does not move, or moves
+// under the threshold, is an ordinary click, which flips the card it is on and
+// opens nothing. Touch and pen are left to the browser. A row that fits
 // cannot be dragged. Reduced motion changes nothing, since nothing here is
 // motion: the strip moves under the reader's hand. Without this a drag that
 // followed the link under it, that ate the next plain click, that fought the
@@ -68,6 +69,12 @@ async function open(page: Page): Promise<string[]> {
   return outside;
 }
 
+/** The cards of the page that are flipped now, by their entry. */
+const flippedNow = (page: Page) =>
+  page
+    .locator('li.card[data-flipped]')
+    .evaluateAll((all) => all.map((el) => el.getAttribute('data-entry')));
+
 /** A linked card of a strip, by its place, with its box and its address. */
 async function linkedCard(list: Locator, place: number) {
   const card = list.locator('li.card[data-linked]').nth(place);
@@ -104,7 +111,7 @@ function drag(reduced: 'no-preference' | 'reduce') {
   test.describe(`with a mouse, motion ${reduced}`, () => {
     test.use({ reducedMotion: reduced });
 
-    test('a drag moves the strip, follows no link and leaves it settled', async ({
+    test('a drag moves the strip, flips no card, follows no link and leaves it settled', async ({
       page,
     }) => {
       const outside = await open(page);
@@ -140,18 +147,19 @@ function drag(reduced: 'no-preference' | 'reduce') {
       expect(Math.abs(at - 300)).toBeLessThan(width);
       await settled(page);
       expect(outside, 'addresses outside the site asked for').toEqual([]);
+      expect(await flippedNow(page), 'cards flipped by a drag').toEqual([]);
       test.info().annotations.push({
         type: 'measured',
         description: `released at 300, settled at ${at}`,
       });
     });
 
-    test('the click after a drag is swallowed once and the next plain click follows its link', async ({
+    test('the click after a drag is swallowed once and the next plain click flips its card', async ({
       page,
     }) => {
       const outside = await open(page);
       const list = strip(page, FIRST);
-      const { box, href } = await linkedCard(list, 1);
+      const { box } = await linkedCard(list, 1);
       // Counts the clicks that reach the document, which a swallowed one does
       // not, whatever element the browser aimed it at.
       await page.evaluate(() => {
@@ -175,17 +183,22 @@ function drag(reduced: 'no-preference' | 'reduce') {
       ).toBe(0);
       expect(outside).toEqual([]);
       expect(page.context().pages().length, 'windows after a drag').toBe(1);
+      expect(await flippedNow(page), 'cards flipped by a drag').toEqual([]);
 
-      // The next press and release, with no movement, is an ordinary click.
+      // The next press and release, with no movement, is an ordinary click:
+      // it flips the card it is on, and opens nothing.
       const now = await linkedCard(list, 1);
       await page.mouse.click(
         now.box.x + now.box.width / 2,
         now.box.y + now.box.height / 3,
       );
-      // The link opens a new window, so the request is what is read, and this
-      // page stays where it was.
-      await expect.poll(() => outside).toContain(href);
-      expect(page.context().pages().length).toBe(2);
+      await expect(now.card).toHaveAttribute('data-flipped', '');
+      expect(await flippedNow(page)).toEqual([
+        await now.card.getAttribute('data-entry'),
+      ]);
+      await settled(page);
+      expect(outside).toEqual([]);
+      expect(page.context().pages().length).toBe(1);
     });
 
     test('dragging right from a scrolled strip goes back and stops at 0', async ({
@@ -262,18 +275,25 @@ drag('no-preference');
 drag('reduce');
 
 test.describe('a click that is not a drag', () => {
-  test('a press with no movement follows the card link', async ({ page }) => {
+  test('a press with no movement flips the card, and opens nothing', async ({
+    page,
+  }) => {
     const outside = await open(page);
     const list = strip(page, FIRST);
-    const { box, href } = await linkedCard(list, 0);
+    const { card, box } = await linkedCard(list, 0);
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 3);
-    await expect.poll(() => outside).toContain(href);
+    await expect(card).toHaveAttribute('data-flipped', '');
+    await settled(page);
+    expect(outside).toEqual([]);
+    expect(page.context().pages().length).toBe(1);
   });
 
-  test('a movement under the threshold is still a click', async ({ page }) => {
+  test('a movement under the threshold is still a click, and flips the card', async ({
+    page,
+  }) => {
     const outside = await open(page);
     const list = strip(page, FIRST);
-    const { box, href } = await linkedCard(list, 0);
+    const { card, box } = await linkedCard(list, 0);
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 3;
     await page.mouse.move(x, y);
@@ -281,7 +301,23 @@ test.describe('a click that is not a drag', () => {
     await page.mouse.move(x - 3, y);
     expect(await marked(list)).toBe(false);
     await page.mouse.up();
-    await expect.poll(() => outside).toContain(href);
+    await expect(card).toHaveAttribute('data-flipped', '');
+    expect(outside).toEqual([]);
+  });
+
+  test('a click on a flipped card’s Play link opens the game, once', async ({
+    page,
+  }) => {
+    const outside = await open(page);
+    const list = strip(page, FIRST);
+    const { card, box, href } = await linkedCard(list, 0);
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 3);
+    await expect(card).toHaveAttribute('data-flipped', '');
+    const opened = page.context().waitForEvent('page');
+    await card.locator('a.card-link').click();
+    await opened;
+    await expect.poll(() => outside).toEqual([href]);
+    expect(page.context().pages().length).toBe(2);
   });
 });
 

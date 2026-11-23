@@ -1,13 +1,20 @@
 ---
-// One card in a row's strip: the picture, a plain label line, the title and
-// the description. Where the entry has an address the title is a link named
-// "Play <title> (opens in a new window)", which opens in a new window, and
-// the icon that says so by sight sits in the label line; its stretched ::after makes the whole card its hit area,
-// so there is one link per card and none nested; where it has none, there is
-// no link and the card is not a control, so it has no hover or focus
-// treatment. Without it each row would repeat this markup and one that
-// forgot the alt words or the link's name would be the odd one out. A late
-// card (see Row.astro) writes its picture with the addresses in data-
+// One card in a row's strip, with two faces. The front is the picture, a plain
+// label line and the title; the back is the label and the title again, the
+// description, the Play link (where the entry has an address: "Play <title>",
+// named with the new-window words, with the icon that says so by sight, opening
+// in a new window cut from this one) and a Close button. Without script, and
+// until it runs, the two faces flow one under the other with the back's repeat
+// of the label and the title kept out of sight and out of the accessibility
+// tree, so each word is drawn once, and the Play link's stretched ::after makes
+// the whole card its hit area, so the card is one link as it always was and
+// none is nested; where there is no address there is no link and the card is
+// not a control. The two buttons are written hidden, since without script they
+// would do nothing: src/scripts/flip.ts shows them, and then the front's
+// button covers the front and turns the card over, and the back's covers the
+// back under Play and turns it back. Without this each row would repeat the
+// markup, and one that forgot the alt words or a name would be the odd one out.
+// A late card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
 // <noscript>, so that script brings the one in and no script has the other. It
 // also carries the colour of its picture, which the frame waits in.
@@ -28,8 +35,9 @@ interface Props {
 const { card, eager, late } = Astro.props;
 
 // The address the build gave the card's loop, if it has one. It is written as
-// an attribute and nothing more, which no browser fetches: the loop is asked
-// for by script, the first time the card grows.
+// an attribute and nothing more, which no browser fetches: it is kept for the
+// script that will play the loop of the card most in view (part 4 of
+// plans/cards.md), and nothing reads it until then.
 const loop = card.loop === undefined ? undefined : loopFor(card.id, card.loop);
 
 // What the card's width is at each window width, as the stylesheet makes it:
@@ -57,6 +65,13 @@ if (late && fsPath === undefined)
   throw new Error(`${card.id}: Astro gave no file path for the picture`);
 const waiting = late && fsPath ? await pictureColour(fsPath) : undefined;
 
+// The Play link's words, split before the last so that the last word and the
+// icon after it go in a span that may not break, as OutsideLink.astro does for
+// every other link that leaves: the icon is never alone at the start of a line.
+const words = card.linkText ?? '';
+const head = words.slice(0, words.lastIndexOf(' ') + 1);
+const tail = words.slice(words.lastIndexOf(' ') + 1);
+
 // The same three files <Picture> would make (AVIF, WebP, then the JPEG that
 // is the fallback), written here so that their addresses can go in data-
 // attributes instead of src and srcset.
@@ -74,72 +89,102 @@ const [avif, webp, jpeg] = late
   data-entry={card.id}
   data-linked={card.href ? '' : undefined}
   data-loop={loop}
-  data-play={card.linkText}
 >
-  {late && avif && webp && jpeg ? (
-    <div class="frame" data-late data-waiting={waiting}>
-      <picture>
-        <source
-          data-srcset={avif.srcSet.attribute}
-          type="image/avif"
-          sizes={sizes}
-        />
-        <source
-          data-srcset={webp.srcSet.attribute}
-          type="image/webp"
-          sizes={sizes}
-        />
-        <img
-          data-src={jpeg.src}
-          data-srcset={jpeg.srcSet.attribute}
-          data-alt={card.pictureAlt}
-          alt=""
-          sizes={sizes}
-          width={1280}
-          height={720}
-          decoding="async"
-        />
-      </picture>
-      <noscript>
+  <div class="card-faces">
+    <div class="face front">
+      {late && avif && webp && jpeg ? (
+        <div class="frame" data-late data-waiting={waiting}>
+          <picture>
+            <source
+              data-srcset={avif.srcSet.attribute}
+              type="image/avif"
+              sizes={sizes}
+            />
+            <source
+              data-srcset={webp.srcSet.attribute}
+              type="image/webp"
+              sizes={sizes}
+            />
+            <img
+              data-src={jpeg.src}
+              data-srcset={jpeg.srcSet.attribute}
+              data-alt={card.pictureAlt}
+              alt=""
+              sizes={sizes}
+              width={1280}
+              height={720}
+              decoding="async"
+            />
+          </picture>
+          <noscript>
+            <Picture
+              {...shared}
+              alt={card.pictureAlt}
+              formats={['avif', 'webp']}
+              fallbackFormat="jpeg"
+              loading="lazy"
+              decoding="async"
+            />
+          </noscript>
+        </div>
+      ) : (
         <Picture
           {...shared}
           alt={card.pictureAlt}
           formats={['avif', 'webp']}
           fallbackFormat="jpeg"
-          loading="lazy"
+          loading={eager ? 'eager' : 'lazy'}
           decoding="async"
+          pictureAttributes={{ class: 'frame' }}
         />
-      </noscript>
+      )}
+      <p class="label" data-label>
+        {card.label}
+      </p>
+      <h3 class="card-title">{card.title}</h3>
+      <button type="button" class="card-flip" hidden>
+        <span class="visually-hidden">{card.aboutName}</span>
+      </button>
     </div>
-  ) : (
-    <Picture
-      {...shared}
-      alt={card.pictureAlt}
-      formats={['avif', 'webp']}
-      fallbackFormat="jpeg"
-      loading={eager ? 'eager' : 'lazy'}
-      decoding="async"
-      pictureAttributes={{ class: 'frame' }}
-    />
-  )}
-  <p class="label" data-label>
-    {card.label}
-    {card.href ? <NewWindowIcon /> : null}
-  </p>
-  <h3>
-    {card.href ? (
-      <a
-        class="card-link"
-        href={card.href}
-        target="_blank"
-        rel="noopener"
-        aria-label={card.linkName}
-      >
+    <div class="face back">
+      <p class="label" data-repeat>
+        {card.label}
+      </p>
+      <p class="card-title" data-repeat>
         {card.title}
-      </a>
-    ) : (
-      card.title
-    )}
-  </h3>
-  <p class="description">{card.description}</p>
+      </p>
+      <p class="description">{card.description}</p>
+      <div class="card-actions">
+        {card.href && card.linkText ? (
+          <a
+            class="card-link button"
+            href={card.href}
+            target="_blank"
+            rel="noopener"
+            aria-label={card.linkName}
+          >
+            <span>
+              {head}
+              <span class="keep-together">
+                {tail}
+                <NewWindowIcon />
+              </span>
+            </span>
+          </a>
+        ) : null}
+        <button type="button" class="card-unflip" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path
+              d="M3 3l10 10M13 3L3 13"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="square"
+            ></path>
+          </svg>
+          <span class="visually-hidden">{card.closeName}</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </li>

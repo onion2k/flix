@@ -1,14 +1,17 @@
-// Moves focus between the page's links by arrow key and by gamepad. With focus
-// on a card's link or the feature's link, Left, Right, Up, Down, Home and End
-// move it as moveTo() says, and the key's own scrolling is stopped, so that a
-// press moves focus and never also scrolls the strip. Where focus is anywhere
-// else (a strip, the footer's links, a row arrow) and with Alt, Ctrl, Meta or
-// Shift held, the key is the browser's. A gamepad is read only while one is
-// connected: gamepadconnected starts one read a frame, which turns the d-pad
-// or the left stick into a held direction, fires it as repeating() says, and
-// follows the focused link on the first button (see follow()), which opens a
-// new window where the link does; gamepaddisconnected stops the loop when no
-// pad is left. The stops are read from the page as it is at the
+// Moves focus between the feature's link and the cards by arrow key and by
+// gamepad. A card's stop is its live control: its flip button while it shows
+// its front, and its Play link (or its Close button, where it has no link)
+// while it is flipped. With focus on the feature's link or on any of a card's
+// controls, Left, Right, Up, Down, Home and End move it as moveTo() says, and
+// the key's own scrolling is stopped, so that a press moves focus and never
+// also scrolls the strip. Where focus is anywhere else (a strip, the footer's
+// links, a row arrow) and with Alt, Ctrl, Meta or Shift held, the key is the
+// browser's. A gamepad is read only while one is connected: gamepadconnected
+// starts one read a frame, which turns the d-pad or the left stick into a held
+// direction, fires it as repeating() says, and on the first button presses the
+// focused control: a button is clicked (a card's flip button turns it over) and
+// a link is followed (see follow()), which opens a new window where the link
+// does; gamepaddisconnected stops the loop when no pad is left. The stops are read from the page as it is at the
 // moment of a move (a row scrolls, so centres change). It builds no markup,
 // sets no style, and keeps only the loop's handle and the last frame's small
 // record, so nothing it keeps grows. Without it the links can be reached only
@@ -35,42 +38,74 @@ const KEYS: Readonly<Record<string, Move>> = {
 // Only the feature that is shown: with a list of features the others are in
 // the page, hidden, and a link in one of them must never be found.
 const FEATURE_LINK = 'section.feature:not([hidden]) a.button';
-const CARD_LINK = 'section.row li.card a.card-link';
+// Any of a card's controls is in the grid: focus may be on Close of a flipped
+// card, which is not its stop, and an arrow from there still moves.
+const CARD_CONTROL =
+  'section.row li.card :is(button.card-flip, a.card-link, button.card-unflip)';
 
-/** The grid as it stands: each row's links, and the stops that stand for them. */
-function grid(): { links: Map<string, HTMLElement>; rows: Stop[][] } {
-  const links = new Map<string, HTMLElement>();
+/**
+ * The control of a card a move lands on: its flip button while it shows its
+ * front, its Play link (or Close, where it has none) while it is flipped, and,
+ * where the flip has not been set up, the link the card then is.
+ */
+function liveControl(card: Element): HTMLElement | null {
+  if (card.hasAttribute('data-flipped'))
+    return (
+      card.querySelector<HTMLElement>('.back a.card-link') ??
+      card.querySelector<HTMLElement>('button.card-unflip')
+    );
+  return (
+    card.querySelector<HTMLElement>('button.card-flip:not([hidden])') ??
+    card.querySelector<HTMLElement>('a.card-link')
+  );
+}
+
+/** The grid as it stands: each stop's control, what it stands for, and the stops. */
+function grid(): {
+  controls: Map<string, HTMLElement>;
+  owners: Map<string, Element>;
+  rows: Stop[][];
+} {
+  const controls = new Map<string, HTMLElement>();
+  const owners = new Map<string, Element>();
   const rows: Stop[][] = [];
-  const add = (row: Stop[], link: HTMLElement, id: string) => {
-    // The card is what the reader sees, and the link covers it, so its centre
-    // is the same; the link's own box is the one that is certain to be there.
-    const box = link.getBoundingClientRect();
-    links.set(id, link);
+  // The owner is what the reader sees as the stop, the card or the feature's
+  // link, and its centre is the stop's.
+  const add = (
+    row: Stop[],
+    control: HTMLElement,
+    owner: Element,
+    id: string,
+  ) => {
+    const box = owner.getBoundingClientRect();
+    controls.set(id, control);
+    owners.set(id, owner);
     row.push({ id, centre: box.left + box.width / 2 });
   };
   const feature = document.querySelector<HTMLElement>(FEATURE_LINK);
   rows.push([]);
-  if (feature !== null) add(rows[0] ?? [], feature, 'feature');
+  if (feature !== null) add(rows[0] ?? [], feature, feature, 'feature');
   document.querySelectorAll('section.row').forEach((section, at) => {
     const row: Stop[] = [];
-    section
-      .querySelectorAll<HTMLElement>('li.card a.card-link')
-      .forEach((link, place) => add(row, link, `row${at}-${place}`));
+    section.querySelectorAll('li.card').forEach((card, place) => {
+      const control = liveControl(card);
+      if (control !== null) add(row, control, card, `row${at}-${place}`);
+    });
     rows.push(row);
   });
-  return { links, rows };
+  return { controls, owners, rows };
 }
 
 /** Moves focus as asked, from where it is. True where focus is in the grid. */
 function move(direction: Move): boolean {
   const here = document.activeElement;
   if (!(here instanceof HTMLElement)) return false;
-  if (!here.matches(`${FEATURE_LINK}, ${CARD_LINK}`)) return false;
-  const { links, rows } = grid();
-  const from = [...links].find(([, link]) => link === here)?.[0];
+  if (!here.matches(`${FEATURE_LINK}, ${CARD_CONTROL}`)) return false;
+  const { controls, owners, rows } = grid();
+  const from = [...owners].find(([, owner]) => owner.contains(here))?.[0];
   if (from === undefined) return false;
   const to = moveTo(rows, from, direction);
-  if (to !== null && to !== from) links.get(to)?.focus();
+  if (to !== null && to !== from) controls.get(to)?.focus();
   return true;
 }
 
@@ -85,11 +120,12 @@ document.addEventListener('keydown', (event) => {
 
 // The gamepad.
 
-/** Focus goes to the feature's link, or the first linked card without one. */
+/** Focus goes to the feature's link, or the first card's live control without one. */
 function enter(): void {
+  const card = document.querySelector('section.row li.card');
   const first =
     document.querySelector<HTMLElement>(FEATURE_LINK) ??
-    document.querySelector<HTMLElement>(CARD_LINK);
+    (card === null ? null : liveControl(card));
   first?.focus();
 }
 
@@ -140,10 +176,14 @@ function read(now: number): void {
   if (pressedNow(wasDown, down)) {
     const here = document.activeElement;
     if (
-      here instanceof HTMLAnchorElement &&
-      here.matches(`${FEATURE_LINK}, ${CARD_LINK}`)
-    )
-      follow(here);
+      here instanceof HTMLElement &&
+      here.matches(`${FEATURE_LINK}, ${CARD_CONTROL}`)
+    ) {
+      if (here instanceof HTMLAnchorElement) follow(here);
+      // A button is the page's own to work, and a click is what it answers:
+      // a card's flip button turns it over, its Close turns it back.
+      else here.click();
+    }
   }
   wasDown = down;
 }
