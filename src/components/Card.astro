@@ -48,11 +48,11 @@ const loop = card.loop === undefined ? undefined : loopFor(card.id, card.loop);
 
 // How wide the card's picture is drawn at each window width, as the
 // stylesheet makes it. On a phone the card is max(36vw, 7.75rem) and its frame
-// 3 by 4, which a 16 by 9 picture covers only when drawn about 2.4 times the
-// card's width (cropped at its sides), so a phone asks for 86vw; then
+// square, which a 16 by 9 picture covers only when drawn about 1.8 times the
+// card's width (cropped at its sides), so a phone asks for 64vw; then
 // clamp(17rem, 27vw, 25rem).
 const sizes =
-  '(max-width: 40rem) 86vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
+  '(max-width: 40rem) 64vw, (max-width: 63rem) 17rem, (max-width: 92.6rem) 27vw, 25rem';
 
 // The widths and formats of a card's picture, said once so that the late
 // picture's sources and the ordinary one cannot differ.

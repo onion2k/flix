@@ -1,7 +1,7 @@
 // Holds the phone layout the owner chose on 2026-11-23 from a mock on the built
 // page: rows that scroll sideways at every width and every text size, never
 // stacking (the owner's decision, over WCAG 1.4.10's reflow at 320; see
-// CLAUDE.md's Keeps); small portrait cards, about two and a half to a row at a
+// CLAUDE.md's Keeps); small cards with square pictures, about two and a half to a row at a
 // phone's default text, that grow with the reader's text so that no word is
 // broken; a card's back that opens as a sheet at the foot of the screen, so
 // that every card stays its own small size; and no row arrows on a touch
@@ -110,7 +110,7 @@ test.describe('a phone’s rows never stack', () => {
 test.describe('a phone’s cards', () => {
   test.use({ ...PHONE, viewport: { width: 390, height: 844 } });
 
-  test('are small portrait cards, more than two to a row at the default text, and grow with the text', async ({
+  test('are small cards with square pictures, more than two to a row at the default text, and grow with the text', async ({
     page,
   }) => {
     for (const text of [16, 20]) {
@@ -142,10 +142,15 @@ test.describe('a phone’s cards', () => {
       // that grows with the reader's text.
       const wanted = Math.max(0.36 * 390, 7.75 * found.root);
       expect(found.width, `text ${text}`).toBeCloseTo(wanted, 0);
-      expect(
-        found.frame.height,
-        `text ${text}: portrait`,
-      ).toBeGreaterThanOrEqual((found.frame.width * 4) / 3 - 1);
+      // Square (the owner, 2026-11-23): a 3 by 4 frame made a card too tall
+      // for its width; it grows past square only where a row's longer label
+      // or title leaves it the room.
+      expect(found.frame.height, `text ${text}: square`).toBeGreaterThanOrEqual(
+        found.frame.width - 1,
+      );
+      expect(found.frame.height, `text ${text}: not portrait`).toBeLessThan(
+        (found.frame.width * 4) / 3 - 1,
+      );
       expect(found.whole, `text ${text}: whole cards`).toBeGreaterThanOrEqual(
         2,
       );

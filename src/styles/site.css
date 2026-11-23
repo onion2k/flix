@@ -1297,12 +1297,12 @@ main {
     font-size: var(--size-row-title-phone);
   }
 
-  /* A phone's cards are small portrait cards, about two and a half to a row,
-     as a film service's posters are (the owner, 2026-11-23): the picture is 3
-     by 4, cropped at its sides, and the label and the title are smaller and
-     padded more tightly. The card's width grows with the reader's text
-     (tokens.css), so that a larger text gives fewer, wider cards and never a
-     word broken in two. */
+  /* A phone's cards are small cards, about two and a half to a row, as a film
+     service's posters are (the owner, 2026-11-23): the picture is square,
+     cropped at its sides (3 by 4 made a card too tall for its width), and
+     the label and the title are smaller and padded more tightly. The card's
+     width grows with the reader's text (tokens.css), so that a larger text
+     gives fewer, wider cards and never a word broken in two. */
   .card .label {
     margin-top: var(--space-s);
     font-size: var(--size-card-label-phone);
@@ -1313,7 +1313,7 @@ main {
   }
 
   .card[data-flips] .frame {
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 1;
   }
 
   .card[data-flips] .front > :is(.label, .card-title) {

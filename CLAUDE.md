@@ -180,9 +180,9 @@ commit of its own that says what it is for.
   cell, so a card is as tall as its taller face and one size flipped or
   not; a strip stretches a row's cards level, and the front's frame takes
   the room left (never shorter than 16 by 9, the picture cropped at its
-  sides to cover it). **On a phone** (to 40rem) a card is a small portrait
+  sides to cover it). **On a phone** (to 40rem) a card is a small
   card, `--card-width-phone` (`max(36vw, 7.75rem)`, so it widens with the
-  reader's text) wide, its frame 3 by 4, its label and title smaller, and
+  reader's text) wide, its frame square, its label and title smaller, and
   never trimmed narrower than `--card-least-phone` (6rem: no word breaks
   above about 5.8rem, measured), which `rows.ts` reads as the registered
   length `--card-least`; where clearing the arrows would take it under
@@ -484,7 +484,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced;   |
 |                                     | at 320 and 339 a row scrolls and the page does not     |
 | `tests/e2e/phone.spec.ts`           | a phone: never stacks at any width or text size, small |
-|                                     | portrait cards, the sheet, no arrows on touch          |
+|                                     | cards with square pictures, the sheet, no touch arrows |
 | `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip        |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour      |
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
@@ -650,9 +650,10 @@ The nine points of the definition of done, as this project has them.
   to the page; nothing holds where it should go. A focused card at a desk's
   width is brought to its own start, which may move a row more than a
   reader expects; nothing pictures it.
-- **A phone card's picture is cropped** to 3 by 4 from a 16 by 9 picture,
-  so a little under half of its width shows, and more where a long label or
-  title makes a row's cards taller. Its `sizes` asks for a file 86vw wide to
+- **A phone card's picture is cropped** square from a 16 by 9 picture (the
+  owner's choice over 3 by 4, which made a card too tall for its width), so
+  a little over half of its width shows, and less where a long label or
+  title makes a row's cards taller. Its `sizes` asks for a file 64vw wide to
   cover the crop sharply, which nothing measures on a real screen.
 - **In a few bands of window width a row's cards are drawn a little
   narrower than the stylesheet's width,** by script alone (`trim`, up to
