@@ -69,7 +69,10 @@ for (const width of WIDTHS) {
         .locator('.card')
         .nth(1);
       await second.scrollIntoViewIfNeeded();
-      const box = await second.boundingBox();
+      // Pointed at by its title: at a phone's width the card is cut off at the
+      // strip's edge, where the row's arrow lies over its picture, as tall as
+      // the picture, and a pointer on the picture would be on the arrow.
+      const box = await second.locator('.front .card-title').boundingBox();
       expect(box, 'the card is drawn').not.toBeNull();
       await page.mouse.move(
         (box?.x ?? 0) + (box?.width ?? 0) / 2,

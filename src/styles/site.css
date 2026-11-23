@@ -322,12 +322,22 @@ p {
   min-width: var(--size-target);
   height: calc(var(--card-width) * 9 / 16);
   min-height: var(--size-target);
+  /* A card that flips has a picture as tall as its row leaves it, not 16 by
+     9, so the arrows take the top and the height of the row's first picture
+     where the browser can anchor to it (the frame is named below), and the 16
+     by 9 above where it cannot. */
+  top: anchor(--row-frame top, var(--space-m));
+  height: anchor-size(--row-frame height, calc(var(--card-width) * 9 / 16));
   padding: 0;
   background: var(--color-ground);
   color: var(--color-accent);
   border: var(--size-outline-button) solid var(--color-accent);
   border-radius: 0;
   cursor: pointer;
+}
+
+.card:first-child .frame {
+  anchor-name: --row-frame;
 }
 
 .row-arrow[data-page='previous'] {
@@ -439,8 +449,9 @@ p {
   scroll-snap-align: start;
 }
 
-/* The picture's frame: 16 by 9, cover, with its edge drawn over it as a
-   border so that a zoom inside it cannot cover the edge. */
+/* The picture's frame: 16 by 9 (at least 16 by 9 on a card that flips, below),
+   cover, with its edge drawn over it as a border so that a zoom inside it
+   cannot cover the edge. */
 .frame {
   position: relative;
   display: block;
@@ -590,6 +601,38 @@ p {
   backface-visibility: hidden;
 }
 
+/* The front of a card that flips is as tall as the row makes it, which is the
+   row's tallest back, so its picture takes whatever room the label and the
+   title leave: the frame is the first row of a grid that grows to fill it and
+   is never shorter than 16 by 9 (its ratio is its least height), and the
+   picture, a late one and its waiting colour, and a playing loop cover it,
+   cropped at their sides. Without this a phone's fronts stood over 79 to 165px
+   of empty ground under their titles. The card itself is one size, flipped or
+   not, as the owner asked. */
+.card[data-flips] .front {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1fr auto auto;
+}
+
+/* Stretched both ways, so that the ratio sets neither side (a box with a ratio
+   is otherwise sized from the side that is set, and grew wider than the card
+   in the stack below 340px), and is only what the grid's row reads as the
+   frame's least height. */
+.card[data-flips] .frame {
+  /* Its cell said, as the Pause button's place says the same one: an item
+     placed by the grid itself would be put round a cell already taken. */
+  grid-area: 1 / 1;
+  place-self: stretch;
+  aspect-ratio: 16 / 9;
+}
+
+.card[data-flips] .frame img {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
 /* The back: the panel colour with the picture's edge, its words at 7:1 on it,
    and its Play link and Close button at its foot, level along a row. */
 .card[data-flips] .back {
@@ -702,6 +745,18 @@ p {
   padding: var(--space-pause-inset);
   box-sizing: border-box;
   pointer-events: none;
+}
+
+/* On a card that flips the picture's frame is as tall as the row leaves it and
+   not 16 by 9, so the place is laid in the frame's own cell of the front's grid
+   and is the frame's size, whatever that is: the button stays its inset in from
+   the picture's lower right corner. */
+.card[data-flips] .card-pause-place {
+  position: relative;
+  inset: auto;
+  grid-area: 1 / 1;
+  align-self: stretch;
+  aspect-ratio: auto;
 }
 
 /* A square with the accent edge, as Close is, and the ground behind it, as the
@@ -915,6 +970,24 @@ main {
   .card[data-flips] .card-link {
     flex: 1 1 0;
     padding-inline: var(--space-m);
+  }
+}
+
+/* A phone's back, and not the stack below it, where a card is the window's
+   width and has the room: the back is the tallest thing in a row and sets the
+   height of every card in it, so it does not repeat the label and the title
+   the front has just shown (out of sight and out of the tree), and the Play
+   link's drawn words are "Play" and its icon, on one line. Its name is still
+   "Play <title> (opens in a new window)", which holds the drawn word (WCAG
+   2.5.3). */
+@media (21.25rem <= width <= 40rem) {
+  .card[data-flips] [data-repeat],
+  .card[data-flips] .card-link-title {
+    display: none;
+  }
+
+  .card[data-flips] .card-link-words {
+    white-space: nowrap;
   }
 }
 

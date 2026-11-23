@@ -12,7 +12,10 @@
 // not a control. The two buttons are written hidden, since without script they
 // would do nothing: src/scripts/flip.ts shows them, and then the front's
 // button covers the front and turns the card over, and the back's covers the
-// back under Play and turns it back. Without this each row would repeat the
+// back under Play and turns it back. On a phone the back does not draw its
+// repeat of the label and the title, and the Play link draws only "Play" and
+// its icon, the title's words being in spans of their own that the stylesheet
+// leaves out there, never a second link. Without this each row would repeat the
 // markup, and one that forgot the alt words or a name would be the odd one out.
 // A late card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
@@ -65,12 +68,20 @@ if (late && fsPath === undefined)
   throw new Error(`${card.id}: Astro gave no file path for the picture`);
 const waiting = late && fsPath ? await pictureColour(fsPath) : undefined;
 
-// The Play link's words, split before the last so that the last word and the
-// icon after it go in a span that may not break, as OutsideLink.astro does for
-// every other link that leaves: the icon is never alone at the start of a line.
+// The Play link's words: the first ("Play") on its own, and the rest (the
+// title) in spans of their own, so that a phone's short back can leave the
+// title undrawn and say "Play" alone, the link's name keeping the whole. The
+// rest is split before its last word, so that the last word and the icon after
+// it go in a span that may not break, as OutsideLink.astro does for every other
+// link that leaves: the icon is never alone at the start of a line.
 const words = card.linkText ?? '';
-const head = words.slice(0, words.lastIndexOf(' ') + 1);
-const tail = words.slice(words.lastIndexOf(' ') + 1);
+const firstSpace = words.indexOf(' ');
+const verb = firstSpace < 0 ? words : words.slice(0, firstSpace);
+const rest = firstSpace < 0 ? '' : words.slice(firstSpace + 1);
+// Each piece of the title starts with the space that parts it from what is
+// before it, so that the space goes with it where it is not drawn.
+const head = rest.slice(0, rest.lastIndexOf(' ') + 1);
+const tail = rest.slice(rest.lastIndexOf(' ') + 1);
 
 // The same three files <Picture> would make (AVIF, WebP, then the JPEG that
 // is the fallback), written here so that their addresses can go in data-
@@ -163,10 +174,17 @@ const [avif, webp, jpeg] = late
             rel="noopener"
             aria-label={card.linkName}
           >
-            <span>
-              {head}
+            <span class="card-link-words">
+              {verb}
+              {head === '' ? null : (
+                <span class="card-link-title">{` ${head}`}</span>
+              )}
               <span class="keep-together">
-                {tail}
+                {tail === '' ? null : (
+                  <span class="card-link-title">
+                    {head === '' ? ` ${tail}` : tail}
+                  </span>
+                )}
                 <NewWindowIcon />
               </span>
             </span>

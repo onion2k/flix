@@ -889,3 +889,207 @@ test.describe('nothing grows', () => {
     expect(await flipped(page)).toEqual([]);
   });
 });
+
+// A card is one size whether it is flipped or not (the owner, 2026-11-23: "It'd
+// be better if cards didn't change height (or size)"), and since a row's cards
+// are as tall as its tallest back, the front's picture takes up the room that
+// is left over, so that no front stands over empty ground under its title. On a
+// phone the back is kept short: it does not repeat the label and the title, and
+// Play says "Play" on one line, its name unchanged. Every card on the page is
+// measured; nothing here is a figure typed in, but what the page says.
+test.describe('a card keeps one size', () => {
+  /** The size of every card in a row, in the row's order. */
+  function sizes(row: Locator): Promise<{ width: number; height: number }[]> {
+    return row.locator('li.card').evaluateAll((all) =>
+      all.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { width: box.width, height: box.height };
+      }),
+    );
+  }
+
+  /** Each size within half a pixel of the one it is held to. */
+  function same(
+    now: { width: number; height: number }[],
+    was: { width: number; height: number }[],
+    what: string,
+  ): void {
+    expect(now.length, what).toBe(was.length);
+    now.forEach((size, at) => {
+      const before = was[at];
+      expect(
+        Math.abs(size.width - (before?.width ?? -1)),
+        `${what}, card ${at} wide`,
+      ).toBeLessThanOrEqual(0.5);
+      expect(
+        Math.abs(size.height - (before?.height ?? -1)),
+        `${what}, card ${at} tall`,
+      ).toBeLessThanOrEqual(0.5);
+    });
+  }
+
+  for (const width of [1440, 390]) {
+    test.describe(`at ${width} wide`, () => {
+      test.use({ viewport: { width, height: width > 800 ? 1000 : 844 } });
+
+      test('every card is the same size before it is flipped, while it is, and after, and so is every other card in its row', async ({
+        page,
+      }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await ready(page);
+        let reached = 0;
+        for (const row of await page.locator('section.row').all()) {
+          const rest = await sizes(row);
+          const cards = row.locator('li.card');
+          for (let at = 0; at < (await cards.count()); at += 1) {
+            const card = cards.nth(at);
+            await card.locator('button.card-flip').focus();
+            await page.keyboard.press('Enter');
+            await expect(card).toHaveAttribute('data-flipped', '');
+            same(await sizes(row), rest, `card ${at} flipped`);
+            await page.keyboard.press('Escape');
+            await expect(card).not.toHaveAttribute('data-flipped', '');
+            same(await sizes(row), rest, `card ${at} turned back`);
+            reached += 1;
+          }
+        }
+        expect(reached).toBe(
+          catalogue.rows.reduce((sum, row) => sum + row.entries.length, 0),
+        );
+      });
+
+      test('at rest no front stands over empty ground, and every picture fills a frame no shorter than 16 by 9', async ({
+        page,
+      }) => {
+        await ready(page);
+        const found = await page.locator('main li.card').evaluateAll((all) =>
+          all.map((card) => {
+            const title = card.querySelector('.front .card-title');
+            const frame = card.querySelector('.front .frame');
+            const image = frame?.querySelector('img');
+            if (!title || !frame || !image) return { problems: ['parts'] };
+            const problems: string[] = [];
+            const under = parseFloat(getComputedStyle(title).marginBottom);
+            const ground =
+              card.getBoundingClientRect().bottom -
+              title.getBoundingClientRect().bottom;
+            if (!(under >= 0) || ground > under + 0.5)
+              problems.push(
+                `${ground}px under the title, where ${under} is given`,
+              );
+            const box = frame.getBoundingClientRect();
+            // Nor between the picture and the label: the room left over is
+            // the picture's, and not a gap above the words.
+            const label = card.querySelector('.front .label');
+            const over = label
+              ? parseFloat(getComputedStyle(label).marginTop)
+              : NaN;
+            const gap =
+              (label?.getBoundingClientRect().top ?? NaN) - box.bottom;
+            if (!(over >= 0) || !(gap <= over + 0.5))
+              problems.push(`${gap}px over the label, where ${over} is given`);
+            if (box.height < (box.width * 9) / 16 - 0.5)
+              problems.push(`a frame ${box.width} by ${box.height}`);
+            const drawn = image.getBoundingClientRect();
+            for (const side of ['left', 'top', 'right', 'bottom'] as const)
+              if (Math.abs(drawn[side] - box[side]) > 0.5)
+                problems.push(`the picture's ${side} is not the frame's`);
+            if (getComputedStyle(image).objectFit !== 'cover')
+              problems.push('the picture does not cover');
+            return { problems };
+          }),
+        );
+        expect(found.length).toBe(
+          catalogue.rows.reduce((sum, row) => sum + row.entries.length, 0),
+        );
+        found.forEach((card, at) =>
+          expect(card.problems, `card ${at}`).toEqual([]),
+        );
+      });
+    });
+  }
+
+  // On each side of the phone's two steps: below 21.25rem a card is the
+  // window's width and its back is as it was, repeat and all; from there to
+  // 40rem the back drops the repeat and Play says "Play"; above it the back is
+  // whole again.
+  for (const [width, short] of [
+    [320, false],
+    [339, false],
+    [341, true],
+    [390, true],
+    [640, true],
+    [641, false],
+  ] as const) {
+    test(`at ${width} wide a flipped card’s back ${short ? 'has no label or title of its own, and Play is one line with its name' : 'repeats its label and title'}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 844 });
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await ready(page);
+      let reached = 0;
+      for (const card of await page.locator('main li.card').all()) {
+        await card.locator('button.card-flip').focus();
+        await page.keyboard.press('Enter');
+        await expect(card).toHaveAttribute('data-flipped', '');
+        const label = (
+          (await card.locator('.front .label').textContent()) ?? ''
+        ).trim();
+        const title = (
+          (await card.locator('.front h3').textContent()) ?? ''
+        ).trim();
+        const repeat = card.locator('.back [data-repeat]');
+        expect(await repeat.count()).toBe(2);
+        const tree = (await inTree(card.locator('.face.back'))).map((each) =>
+          each.toLowerCase(),
+        );
+        for (const words of [label, title]) {
+          const said = tree.includes(`statictext: ${words.toLowerCase()}`);
+          expect(said, `${words} in the back's tree`).toBe(!short);
+        }
+        for (const each of await repeat.all())
+          if (short) await expect(each).toBeHidden();
+          else await expect(each).toBeVisible();
+        const play = card.locator('a.card-link');
+        if ((await play.count()) === 1) {
+          await expect(play).toHaveAccessibleName(
+            `Play ${title} (opens in a new window)`,
+          );
+          const drawn = ((await play.innerText()) ?? '').trim();
+          if (short) {
+            expect(drawn).toBe('Play');
+            const lines = await play.evaluate((el) => {
+              const style = getComputedStyle(el);
+              const words = el.firstElementChild?.getBoundingClientRect();
+              // The box less its padding and edge: what its words take, or
+              // the least height a button is given, whichever is more.
+              const inner =
+                el.getBoundingClientRect().height -
+                parseFloat(style.paddingTop) -
+                parseFloat(style.paddingBottom) -
+                parseFloat(style.borderTopWidth) -
+                parseFloat(style.borderBottomWidth);
+              return {
+                line: parseFloat(style.lineHeight),
+                least: parseFloat(style.minHeight) || 0,
+                inner,
+                words: words?.height ?? -1,
+              };
+            });
+            expect(lines.words).toBeGreaterThan(0);
+            expect(lines.words).toBeLessThan(lines.line * 1.5);
+            expect(lines.inner).toBeLessThanOrEqual(
+              Math.max(lines.line, lines.least) + 0.5,
+            );
+          } else expect(drawn).toBe(`Play ${title}`);
+        }
+        await page.keyboard.press('Escape');
+        await expect(card).not.toHaveAttribute('data-flipped', '');
+        reached += 1;
+      }
+      expect(reached).toBe(
+        catalogue.rows.reduce((sum, row) => sum + row.entries.length, 0),
+      );
+    });
+  }
+});

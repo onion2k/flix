@@ -25,6 +25,11 @@ Answered by the owner on 2026-11-23:
 - **Pause:** the one card that is playing shows a small Pause button on its
   picture. It holds every card loop for the visit and then reads Play. The
   hero's button is unchanged.
+- **Size:** a card is one size, flipped or not ("It'd be better if cards
+  didn't change height (or size)"). On a phone the back drops its repeat of
+  the label and title and Play reads "Play"; at every width the front's
+  picture fills the room left over, cropped at its sides and never shorter
+  than 16 by 9.
 
 **Built on Opus,** as the owner asked: each part is handed to the `builder`
 agent with `model: opus`, one part at a time (they share `Card.astro` and
@@ -70,7 +75,9 @@ div.face.back`. Front: the frame, the label, `h3` (plain title, no link),
   (a `p`, not a second heading), description, the one link
   `a.card-link.button` (words `linkText`, the new-window icon, `aria-label`
   `linkName`), and `button.card-unflip[hidden]` named `card.closeName`. The
-  label line loses its icon.
+  label line loses its icon. On a phone (21.25rem to 40rem) the back does
+  not draw its repeat of the label and title, and Play's drawn words are
+  "Play" and its icon, its name unchanged.
 - **Words, said once in `src/catalogue/rows.ts`:** `aboutName` "About
   <title>", `closeName` "Close <title>". Drafts: the owner edits them.
 - **Without script, or before it runs:** the faces flow one under the
@@ -78,7 +85,10 @@ div.face.back`. Front: the frame, the label, `h3` (plain title, no link),
   as now. `flip.ts` marks each card `data-flips` and unhides the buttons;
   CSS under `[data-flips]` stacks the faces in one grid cell (the card is
   as tall as its taller face, the strip stretches a row's cards level, so
-  nothing is clipped at any text size) and takes the link's stretch off.
+  nothing is clipped at any text size, and a card is the same size flipped
+  or not), lets the front's picture fill the room its label and title leave
+  (never shorter than 16 by 9, cropped at its sides), and takes the link's
+  stretch off.
 - **Rule, `src/catalogue/flipping.ts`** (pure): from which card is flipped
   and a press (flip, unflip, Escape, another card's flip), which is flipped
   next and where focus goes. Unit-tested.
