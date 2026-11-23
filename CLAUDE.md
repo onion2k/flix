@@ -455,7 +455,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
 | `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
 | `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still;     |
-|                                     | its two layers, dimmed with their contrast kept        |
+|                                     | its two layers, dimmed with their contrast kept; a     |
+|                                     | scroll before the script's first sight of the cards    |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |

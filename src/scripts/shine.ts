@@ -104,8 +104,15 @@ if (best.length > 0 && !lessMotion()) {
 
   // The first answer says what is in the window at load, and moves nothing:
   // only a reader's scroll or pointer does. Later answers are a scroll that
-  // has brought a card in, or taken it out.
+  // has brought a card in, or taken it out. Under load a reader can scroll
+  // before the first answer comes, while nothing listens yet, so a scroll
+  // then is noted and the first answer acts on it.
   let first = true;
+  let early = false;
+  const noteEarly = (): void => {
+    early = true;
+  };
+  document.addEventListener('scroll', noteEarly, { capture: true });
   const observer = new IntersectionObserver((entries) => {
     const before = seen.size;
     for (const entry of entries) {
@@ -124,7 +131,9 @@ if (best.length > 0 && !lessMotion()) {
     }
     if (before === 0 && seen.size > 0) listen(true);
     if (before > 0 && seen.size === 0) listen(false);
-    if (!first && seen.size > 0) scrolled();
+    if ((!first || early) && seen.size > 0) scrolled();
+    if (first)
+      document.removeEventListener('scroll', noteEarly, { capture: true });
     first = false;
   });
   for (const card of best) observer.observe(card);

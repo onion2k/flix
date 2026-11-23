@@ -654,3 +654,46 @@ test.describe('the foil’s two layers', () => {
     expect(reached).toBeGreaterThan(1);
   });
 });
+
+// The script's first answer from its IntersectionObserver says what is in the
+// window at load, and moves nothing. Under load a reader's first scroll can
+// come before that answer: the scroll was not heard (nothing listened yet),
+// the answer was taken for the page at load, and the sheen stayed where it
+// was until the next scroll. Seen once in a full check. Here the observer's
+// answers are held back until the page has been scrolled, every time.
+test('a scroll that comes before the script’s first sight of the cards still moves the sheen', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.addInitScript(() => {
+    const Own = window.IntersectionObserver;
+    const held: (() => void)[] = [];
+    Reflect.set(window, '__releaseSight', () => {
+      for (const run of held.splice(0)) run();
+    });
+    window.IntersectionObserver = class extends Own {
+      constructor(
+        callback: IntersectionObserverCallback,
+        options?: IntersectionObserverInit,
+      ) {
+        super(
+          (entries, observer) => held.push(() => callback(entries, observer)),
+          options,
+        );
+      }
+    };
+  });
+  await ready(page);
+  const card = cardOf(page, 'aquaclysm');
+  await frames(page, 4);
+  // The answer about the cards at load is being held; the reader scrolls.
+  await firstRowInView(page);
+  await frames(page, 4);
+  await page.evaluate(() =>
+    (Reflect.get(window, '__releaseSight') as () => void)(),
+  );
+  await expect
+    .poll(async () => (await setOn(card))['--shine-y'] ?? '')
+    .not.toBe('');
+});

@@ -12,12 +12,12 @@
       "document": {
         "count": 1,
         "bytes": 98951,
-        "gzip": 14923
+        "gzip": 14922
       },
       "script": {
         "count": 1,
-        "bytes": 19258,
-        "gzip": 6718
+        "bytes": 19393,
+        "gzip": 6754
       },
       "stylesheet": {
         "count": 0,
@@ -49,12 +49,12 @@
       "document": {
         "count": 1,
         "bytes": 98951,
-        "gzip": 14923
+        "gzip": 14922
       },
       "script": {
         "count": 1,
-        "bytes": 19258,
-        "gzip": 6718
+        "bytes": 19393,
+        "gzip": 6754
       },
       "stylesheet": {
         "count": 0,
@@ -86,12 +86,12 @@
       "document": {
         "count": 1,
         "bytes": 98951,
-        "gzip": 14923
+        "gzip": 14922
       },
       "script": {
         "count": 1,
-        "bytes": 19258,
-        "gzip": 6718
+        "bytes": 19393,
+        "gzip": 6754
       },
       "stylesheet": {
         "count": 0,
@@ -123,12 +123,12 @@
       "document": {
         "count": 1,
         "bytes": 98951,
-        "gzip": 14923
+        "gzip": 14922
       },
       "script": {
         "count": 1,
-        "bytes": 19258,
-        "gzip": 6718
+        "bytes": 19393,
+        "gzip": 6754
       },
       "stylesheet": {
         "count": 0,
