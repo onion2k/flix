@@ -20,6 +20,7 @@
 // page is whole without this: with script off there is the still, the panel
 // and no button. It keeps one video and removes it if it fails.
 import { heroStart, pauseWords } from '../catalogue/hero';
+import { lessMotion, savesData } from './asked';
 
 const hero = document.querySelector<HTMLElement>(
   'section.feature:not([hidden])',
@@ -31,18 +32,10 @@ const button = hero?.querySelector<HTMLButtonElement>(
 const frame = hero?.querySelector<HTMLElement>('.feature-frame');
 const title = hero?.querySelector('h2')?.textContent ?? '';
 
-/** Whether the reader asked for the data to be spared. */
-function saveData(): boolean {
-  const connection = (
-    navigator as Navigator & { connection?: { saveData?: boolean } }
-  ).connection;
-  return connection?.saveData === true;
-}
-
 const start = heroStart({
   hasLoop: address !== undefined,
-  reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-  saveData: saveData(),
+  reducedMotion: lessMotion(),
+  saveData: savesData(),
 });
 
 if (
