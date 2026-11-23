@@ -11,3 +11,8 @@ playwright-report
 
 # The loops tools/loops makes, for the owner to approve before any is used.
 tools/loops/out
+
+# The Claude desktop app's own settings for this checkout (its preview pane's
+# launch file among them): this machine's, not the project's. Ignored, the
+# formatter passes it by too, so it cannot fail the pre-commit hook.
+.claude/
