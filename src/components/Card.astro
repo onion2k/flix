@@ -153,6 +153,7 @@ const [avif, webp, jpeg] = late
           pictureAttributes={{ class: 'frame' }}
         />
       )}
+      {card.best ? <span class="foil-wash" aria-hidden="true" /> : null}
       {card.best ? <span class="foil" aria-hidden="true" /> : null}
       <p class="label" data-label>
         {card.label}

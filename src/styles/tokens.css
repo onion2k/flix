@@ -141,26 +141,36 @@
   --space-pause-inset: 0.5rem;
 
   /*
-   * The shine of the best cards, a holographic trading card's foil, chosen by
-   * the owner on 2026-11-23 from a mock after simeydotme's pen of trading
-   * cards (its code is not used: it is GPL-3.0). Two layers over the picture.
-   * The foil: a pale rainbow running up the card, crossed by diagonal bands of
-   * light, blended by hue and hard light, darkened a little away from the
-   * light, then given a hard contrast and dodged onto the picture, so that it
-   * lights the picture's bright parts. Its brightness rises toward the card's
-   * edges, from the first figure by up to the second. The reflection, on the
-   * picture's frame: the bright rainbow and glints of light added onto the
-   * picture round the light, which lights a dark picture, where a dodge
-   * cannot; its rainbow runs across the card the factor below faster than the
-   * pointer. The glare: a soft light where the pointer is. Each grows toward
-   * the edges, from its first share by up to its second. The foil and the
-   * reflection are multiplied by the card's own picture, so they are drawn
-   * where it is light. There is
-   * no edge of their own: every card has the same border. A card tilts, under a mouse, as
-   * seen from the depth below (how far is MOST_TILT, src/catalogue/shine.ts),
-   * and the sheen and the tilt ease after the pointer over the time below.
-   * None of it carries words or tells a control apart, so no contrast is asked
-   * of it; the label says "Top pick" in words.
+   * The shine of the best cards, a holographic trading card's foil: round
+   * seven of the mocks the owner chose on 2026-11-23, after simeydotme's pen of
+   * trading cards (its code is not used: it is GPL-3.0). Three layers over the
+   * picture, and none under a word.
+   *
+   * The foil: a pale rainbow and diagonal bars of light, run across the card
+   * as the pointer moves (the rainbow by the first pair of shares, the bars by
+   * the second), darkened away from the light, given a contrast and dodged
+   * onto the picture at the share below, so that it lights the picture's
+   * bright parts; its brightness rises toward the card's edges, from the first
+   * figure by up to the second. Inside it a flare of white where the pointer
+   * is, which the dodge turns to light even on a dark picture.
+   *
+   * The glitter: the site's own glitter file at two sizes, the second set off
+   * from the first, each run a little with the pointer, tinted by the bright
+   * rainbow (run across it by its shares) and added onto the picture, strong
+   * round the light and faint away from it, with a glare of light added on
+   * top: it is what shines on a dark picture, where a dodge cannot.
+   *
+   * The wash: the bright rainbow laid over the picture at the share below,
+   * its angle turning and its place running as the pointer moves.
+   *
+   * How much of all three shows: the rest share at rest, all of it while a
+   * mouse is on the card, which lifts toward the reader by the scale below
+   * with a shadow under it, and the touch share where nothing hovers. A card
+   * tilts under a mouse as seen from the depth below (how far is MOST_TILT,
+   * src/catalogue/shine.ts); the sheen and the tilt ease after the pointer
+   * over the shine's time, the shine fades in and out over the fade's, and the
+   * lift over the lift's. None of it carries words or tells a control apart,
+   * so no contrast is asked of it; the label says "Top pick" in words.
    */
   --color-foil-rose: #ff2d75;
   --color-foil-gold: #ffc400;
@@ -168,51 +178,73 @@
   --color-foil-sky: #00b3ff;
   --color-foil-violet: #8a4dff;
   --color-foil-glare: #ffffff;
-  --color-foil-pale-rose: #ff6f91;
-  --color-foil-pale-gold: #ffe066;
-  --color-foil-pale-green: #9bff6a;
-  --color-foil-pale-sky: #6af7ff;
-  --color-foil-pale-blue: #7a8cff;
-  --color-foil-pale-violet: #e07bff;
-  --color-foil-band-dark: #10172c;
-  --color-foil-band: #8fa8a8;
-  --color-foil-band-light: #b7dede;
   --color-foil-shade: #000000;
-  --angle-foil-light: 125deg;
-  --angle-foil-reflection: 100deg;
-  --size-foil-rainbow: 5%;
-  --size-foil-rainbow-across: 200%;
-  --size-foil-rainbow-up: 650%;
-  --size-foil-light-step: 1.2%;
-  --size-foil-light: 280%;
-  --size-foil-shade: 200%;
-  --size-foil-shade-near: 10%;
-  --size-foil-shade-mid: 25%;
-  --size-foil-shade-far: 110%;
-  --share-foil-shade-near: 10%;
-  --share-foil-shade-mid: 20%;
-  --share-foil-shade-far: 28%;
-  --brightness-foil: 0.52;
-  --brightness-foil-edge: 0.22;
-  --contrast-foil: 2.8;
-  --saturate-foil: 0.6;
-  --size-foil-glint: 5%;
-  --share-foil-glint: 24%;
-  --size-foil-reflection: 360%;
-  --share-foil-run: 700%;
-  --size-foil-reflection-mid: 30%;
-  --share-foil-reflection-mid: 60%;
-  --size-foil-reach: 75%;
-  --share-foil-reflection: 0.3;
-  --share-foil-reflection-edge: 0.35;
-  --size-foil-glare-mid: 22%;
+  --color-foil-pale-rose: #ff9ab4;
+  --color-foil-pale-gold: #ffe29a;
+  --color-foil-pale-green: #a8ffb4;
+  --color-foil-pale-sky: #9af0ff;
+  --color-foil-pale-violet: #b4a8ff;
+  --color-foil-bar-dark: #222222;
+  --color-foil-bar-light: #ddffee;
+  --color-foil-light-mid: #777777;
+  --color-foil-light-far: #111111;
+  --image-foil-glitter: url('/foil-glitter.svg');
+  --angle-foil-rainbow: 110deg;
+  --angle-foil-bars: -55deg;
+  --angle-foil-glitter: 125deg;
+  --angle-foil-wash: 100deg;
+  --angle-foil-wash-turn: 60deg;
+  --size-foil-rainbow-stop: 8%;
+  --size-foil-rainbow: 260%;
+  --share-foil-rainbow-run-x: 220%;
+  --share-foil-rainbow-run-y: 140%;
+  --size-foil-bar: 3%;
+  --size-foil-bars: 240%;
+  --share-foil-bars-run-x: 110%;
+  --share-foil-bars-run-y: 70%;
+  --size-foil-light-mid: 25%;
+  --size-foil-light-far: 75%;
+  --brightness-foil: 0.72;
+  --brightness-foil-edge: 0.25;
+  --contrast-foil: 1.5;
+  --saturate-foil: 1.1;
+  --share-foil-dodge: 0.7;
+  --share-foil-flare-near: 75%;
+  --share-foil-flare-mid: 19%;
+  --size-foil-flare-mid: 16%;
+  --size-foil-flare: 48%;
+  --size-foil-glitter: 300px;
+  --size-foil-glitter-fine: 220px;
+  --size-foil-glitter-run: 70px;
+  --size-foil-glitter-run-fine: 55px;
+  --space-foil-glitter-x: 30px;
+  --space-foil-glitter-y: 70px;
+  --size-foil-glitter-tint: 400%;
+  --share-foil-glitter-run-x: 300%;
+  --share-foil-glitter-run-y: 200%;
+  --share-foil-glitter-near: 73%;
+  --share-foil-glitter-mid: 20%;
+  --share-foil-glitter-far: 7%;
+  --size-foil-glitter-near: 22%;
+  --size-foil-glitter-mid: 55%;
+  --share-foil-glare-near: 75%;
+  --share-foil-glare-mid: 25%;
+  --size-foil-glare-mid: 18%;
   --size-foil-glare: 55%;
-  --share-foil-glare-near: 45%;
-  --share-foil-glare-mid: 10%;
-  --share-foil-glare: 0.35;
-  --share-foil-glare-edge: 0.4;
-  --depth-tilt: 40rem;
+  --size-foil-wash: 220%;
+  --share-foil-wash-run: 200%;
+  --share-foil-wash: 0.45;
+  --share-foil-rest: 0.35;
+  --share-foil-touch: 0.75;
+  --scale-foil-lift: 1.035;
+  --size-foil-lift-drop: 18px;
+  --size-foil-lift-blur: 30px;
+  --size-foil-lift-spread: 12px;
+  --share-foil-lift-shade: 87%;
+  --depth-tilt: 36rem;
   --duration-shine: 150ms;
+  --duration-foil-fade: 320ms;
+  --duration-foil-lift: 200ms;
 }
 
 /*
@@ -239,6 +271,17 @@
   syntax: '<angle>';
   inherits: true;
   initial-value: 0deg;
+}
+
+/*
+ * How much of a best card's shine shows, from nought to one, registered so
+ * that it can fade where motion is allowed. Each best card sets it from the
+ * tokens above (site.css); nought is only where nothing has.
+ */
+@property --foil-on {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
 }
 
 @property --tilt-y {

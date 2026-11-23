@@ -27,9 +27,9 @@ function at(x: number, y: number) {
 
 describe('MOST_TILT', () => {
   it('is a small, real angle: enough to be seen, not enough to hide the picture', () => {
-    // Twelve degrees, the mock the owner chose on 2026-11-23: six read as
-    // barely turning.
-    expect(MOST_TILT).toBe(12);
+    // Sixteen degrees, round seven of the mocks the owner chose on
+    // 2026-11-23: six, then twelve, read as barely turning beside the pen.
+    expect(MOST_TILT).toBe(16);
   });
 });
 

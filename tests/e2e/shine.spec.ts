@@ -17,7 +17,6 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
 import { textPieces } from './text-pieces';
-import { settleOnFirstRow } from './card-loop';
 import { inWindow, underPointer, MOST_TILT } from '../../src/catalogue/shine';
 
 const catalogue = readRows();
@@ -527,6 +526,7 @@ test('where colours are forced there is no foil and no reflection, and the card�
   let reached = 0;
   for (const card of await page.locator('li.card[data-best]').all()) {
     await expect(card.locator('.foil')).toBeHidden();
+    await expect(card.locator('.foil-wash')).toBeHidden();
     expect(
       await card
         .locator('.card-faces')
@@ -547,17 +547,18 @@ test('where colours are forced there is no foil and no reflection, and the card�
   expect(reached).toBe(catalogue.best.length);
 });
 
-// The foil is made of two layers, as the owner chose from the mock of
-// 2026-11-23 (after simeydotme's pen of trading cards): over the picture a
-// rainbow and bands of light, dodged onto it with a hard contrast, which
-// lights its bright parts; and under that, on the picture's frame, a reflected
-// rainbow added onto it round the light, which lights a dark picture, where a
-// dodge cannot. Only the best cards have either, neither takes a press, the
-// reflection is the picture's size and no larger, and when another card in the
-// row is pointed at both are dimmed with the pictures and the foil keeps its
-// contrast.
-test.describe('the foil’s two layers', () => {
-  test('each best card has the dodged foil and the reflection over its picture, and no other card has either', async ({
+// The foil is made of three layers over the picture, as the owner chose from
+// round seven of the mocks of 2026-11-23 (after simeydotme's pen of trading
+// cards): a rainbow and bands of light dodged onto it with a contrast, which
+// light its bright parts (.foil); a field of glitter tinted by a rainbow, with
+// a glare on top, added onto it, which shines on a dark picture where a dodge
+// cannot (.frame::before, its glitter the site's own /foil-glitter.svg); and a
+// colour wash laid over it (.foil-wash). Only the best cards have them, none
+// takes a press, each is the picture's size and no larger, and when another
+// card in the row is pointed at all three are dimmed with the pictures and the
+// foil keeps its contrast.
+test.describe('the foil’s three layers', () => {
+  test('each best card has the dodged foil, the glitter and the wash over its picture, and no other card has any', async ({
     page,
   }) => {
     await ready(page);
@@ -568,50 +569,84 @@ test.describe('the foil’s two layers', () => {
       const layers = await card.evaluate((el) => {
         const frame = el.querySelector('.front .frame');
         const foil = el.querySelector('.foil');
-        const reflection = frame ? getComputedStyle(frame, '::before') : null;
+        const wash = el.querySelector('.foil-wash');
+        const glitter = frame ? getComputedStyle(frame, '::before') : null;
+        const box = (of: Element | null) =>
+          of === null
+            ? null
+            : {
+                width: of.getBoundingClientRect().width,
+                height: of.getBoundingClientRect().height,
+              };
         return {
           best: el.hasAttribute('data-best'),
+          frame: box(frame),
           foil:
             foil === null
               ? null
               : {
                   blend: getComputedStyle(foil).mixBlendMode,
                   filter: getComputedStyle(foil).filter,
+                  presses: getComputedStyle(foil).pointerEvents,
+                  size: box(foil),
                 },
-          reflection:
-            reflection === null
+          wash:
+            wash === null
               ? null
               : {
-                  content: reflection.content,
-                  blend: reflection.mixBlendMode,
-                  presses: reflection.pointerEvents,
-                  image: reflection.backgroundImage,
-                  width: parseFloat(reflection.width),
-                  height: parseFloat(reflection.height),
+                  blend: getComputedStyle(wash).mixBlendMode,
+                  image: getComputedStyle(wash).backgroundImage,
+                  presses: getComputedStyle(wash).pointerEvents,
+                  hidden: wash.getAttribute('aria-hidden'),
+                  size: box(wash),
                 },
-          frame: frame?.getBoundingClientRect().toJSON() as DOMRect | undefined,
+          glitter:
+            glitter === null
+              ? null
+              : {
+                  content: glitter.content,
+                  blend: glitter.mixBlendMode,
+                  presses: glitter.pointerEvents,
+                  image: glitter.backgroundImage,
+                  width: parseFloat(glitter.width),
+                  height: parseFloat(glitter.height),
+                },
         };
       });
       if (layers.best) {
         expect(layers.foil?.blend, id).toBe('color-dodge');
         expect(layers.foil?.filter, id).toMatch(/contrast\(/);
-        expect(layers.foil?.filter, id).toMatch(/saturate\(/);
-        expect(layers.reflection?.content, id).not.toBe('none');
-        expect(layers.reflection?.blend, id).toBe('screen');
-        expect(layers.reflection?.presses, id).toBe('none');
-        expect(layers.reflection?.image, id).toContain('gradient');
-        expect(layers.reflection?.width ?? 0, id).toBeCloseTo(
-          layers.frame?.width ?? -1,
-          0,
-        );
-        expect(layers.reflection?.height ?? 0, id).toBeCloseTo(
-          layers.frame?.height ?? -1,
-          0,
-        );
+        expect(layers.foil?.presses, id).toBe('none');
+        expect(layers.wash?.blend, id).toBe('overlay');
+        expect(layers.wash?.image, id).toContain('gradient');
+        expect(layers.wash?.presses, id).toBe('none');
+        expect(layers.wash?.hidden, id).toBe('true');
+        expect(layers.glitter?.content, id).not.toBe('none');
+        expect(layers.glitter?.blend, id).toBe('screen');
+        expect(layers.glitter?.presses, id).toBe('none');
+        expect(layers.glitter?.image, id).toContain('/foil-glitter.svg');
+        for (const [name, size] of [
+          ['foil', layers.foil?.size],
+          ['wash', layers.wash?.size],
+          [
+            'glitter',
+            { width: layers.glitter?.width, height: layers.glitter?.height },
+          ],
+        ] as const) {
+          expect(size?.width ?? 0, `${id} ${name}`).toBeCloseTo(
+            layers.frame?.width ?? -1,
+            0,
+          );
+          expect(size?.height ?? 0, `${id} ${name}`).toBeCloseTo(
+            layers.frame?.height ?? -1,
+            0,
+          );
+        }
         best += 1;
       } else {
         expect(layers.foil, id).toBeNull();
-        expect(layers.reflection?.content, id).toBe('none');
+        expect(layers.wash, id).toBeNull();
+        expect(layers.glitter?.content, id).toBe('none');
         plain += 1;
       }
     }
@@ -619,7 +654,7 @@ test.describe('the foil’s two layers', () => {
     expect(plain).toBeGreaterThan(10);
   });
 
-  test('with another card of its row pointed at, both layers are dimmed with the pictures and the foil keeps its contrast', async ({
+  test('with another card of its row pointed at, all three are dimmed with the pictures and the foil keeps its contrast', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -639,7 +674,9 @@ test.describe('the foil’s two layers', () => {
       if ((await card.count()) === 0) continue;
       const filters = await card.evaluate((el) => ({
         foil: getComputedStyle(el.querySelector('.foil') as Element).filter,
-        reflection: getComputedStyle(
+        wash: getComputedStyle(el.querySelector('.foil-wash') as Element)
+          .filter,
+        glitter: getComputedStyle(
           el.querySelector('.front .frame') as Element,
           '::before',
         ).filter,
@@ -649,11 +686,120 @@ test.describe('the foil’s two layers', () => {
       expect(filters.picture, id).toMatch(/brightness\(0\.55\)/);
       expect(filters.foil, id).toMatch(/contrast\(/);
       expect(filters.foil, id).toMatch(/brightness\(0\.55\)$/);
-      expect(filters.reflection, id).toMatch(/brightness\(0\.55\)/);
+      expect(filters.wash, id).toMatch(/brightness\(0\.55\)/);
+      expect(filters.glitter, id).toMatch(/brightness\(0\.55\)/);
       reached += 1;
     }
     expect(reached).toBeGreaterThan(1);
   });
+});
+
+// The shine shows a little at rest and all of it while a mouse is on the card,
+// which lifts toward the reader a little, with a shadow under it; on a screen
+// where nothing hovers it shows most of it, and nothing lifts. A plain card
+// does none of this.
+test.describe('the shine at rest and under a mouse', () => {
+  const onOf = (card: Locator) =>
+    card.evaluate((el) =>
+      parseFloat(getComputedStyle(el).getPropertyValue('--foil-on')),
+    );
+  test('a best card shows a little of it at rest, all of it under a mouse, and lifts; a plain card does not', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ready(page);
+    await firstRowInView(page);
+    const card = cardOf(page, 'aquaclysm');
+    const rest = await onOf(card);
+    expect(rest).toBeGreaterThan(0);
+    expect(rest).toBeLessThan(0.5);
+    const lift = () =>
+      card.evaluate((el) => ({
+        scale: getComputedStyle(el.querySelector('.card-faces') as Element)
+          .scale,
+        shadow: getComputedStyle(el.querySelector('.front') as Element)
+          .boxShadow,
+      }));
+    expect((await lift()).scale).toBe('none');
+    expect((await lift()).shadow).toBe('none');
+    const box = await card.locator('.frame').boundingBox();
+    if (box === null) throw new Error('the picture is not drawn');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => onOf(card)).toBe(1);
+    const lifted = await lift();
+    expect(parseFloat(lifted.scale)).toBeGreaterThan(1);
+    expect(lifted.shadow).not.toBe('none');
+    // A plain card under the mouse lifts nothing.
+    const plain = page
+      .locator('section.row')
+      .first()
+      .locator('li.card:not([data-best])')
+      .first();
+    const plainBox = await plain.locator('.frame').boundingBox();
+    if (plainBox === null) throw new Error('the picture is not drawn');
+    await page.mouse.move(
+      plainBox.x + plainBox.width / 2,
+      plainBox.y + plainBox.height / 2,
+    );
+    expect(
+      await plain
+        .locator('.card-faces')
+        .evaluate((el) => getComputedStyle(el).scale),
+    ).toBe('none');
+    await expect.poll(() => onOf(card)).toBeCloseTo(rest, 5);
+  });
+
+  test.describe('on a touch screen', () => {
+    test.use({
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 390, height: 844 },
+    });
+    test('a best card shows most of it, with nothing to hover, and a tap lifts nothing', async ({
+      page,
+    }) => {
+      await ready(page);
+      await firstRowInView(page);
+      const card = cardOf(page, 'aquaclysm');
+      const on = await onOf(card);
+      expect(on).toBeGreaterThan(0.5);
+      expect(on).toBeLessThan(1);
+      // A tap lands on the flip button laid over the whole front.
+      await card.locator('button.card-flip').tap();
+      await expect(card).toHaveAttribute('data-flipped', '');
+      expect(
+        await card
+          .locator('.card-faces')
+          .evaluate((el) => getComputedStyle(el).scale),
+      ).toBe('none');
+      expect(await onOf(card)).toBeCloseTo(on, 5);
+    });
+  });
+});
+
+// The glitter is the site's own small file, asked for from its own address,
+// and its bytes cross the wire once however many layers draw it.
+test('the glitter is the site’s own file, sent once', async ({ page }) => {
+  const network = await page.context().newCDPSession(page);
+  await network.send('Network.enable');
+  const asks = new Map<string, { url: string; wire: number }>();
+  network.on('Network.requestWillBeSent', (event) =>
+    asks.set(event.requestId, { url: event.request.url, wire: 0 }),
+  );
+  network.on('Network.loadingFinished', (event) => {
+    const ask = asks.get(event.requestId);
+    if (ask !== undefined) ask.wire = event.encodedDataLength;
+  });
+  await ready(page);
+  await firstRowInView(page);
+  await frames(page, 6);
+  const mine = [...asks.values()].filter((ask) =>
+    ask.url.endsWith('/foil-glitter.svg'),
+  );
+  expect(mine.length).toBeGreaterThan(0);
+  for (const ask of mine)
+    expect(new URL(ask.url).origin).toBe(new URL(page.url()).origin);
+  expect(mine.filter((ask) => ask.wire > 200).length).toBe(1);
 });
 
 // Every card has the same border (the owner, 2026-11-23: the best cards'
@@ -703,90 +849,6 @@ test('every card has the same border and no edge of its own, and its front’s w
   }
 });
 
-// The foil follows its own card's picture: the foil and the reflection are
-// multiplied by the picture, so that they shine where the picture is light
-// and not as lines across the card (the owner's choice A of 2026-11-23). The
-// picture is the file the card already shows, handed over by script and laid
-// in as a background, so its bytes cross the wire once: the browser's cache
-// answers the foil's ask (from the disk cache under Netlify's immutable
-// header; here, under the preview's no-cache, by a revalidation of a hundred
-// or so bytes). A mask would have fetched it whole again (masks are asked for
-// in another mode): three more pictures on a desk's first screen. Asks are
-// read from the browser's own network record, since a cache hit is an ask
-// too. It is not motion, so a reader who asked for less has it too.
-test.describe('the foil follows its card’s picture', () => {
-  for (const motion of ['no-preference', 'reduce'] as const)
-    test(`motion ${motion}: each best card's foil and reflection are multiplied by the file its picture shows, sent once`, async ({
-      page,
-    }) => {
-      await page.emulateMedia({ reducedMotion: motion });
-      const network = await page.context().newCDPSession(page);
-      await network.send('Network.enable');
-      const asks = new Map<string, { url: string; wire: number }>();
-      network.on('Network.requestWillBeSent', (event) =>
-        asks.set(event.requestId, { url: event.request.url, wire: 0 }),
-      );
-      network.on('Network.loadingFinished', (event) => {
-        const ask = asks.get(event.requestId);
-        if (ask !== undefined) ask.wire = event.encodedDataLength;
-      });
-      await ready(page);
-      let reached = 0;
-      for (const id of catalogue.best) {
-        const card = cardOf(page, id);
-        await card.scrollIntoViewIfNeeded();
-        await expect
-          .poll(() =>
-            card.evaluate((el: HTMLElement) =>
-              el.style.getPropertyValue('--foil-picture'),
-            ),
-          )
-          .not.toBe('');
-        const found = await card.evaluate((el: HTMLElement) => {
-          const picture = el.querySelector(
-            '.front .frame img',
-          ) as HTMLImageElement;
-          const foil = getComputedStyle(el.querySelector('.foil') as Element);
-          const reflection = getComputedStyle(
-            el.querySelector('.front .frame') as Element,
-            '::before',
-          );
-          return {
-            src: picture.currentSrc,
-            foil: foil.backgroundImage,
-            foilBlend: foil.backgroundBlendMode,
-            reflection: reflection.backgroundImage,
-            reflectionBlend: reflection.backgroundBlendMode,
-            masks: `${foil.maskImage} ${reflection.maskImage}`,
-          };
-        });
-        expect(found.src, id).not.toBe('');
-        // The picture is the top layer of each, multiplied onto the rest.
-        expect(found.foil, id).toMatch(/^url\(/);
-        expect(found.foil, id).toContain(found.src);
-        expect(found.foilBlend.split(',')[0]?.trim(), id).toBe('multiply');
-        expect(found.reflection, id).toMatch(/^url\(/);
-        expect(found.reflection, id).toContain(found.src);
-        expect(found.reflectionBlend.split(',')[0]?.trim(), id).toBe(
-          'multiply',
-        );
-        // No mask asks for a file: the reflection's is a gradient alone.
-        expect(found.masks, id).not.toContain('url(');
-        // Every ask has finished, and only one of them carried the picture.
-        await frames(page, 6);
-        const mine = [...asks.values()].filter((ask) => ask.url === found.src);
-        expect(mine.length, `${id}: asked for`).toBeGreaterThan(0);
-        const whole = mine.filter((ask) => ask.wire > 1000);
-        expect(
-          whole.length,
-          `${id}: its picture sent whole (${mine.map((ask) => ask.wire).join(', ')} bytes)`,
-        ).toBe(1);
-        reached += 1;
-      }
-      expect(reached).toBe(catalogue.best.length);
-    });
-});
-
 // The script's first answer from its IntersectionObserver says what is in the
 // window at load, and moves nothing. Under load a reader's first scroll can
 // come before that answer: the scroll was not heard (nothing listened yet),
@@ -828,85 +890,4 @@ test('a scroll that comes before the script’s first sight of the cards still m
   await expect
     .poll(async () => (await setOn(card))['--shine-y'] ?? '')
     .not.toBe('');
-});
-
-// A best card whose loop is on (playing, or held by Pause, which leaves a
-// frame of the loop showing) has a foil with no still picture in it: the
-// still's shapes over a moving picture were a highlight that stood still
-// while the picture moved, which read as a fault (the owner, 2026-11-23).
-// Its foil and reflection then blend with the loop alone, and follow the
-// pointer. The other best cards keep their pictures, and the playing card
-// has its picture back once its loop is taken down.
-test.describe('a best card whose loop is on', () => {
-  for (const width of [1440, 390])
-    test(`at ${width} wide: its foil carries no still while the loop plays or is held, and has it back once the loop is gone`, async ({
-      page,
-    }) => {
-      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
-      await page.emulateMedia({ reducedMotion: 'no-preference' });
-      await ready(page);
-      const playing = await settleOnFirstRow(page);
-      await expect(playing).toHaveAttribute('data-best', '');
-      /** What each best card's foil and reflection carry, by entry. */
-      const carried = () =>
-        page.locator('li.card[data-best]').evaluateAll((cards) =>
-          cards.map((card) => {
-            const foil = card.querySelector('.foil') as Element;
-            const frame = card.querySelector('.front .frame') as Element;
-            return {
-              id: (card as HTMLElement).dataset['entry'] ?? '?',
-              loop: card.querySelector('video.card-loop') !== null,
-              foil: getComputedStyle(foil).backgroundImage.includes('url('),
-              reflection: getComputedStyle(
-                frame,
-                '::before',
-              ).backgroundImage.includes('url('),
-              given:
-                (card as HTMLElement).style.getPropertyValue(
-                  '--foil-picture',
-                ) !== '',
-            };
-          }),
-        );
-      const id = (await playing.getAttribute('data-entry')) ?? '?';
-      const check = async (when: string) => {
-        const all = await carried();
-        let others = 0;
-        for (const card of all) {
-          if (card.id === id) {
-            expect(card.loop, `${when}: ${id} has its loop`).toBe(true);
-            expect(card.foil, `${when}: ${id}'s foil`).toBe(false);
-            expect(card.reflection, `${when}: ${id}'s reflection`).toBe(false);
-          } else if (card.given) {
-            expect(card.foil, `${when}: ${card.id}'s foil`).toBe(true);
-            expect(card.reflection, `${when}: ${card.id}'s reflection`).toBe(
-              true,
-            );
-            others += 1;
-          }
-        }
-        expect(
-          others,
-          `${when}: other best cards with their picture`,
-        ).toBeGreaterThan(0);
-      };
-      await check('playing');
-      await playing.locator('button.card-pause').click();
-      await expect
-        .poll(() =>
-          playing
-            .locator('video')
-            .evaluate((video: HTMLVideoElement) => video.paused),
-        )
-        .toBe(true);
-      await check('held by Pause');
-      // Flipped, the card's loop is taken down, and its picture comes back.
-      await playing.locator('button.card-flip').click();
-      await expect(playing.locator('video.card-loop')).toHaveCount(0);
-      const back = (await carried()).find((card) => card.id === id);
-      expect(back?.foil, `${id}'s foil once its loop is gone`).toBe(true);
-      expect(back?.reflection, `${id}'s reflection once its loop is gone`).toBe(
-        true,
-      );
-    });
 });

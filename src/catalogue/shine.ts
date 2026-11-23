@@ -13,10 +13,11 @@
 // the window could send its sheen off its picture.
 
 /**
- * The most a card tilts either way, about either axis, in degrees: twelve, as
- * the owner chose from the mock of 2026-11-23, where six read as barely turning.
+ * The most a card tilts either way, about either axis, in degrees: sixteen, as
+ * the owner chose with round seven of the mocks of 2026-11-23, where six, and
+ * then twelve, read as barely turning beside the pen they were after.
  */
-export const MOST_TILT = 12;
+export const MOST_TILT = 16;
 
 /** A box in the window, as getBoundingClientRect gives it. */
 export interface Box {
