@@ -204,7 +204,9 @@ commit of its own that says what it is for.
   `hypot()`) and both multiplied by the card's own picture, so that they
   shine where it is light (`--foil-picture`, the file the card already shows,
   set by `shine.ts` for every reader and laid in as a background, which is
-  not fetched again as a mask would be), never under a word, from
+  not fetched again as a mask would be; while the card's loop is on, playing
+  or held, they take a plain layer in its place, so no still stands over a
+  moving picture), never under a word, from
   `--shine-x`/`--shine-y` and a tilt of `.card-faces` from
   `--tilt-x`/`--tilt-y`, the four registered with `@property` in
   `tokens.css` so their first values are the resting place.
@@ -461,8 +463,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
 | `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still;     |
 |                                     | its two layers, dimmed with their contrast kept; one   |
-|                                     | border; the picture laid in; a scroll before first     |
-|                                     | sight                                                  |
+|                                     | border; the picture laid in, and not while a loop is   |
+|                                     | on; a scroll before first sight                        |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |

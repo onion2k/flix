@@ -930,6 +930,17 @@ p {
   mix-blend-mode: color-dodge;
 }
 
+/* A best card whose loop is on, playing or held by Pause, has no still in its
+   foil or its reflection: the still's shapes over a moving picture were a
+   highlight that stood still while the picture moved, which read as a fault
+   (the owner, 2026-11-23). They take the plain layer in its place, so they
+   blend with the loop alone and follow the pointer, and the picture comes
+   back once the loop is taken down. The foil and the frame each say it, as
+   each reads it, since a card's own style says the picture. */
+.card[data-best]:has(.card-loop) :is(.foil, .frame) {
+  --foil-picture: linear-gradient(var(--color-foil-glare) 0 0);
+}
+
 /* How far the sheen is from the card's middle: 0 there, 1 at a corner. The
    layers grow stronger toward the edges by it, as light off foil does. */
 .card[data-best] {

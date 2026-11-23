@@ -17,6 +17,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
 import { textPieces } from './text-pieces';
+import { settleOnFirstRow } from './card-loop';
 import { inWindow, underPointer, MOST_TILT } from '../../src/catalogue/shine';
 
 const catalogue = readRows();
@@ -827,4 +828,85 @@ test('a scroll that comes before the script’s first sight of the cards still m
   await expect
     .poll(async () => (await setOn(card))['--shine-y'] ?? '')
     .not.toBe('');
+});
+
+// A best card whose loop is on (playing, or held by Pause, which leaves a
+// frame of the loop showing) has a foil with no still picture in it: the
+// still's shapes over a moving picture were a highlight that stood still
+// while the picture moved, which read as a fault (the owner, 2026-11-23).
+// Its foil and reflection then blend with the loop alone, and follow the
+// pointer. The other best cards keep their pictures, and the playing card
+// has its picture back once its loop is taken down.
+test.describe('a best card whose loop is on', () => {
+  for (const width of [1440, 390])
+    test(`at ${width} wide: its foil carries no still while the loop plays or is held, and has it back once the loop is gone`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await ready(page);
+      const playing = await settleOnFirstRow(page);
+      await expect(playing).toHaveAttribute('data-best', '');
+      /** What each best card's foil and reflection carry, by entry. */
+      const carried = () =>
+        page.locator('li.card[data-best]').evaluateAll((cards) =>
+          cards.map((card) => {
+            const foil = card.querySelector('.foil') as Element;
+            const frame = card.querySelector('.front .frame') as Element;
+            return {
+              id: (card as HTMLElement).dataset['entry'] ?? '?',
+              loop: card.querySelector('video.card-loop') !== null,
+              foil: getComputedStyle(foil).backgroundImage.includes('url('),
+              reflection: getComputedStyle(
+                frame,
+                '::before',
+              ).backgroundImage.includes('url('),
+              given:
+                (card as HTMLElement).style.getPropertyValue(
+                  '--foil-picture',
+                ) !== '',
+            };
+          }),
+        );
+      const id = (await playing.getAttribute('data-entry')) ?? '?';
+      const check = async (when: string) => {
+        const all = await carried();
+        let others = 0;
+        for (const card of all) {
+          if (card.id === id) {
+            expect(card.loop, `${when}: ${id} has its loop`).toBe(true);
+            expect(card.foil, `${when}: ${id}'s foil`).toBe(false);
+            expect(card.reflection, `${when}: ${id}'s reflection`).toBe(false);
+          } else if (card.given) {
+            expect(card.foil, `${when}: ${card.id}'s foil`).toBe(true);
+            expect(card.reflection, `${when}: ${card.id}'s reflection`).toBe(
+              true,
+            );
+            others += 1;
+          }
+        }
+        expect(
+          others,
+          `${when}: other best cards with their picture`,
+        ).toBeGreaterThan(0);
+      };
+      await check('playing');
+      await playing.locator('button.card-pause').click();
+      await expect
+        .poll(() =>
+          playing
+            .locator('video')
+            .evaluate((video: HTMLVideoElement) => video.paused),
+        )
+        .toBe(true);
+      await check('held by Pause');
+      // Flipped, the card's loop is taken down, and its picture comes back.
+      await playing.locator('button.card-flip').click();
+      await expect(playing.locator('video.card-loop')).toHaveCount(0);
+      const back = (await carried()).find((card) => card.id === id);
+      expect(back?.foil, `${id}'s foil once its loop is gone`).toBe(true);
+      expect(back?.reflection, `${id}'s reflection once its loop is gone`).toBe(
+        true,
+      );
+    });
 });
