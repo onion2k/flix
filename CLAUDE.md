@@ -1,13 +1,15 @@
 # Ooerflix
 
 A static website that shows the games and toys its owner builds, as a
-featured entry and rows of large cards that scroll sideways. It is built
+featured entry and rows of cards that scroll sideways and flip over for
+their details. It is built
 with Astro into plain files and served by Netlify from `main`, at
 `https://flix.ooer.com`. There is no server and no saved state.
 
 This file says how the project is changed. It was written on 2026-11-22
-from commit `d955f12`, when only the scaffold existed, and each part of
-`plans/first-site.md` moves it on as it lands. How work is done is the
+from commit `d955f12`, when only the scaffold existed; each part of
+`plans/first-site.md` moved it on as it landed, and `plans/cards.md` moved
+it on, on 2026-11-23. How work is done is the
 guardrails kit's: this project carries no copy of it, and is held to
 `~/projects/guardrails/GUARDRAILS.md` and, as a website, to
 `~/.claude/rules/websites.md`. The bar is WCAG 2.2 AAA, less 3.1.3 to
@@ -22,7 +24,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the twelve pictures, tests/look, against baselines
+    npm run look         the seventeen pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -69,21 +71,31 @@ commit of its own that says what it is for.
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
   `hero.ts` says what the moving hero does at load (play its loop, offer
-  it on a button, or leave the still) from three facts, and the Pause
-  button's words. `moving.ts` says where an arrow-key or gamepad move lands among the
-  links, which direction a pad holds, and when a held one fires (time
-  handed in). `chance.ts` is the one source of chance: a seeded generator
-  (mulberry32), `pick` (one id that is not excluded, with the random
-  handed in), and `seedFrom` (a seed from outside, or the clock's reading
-  handed in). Nothing in `src/` calls the language's global random.
-  `today.ts` says which candidate is the day's feature, from a count and
-  the clock's reading handed in (whole days since 1970-01-01 UTC, modulo
-  the count). `buildPage` returns `candidates`: `feature`, then the
+  it on a button, or leave the still) from three facts, the Pause
+  button's words (`pauseWords`) and the cards' (`cardPauseWords`).
+  `paging.ts` also has `whollyIn`: whether a focused card is wholly in its
+  strip's window, less the scroll padding. `moving.ts` says where an
+  arrow-key or gamepad move lands among the cards' live controls, which
+  direction a pad holds, and when a held one fires (time handed in).
+  `flipping.ts` says what a press (flip, unflip, Escape) does: which card is
+  flipped next, which was turned back, and where focus goes. `playing.ts`
+  says which card's loop plays (`inFocus`: one with a loop, its picture
+  arrived, its frame wholly in the window and its front showing; the
+  pointed or focused card first, else the nearest the window's centre; none
+  while more than half the hero's frame shows) and when (`settled`,
+  `SETTLE_MS`, time handed in). `shine.ts` says where a best card's sheen is
+  and how far it tilts (`MOST_TILT`), under a mouse or from its place in the
+  window. `today.ts` says which candidate is the day's feature, from a
+  count and the clock's reading handed in (whole days since 1970-01-01 UTC,
+  modulo the count). `buildPage` returns `candidates`: `feature`, then the
   optional `features` list of `catalogue.json`, each refused by name if it
-  has no file, repeats or is `feature` itself. `growing.ts` says when a hovered
-  or focused card may grow (from 600ms of it, the time handed in) and where
-  its grown copy goes: `GROW` (1.5) times the card's width, centred, `LIFT`
-  above its top, kept `MARGIN` from the window's edges.
+  has no file, repeats or is `feature` itself; and marks a row's card
+  `best` where `catalogue.json`'s `best` names it, refusing by name an id
+  with no file, one said twice and one in no row. A card's words are said
+  there: `aboutName` ("About <title>"), `closeName` ("Close <title>"),
+  `linkText`/`linkName`, and a best card's label "<Kind> · Top pick"
+  (`BEST_WORDS`) where another's says Play now or In the workshop. Nothing
+  in `src/` calls the language's global random: the page has no chance.
 - `src/build/` is build-time code that is not the thing: `picture-colour.ts`
   makes that small copy with `sharp` (Node, so not in `src/catalogue/`)
   and hands its pixels to `colour.ts`. `Card.astro` writes the answer on a
@@ -98,61 +110,87 @@ commit of its own that says what it is for.
 - `src/content/` is where the content lives: an entry a file, its
   picture, and `catalogue.json`, the one file that says which sites are
   listed (the `feature` and each row's `sites`), in which rows and in what
-  order. A site with a file that it does not name is not listed, and the
+  order, and which shine (`best`). A site with a file that it does not name is not listed, and the
   build says so on its output ("Not listed in src/content/catalogue.json:
   ..."); nothing is deleted. `src/content.config.ts` tells
   Astro where each is and which of the catalogue's schemas it must meet.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
-  out. `Base.astro` is the head, skip link and header;
+  out. `Base.astro` is the head, skip link and header (the wordmark alone);
   `Footer.astro` (drawn by `Base` on every page: Privacy, the licences,
   Source); `OutsideLink.astro` and `NewWindowIcon.astro` draw a link that
   leaves the site (words: `NEW_WINDOW`, `rows.ts`); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
   `Card` the parts, `robots.txt.ts` and `sitemap.xml.ts` the endpoints.
   `src/scripts/rows.ts` works each row's edge arrows (its Previous and Next,
   hidden from the tree where there is nothing that way), its page marks and
-  the words that say the page, from `paging.ts`, and marks the row
+  the words that say the page, from `paging.ts`, brings a focused card that
+  is not `whollyIn` its window to its own start, and marks the row
   `data-arrows` once it has, which is what hides the strip's scrollbar and
-  what specs wait on to know script has run; and
-  `src/scripts/pictures.ts` brings in the pictures of the **late rows**
+  what specs wait on to know script has run. The arrows take the top and
+  height of the row's first picture by anchor positioning (`--row-frame`),
+  16 by 9 where a browser cannot. `src/scripts/pictures.ts` brings in the
+  pictures of the **late rows**
   (every row after the second, `LATE_ROWS_FROM` in `Row.astro`): a late
   card's `<picture>` holds its addresses in `data-` attributes and the
   ordinary picture sits beside it in a `<noscript>`, and an
   IntersectionObserver on each late row (`MARGIN`, 300px) moves them into
   `srcset` and `src`; it also checks each frame's `data-waiting` with
   `colour.ts` and sets `--waiting` through the CSSOM, and marks a picture
-  `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). `src/scripts/moving.ts` reads the links' places at each
+  `data-arrived` when it loads or fails. `src/scripts/drag.ts` lets a mouse drag a strip from `dragging.ts` (touch and pen are left to the browser). `src/scripts/moving.ts` reads the cards' live controls at each
   move and the gamepad (only while one is connected), and focuses, from
-  `moving.ts`; its first button opens a link's new window with
-  `window.open`, and goes there in this one if the browser refuses. `src/scripts/surprise.ts` works the header's Surprise me
-  button (in `Base.astro`, `hidden` until script shows it, and only
-  where two or more cards have a link): it picks with `chance.ts`, never
-  the card focus came from nor the last pick, and focuses its link. It is
-  the one place the generator is made and (with the next) the clock is
-  read. `src/scripts/grow.ts` grows a card (below). `src/scripts/hero.ts` plays the hero's loop
-  (below). All seven are imported by the one script block in `index.astro`. **The grown card:** a mouse on
-  a linked card (`pointerType` mouse, `(hover: hover) and (pointer: fine)`)
-  or `:focus-visible` on its link, held for the pause (counted on
-  `requestAnimationFrame`, handed to `pauseOver`), opens a `div.grown`
-  appended to `body`, placed in the document by `placeGrown` so that it
-  follows its card when the page scrolls. It is made by cloning the card's
-  label, title (its link taken out) and description and writing nothing from
-  a string; the Play look is a `span.button` with the words of the card's
-  `data-play` and the label's icon; the picture area holds the card's own
-  picture (the file it already shows: `currentSrc`) and, where the card has
-  `data-loop` and Save-Data is off, a `<video>` (muted, looping, `playsinline`)
-  made with its `src` then, which is the first any browser hears of the loop.
-  It is `aria-hidden`, holds nothing focusable, and a click on it is
-  `.click()` on the card's link. It carries `data-focused` (the ring) while
-  the real link has keyboard focus, and the card carries `data-grown` (house
-  lights keep the row dim while the pointer is on the copy). It is taken
-  down at once when the pointer leaves both, focus leaves the link, Escape
-  (kept down until the pointer leaves the card), the card's strip scrolls
-  (and the pause starts again if the card is still pointed at and in the
-  window) and on resize. Reduced motion, touch, an unlinked card and a card
-  whose picture has not arrived do not grow; Save-Data grows with the still.
-  Only the grow's transition (`@starting-style`) is motion, in the
-  no-preference block. **The moving hero:** the feature is a band across the window
+  `moving.ts`; its first button clicks a button (a flip button turns its
+  card) and follows a link, opening a new window with `window.open` and
+  going there in this one if the browser refuses. `src/scripts/asked.ts`
+  reads, once, what the reader asked for (`lessMotion`, `savesData`), for
+  both loops. Eight scripts are imported by the one script block in
+  `index.astro`: `rows`, `pictures`, `drag`, `moving`, `flip`, `hero`,
+  `playing` and `shine`. **The card:** `li.card` (`data-entry`,
+  `data-linked`, `data-loop`, `data-best`) holds `div.card-faces` with
+  `div.face.front` (the frame, the label, the `h3` title and
+  `button.card-flip[hidden]` named `aboutName`, laid over the whole front)
+  and `div.face.back` (the label and title again, marked `data-repeat`, the
+  description, the one link `a.card-link.button`, "Play <title>" and the
+  new-window icon, and `button.card-unflip[hidden]` named `closeName`, whose
+  `::after` covers the back so a press outside Play is a Close). With script
+  off the faces flow one under the other, the repeat is not drawn, and the
+  link's `::after` covers the card, so the card is one link. `flip.ts` marks
+  each card `data-flips` and shows its buttons, and works the press by
+  `flipping.ts`: `data-flipped` on the card, `inert` on the face turned
+  away, focus as the rule says, and `data-turns` from the first press, which
+  is what lets a face turn (`rotateY`, `--duration-flip`, in the
+  no-preference block only). Under `data-flips` the faces share one grid
+  cell, so a card is as tall as its taller face and one size flipped or
+  not; a strip stretches a row's cards level, and the front's frame takes
+  the room left (never shorter than 16 by 9, the picture cropped at its
+  sides to cover it). On a phone (21.25rem to 40rem) the back draws no
+  repeat and Play draws "Play" and its icon, its name unchanged; a card is
+  `--card-width-phone` (58vw) wide. **The card most in focus:**
+  `src/scripts/playing.ts` reads the cards' boxes on scroll, resize, hover,
+  focus, a flip, an arrival and the tab hidden, counts the settle on
+  `requestAnimationFrame`, and keeps one `video.card-loop` (muted, looping,
+  `playsinline`, `aria-hidden`), made with its `src` from the card's
+  `data-loop` when the card is settled on (the first any browser hears of
+  it) and taken down when another takes over or its card stops qualifying.
+  Whether it plays, waits for Play or is never offered is `heroStart`'s,
+  from `asked.ts`. The one Pause button (`button.card-pause` in a
+  `.card-pause-place` laid over the picture) is made by script and moved
+  to the front of the card in focus, after its flip button in the Tab
+  order: a 44px square with a pause or play mark and its name hidden in it
+  (`cardPauseWords`). A pause holds every card loop for the visit, kept
+  nowhere. A loop that fails goes with its button and its card is not
+  tried again. **The shine:** a best card carries `data-best` and an
+  `aria-hidden` `span.foil` in its frame's cell: a band of the five
+  `--color-foil-*` colours blended over the picture, a glare, and a foil
+  edge just outside the card, never under a word, from
+  `--shine-x`/`--shine-y` and a tilt of `.card-faces` from
+  `--tilt-x`/`--tilt-y`, the four registered with `@property` in
+  `tokens.css` so their first values are the resting place.
+  `src/scripts/shine.ts` sets them through the CSSOM by the catalogue's rule, at most once a frame
+  and only while a best card is in the window; under reduced motion it
+  sets nothing, and forced colours draw no foil. House lights (`:has()`)
+  dim the other pictures of a row while a card is hovered by a mouse or
+  holds focus, foil and loop with them.
+  **The moving hero:** the feature is a band across the window
   (`.feature`, at least `--height-hero` of its height and at most
   `--height-hero-max`) with its picture filling it (`sizes` is `100vw`,
   quality 40, said once in `Feature.astro`), its words on a solid panel at the
@@ -199,14 +237,18 @@ day's is `[feature, ...features]` at index whole days since 1970-01-01 UTC
 modulo its length. `feature` is still what shows with script off and what
 the social card uses. Empty or absent, the page is one feature as before.
 
+**To set the best cards:** `best` in `catalogue.json` is a list of site
+ids, each with a file, none twice, each in a row; those cards, wherever a
+row draws them, carry the foil and "Top pick". Empty or absent, none shines.
+
 **To list, unlist or move a site:** edit `src/content/catalogue.json`. A
 new site also needs its `entries/<id>.yaml` and its picture in
 `pictures/`. **To give a site a loop:** make it with
 `npm run loops -- <id>`, have the owner approve it, copy it, bytes
 unchanged, to `src/content/loops/<id>.webm` and name it in the site's YAML
 as `loop: ../loops/<id>.webm`; a file that is missing or not `.webm` stops
-the build and names the entry. A site with none keeps its picture and grows
-with it. **A site that may be the day's feature needs a hero loop** (960
+the build and names the entry. A site with none keeps its picture, flips, and
+never plays. **A site that may be the day's feature needs a hero loop** (960
 wide) as well: `npm run loops -- <id>` makes both from one take; for one whose
 card loop is approved already, `node tools/loops/hero-from-take.mjs <id>
 <start second>` cuts it from the kept take in `tools/loops/out/work/<id>/`
@@ -224,8 +266,10 @@ name a thing by what it is.
 ## Model features
 
 - **Something the user sees:** `Card.astro`, held by `tests/e2e/page.spec.ts`
-  (what a card draws and links) and `keyboard.spec.ts` (its ring and
-  target). Each spec counts what it reached.
+  (what a card draws and links), `flip.spec.ts` (its two faces: the flip by
+  click, tap and Enter, what is in the tree, one size), `keyboard.spec.ts`
+  (its ring and target) and `nojs.spec.ts` (one link with script off). Each
+  spec counts what it reached.
 - **The thing's logic:** `tests/unit/rows.test.ts`. It builds a small
   catalogue in the test, reads each refusal's message for the file and
   the id, and was mutation-checked by hand for each rule.
@@ -247,17 +291,21 @@ An end-to-end test opens the built site through Playwright's `baseURL`
 --ignore-lock`, since Astro 7 otherwise backgrounds the server and
 Playwright reads that as it dying), which is this project's own so
 that a test never meets a dev server on 4321. It never reuses a server
-it finds there. The page is the same on
-every load except for chance: `window.ooerflixSeed`, a number set by
-`addInitScript` before the page's scripts run, seeds Surprise me
-(`surprise.spec.ts`); anything but a safe integer is ignored and the
-clock's reading is used (`page.clock.setFixedTime` holds that). It is the
-only way chance is handed in. `moving.spec.ts` stands a gamepad in with
+it finds there. The page is the same on every load: it has no chance.
+What is in the accessibility tree is asked of the browser's own tree over
+the DevTools protocol (`tests/e2e/tree.ts`), since Playwright's reading of
+roles counts an `inert` face as there. `tests/e2e/card-loop.ts` brings a
+card loop on in real time (the first row centred, the settle waited out)
+for the specs that need one there; `playing.spec.ts` and `flip.spec.ts`
+step the clock instead, as below. `moving.spec.ts` stands a gamepad in with
 `addInitScript` (`navigator.getGamepads` returns what the test sets on
 `window.__pad`: standard mapping, 17 buttons, 4 axes, and a count of
 calls) and holds the clock with `page.clock.install` then `pauseAt`. Each
 `runFor(16)` is one frame, since Playwright steps `requestAnimationFrame`,
-`performance.now` and `Date` together, so the 400ms and 150ms are stepped.
+`performance.now` and `Date` together, so the 400ms and 150ms are stepped;
+`playing.spec.ts` steps the 600ms settle the same way, and asks a loop's
+playing of the video (`currentTime`, `paused`), since media time is the
+browser's.
 
 **The clock.** With a list of features the page shows a different
 feature each day, so every spec takes `test` from `tests/clock.ts` and
@@ -267,9 +315,8 @@ which is the first candidate whatever the list's length) in every context,
 before any page script runs, with `setFixedTime`: timers and frames still
 run. A test that makes a context of its own calls `holdClock(context)`; a
 test for another day calls `page.clock.setFixedTime(noonOf(day))` before
-`goto`. `moving.spec.ts` installs the stepped clock itself at time 0 (also
-day 0), which replaces the held one, and `surprise.spec.ts` sets its own
-time, which wins, since the later call does.
+`goto`. `moving.spec.ts` and `playing.spec.ts` install the stepped clock
+themselves on day 0, which replaces the held one.
 
 ## Edge cases
 
@@ -285,12 +332,23 @@ Every new thing is taken through each of these that it can reach.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
   press that does not move is a click.
 - By keyboard alone: order, a visible focus ring, nothing trapped. With
-  focus on a link in the grid, arrows move it and are the grid's even at
-  an end; on a strip, a nav link, a button or with a modifier, they are
-  the browser's.
-- Surprise me: shown only with script and two or more linked cards; never
-  the card focus came from, the last pick or an unlinked card; a pick in a
-  late row loads that row.
+  focus on a card's live control or the feature's link, arrows move it and
+  are the grid's even at an end; on a strip, a footer link, a row arrow or
+  with a modifier, they are the browser's.
+- A card flipped: by click, tap and Enter, turned back by Close, a press on
+  the back and Escape; one flipped at a time; focus to Play (Close with no
+  link) and back to the flip button; the face away inert and out of the
+  tree; one size flipped or not, at a desk and a phone; reduced motion (the
+  faces swap at once); a late card before and after its picture; text
+  spacing with a card flipped; script off (no flip, one link).
+- The card most in focus playing: none while the hero's half shows, none
+  short of the settle, none for a flipped card or one whose picture has not
+  come; mouse and focus taking over; Pause holding every card for the visit
+  and Play; reduced motion (Play, fetched on press), Save-Data (nothing), a
+  loop that fails, a late row, a touch screen, script off.
+- The shine: the three best cards and no other; a mouse (sheen and tilt),
+  touch (sheen by place, no tilt), reduced motion (still), script off (a
+  still foil), forced colours (none); never under words.
 - The date, with a list of features: each place in the list, 60 days
   running, the first and last millisecond of a day, a zone far either side
   of UTC (the day changes at midnight UTC for everyone), and the module
@@ -306,12 +364,8 @@ Every new thing is taken through each of these that it can reach.
 - The hero, on each feature day: a loop never asked for before `load` nor a
   hidden candidate's; Pause by click and by Enter; reduced motion, Save-Data,
   script off, a loop that fails; at 390 the picture above the panel.
-- A card grown (hover or focus; reduced motion, Save-Data, touch, no loop,
-  not a link, script off): one open at a time, closed by leaving, Escape,
-  its strip scrolling and resize, followed by the page's scroll; one picture
-  a card in the tree and the same tree throughout; its words 7:1.
-- A card hovered (mouse) and focused (Tab), and a tap on touch: the others
-  in its row dim, nothing else does, text stays 7:1.
+- A card hovered (mouse) and focused (Tab): the others in its row dim,
+  nothing else does, text stays 7:1. A tap on touch dims nothing.
 - An entry with an address and one without. A link inside the site and
   one that leaves it (new window). A row that overflows and one
   that fits. A long title, a long description.
@@ -320,64 +374,66 @@ Every new thing is taken through each of these that it can reach.
 
 ## Gates
 
-| Gate                                | What it holds today                                  |
-| ----------------------------------- | ---------------------------------------------------- |
-| `npm run secrets`                   | nothing staged looks like a key                      |
-| `prettier --check .`                | one formatter decides every file it should           |
-| `npm run types`                     | no type error in `.astro` or `.ts`                   |
-| `npm run lint`                      | type-aware mistakes in `.ts`                         |
-| `tests/unit/tokens.test.ts`         | each colour token defined once, as the plan says     |
-| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1          |
-| `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name   |
-| `tests/unit/rows.test.ts`           | the page's model, refusals, the not listed           |
-| `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files           |
-| `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no global  |
-|                                     | random anywhere in `src/`                            |
-| `tests/unit/chance.test.ts`         | the seeded run, pick's exclusions and fairness       |
-| `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes  |
-| `tests/unit/paging.test.ts`         | the paging rule, with a pixel of tolerance           |
-| `tests/unit/growing.test.ts`        | the pause rule: 600ms to the millisecond             |
-| `tests/unit/hero.test.ts`           | the hero's start rule, every case, and Pause's words |
-| `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry     |
-| `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat  |
-| `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends       |
-| `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals  |
-| `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`         |
-| `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates        |
-| `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed    |
-| `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                 |
-| `tests/unit/weight-judging.test.ts` | the weight rule: counts, both ways, budgets          |
-| `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it    |
-| `tests/e2e/page.spec.ts`            | the model drawn, pictures, links, head, 404, footer  |
-| `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line |
-| `tests/e2e/rows.spec.ts`            | the edge arrows, page marks and words, ends, fitting |
-| `tests/e2e/drag.spec.ts`            | a mouse drag, no link followed; touch left alone     |
-| `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll, link,  |
-|                                     | Tab, print, no observer; markup holds no address     |
-| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; the arrows   |
-| `tests/e2e/moving.spec.ts`          | arrow keys through the grid; a stood-in pad, stepped |
-| `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), each Tab ring 3:1      |
-| `tests/e2e/motion.spec.ts`          | every CSSOM rule with motion sits in no-preference   |
-| `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2 and best practice, no violation    |
-| `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*         |
-| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it, and   |
-|                                     | the hero plays under the Permissions-Policy          |
-| `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched, |
-|                                     | no module, UTC, script off, arrows, clean console    |
-| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced  |
-| `tests/e2e/nojs.spec.ts`            | the page whole with script off                       |
-| `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour    |
-| `tests/e2e/surprise.spec.ts`        | Surprise me: seeded picks, what it leaves out        |
-| `tests/e2e/grow.spec.ts`            | the grown card, stepped; where it must not happen    |
-| `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off  |
-| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures    |
-| `tests/e2e/origin.spec.ts`          | own origin only, clean console; nothing stored       |
-| `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page |
-| `tests/look/look.spec.ts`           | twelve pictures of the built site, as written        |
-| `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;  |
-|                                     | the hero's loop apart, against its own budget        |
-| `scripts/links.mjs`                 | no card's address is gone (network; not in check)    |
-| `scripts/headers.mjs`               | a live address sends the whole policy (not in check) |
+| Gate                                | What it holds today                                    |
+| ----------------------------------- | ------------------------------------------------------ |
+| `npm run secrets`                   | nothing staged looks like a key                        |
+| `prettier --check .`                | one formatter decides every file it should             |
+| `npm run types`                     | no type error in `.astro` or `.ts`                     |
+| `npm run lint`                      | type-aware mistakes in `.ts`                           |
+| `tests/unit/tokens.test.ts`         | the five colours and the foil's, each said once        |
+| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1            |
+| `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name     |
+| `tests/unit/rows.test.ts`           | the page's model, best, the words, refusals            |
+| `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files             |
+| `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no           |
+|                                     | global random anywhere in `src/`                       |
+| `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes    |
+| `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`      |
+| `tests/unit/flipping.test.ts`       | every press from every state: flipped, focus           |
+| `tests/unit/playing.test.ts`        | which card plays, the hero's half, the 600ms settle    |
+| `tests/unit/shine.test.ts`          | the sheen's place and the tilt, clamped; at rest       |
+| `tests/unit/hero.test.ts`           | the start rule, every case; both buttons' words        |
+| `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry       |
+| `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat    |
+| `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends         |
+| `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals    |
+| `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`           |
+| `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates          |
+| `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed      |
+| `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                   |
+| `tests/unit/weight-judging.test.ts` | counts, both ways, the four budgets, card loops        |
+| `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it      |
+| `tests/e2e/page.spec.ts`            | the model drawn, labels, head, 404, footer, header     |
+| `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line   |
+| `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows     |
+| `tests/e2e/drag.spec.ts`            | a mouse drag, nothing flipped; touch left alone        |
+| `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll,          |
+|                                     | address, Tab, print, no observer; no address in markup |
+| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; arrows, Pause  |
+| `tests/e2e/moving.spec.ts`          | arrows through live controls; a stood-in pad, stepped  |
+| `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), Tab rings and Pause 3:1  |
+| `tests/e2e/motion.spec.ts`          | all motion in no-preference; loop and shine still      |
+| `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2, best practice; flipped, playing     |
+| `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*           |
+| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it, and     |
+|                                     | the hero and a card loop play under Permissions-Policy |
+| `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched,   |
+|                                     | no module, UTC, script off, arrows, clean console      |
+| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced    |
+| `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip        |
+| `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour      |
+| `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
+| `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
+| `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still      |
+| `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
+| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
+| `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |
+| `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page   |
+| `tests/look/look.spec.ts`           | seventeen pictures of the built site, as written       |
+| `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;    |
+|                                     | hero and card loops apart, each to its own budget      |
+| `scripts/links.mjs`                 | no card's address is gone (network; not in check)      |
+| `scripts/headers.mjs`               | a live address sends the whole policy (not in check)   |
 
 Where the figures are kept, never here. The look's baselines are the
 pictures in `tests/look/baselines/` and its tolerance and the wobble
@@ -385,7 +441,7 @@ measured for it are `TOLERANCE` in `tests/look/look.spec.ts`. The weight's
 baseline and its budgets are `gates/weight.json`; its tolerance (0, bytes
 held exactly, with the evidence) is `TOLERANCE` in
 `tests/gates/weight.spec.ts`. The budgets there are agreed figures, set
-by the owner on 2026-11-22. The privacy page's words are the owner's, and
+by the owner on 2026-11-22, the card loop's on 2026-11-23. The privacy page's words are the owner's, and
 the date they were last reviewed is the last paragraph of
 `src/pages/privacy.astro`: move it when they are read again. The contrast pairs are `TEXT` and `EDGES` in
 `tests/unit/contrast.test.ts`.
@@ -408,13 +464,11 @@ The nine points of the definition of done, as this project has them.
 
 ## What is not held
 
-- **No fuzzer or saved shape,** and time is stepped only for the gamepad.
-  A static page has no use for them. The catalogue's refusals at build are
-  to stand in for "what comes from outside is checked". **Chance is seeded
-  in one place**: Surprise me, from `window.ooerflixSeed` or the clock, and
-  held by the same seed giving the same picks. Nothing else on the page is
-  random. A fresh visit with no seed is different each time, and no pick is
-  remembered between visits (nothing is stored). Focus moved by script
+- **No fuzzer or saved shape,** and time is stepped only for the gamepad,
+  the card loops' settle and the flip. A static page has no use for them.
+  The catalogue's refusals at build are to stand in for "what comes from
+  outside is checked". **There is no chance on the page** since Surprise me
+  went, so there is no seed. Focus moved by script
   after a mouse press is ringed through `focus({ focusVisible: true })`,
   which Chromium honours and Safari and Firefox are not seen to.
 - **The hero is seen in Chromium alone.** Safari's autoplay and a real phone
@@ -430,11 +484,11 @@ The nine points of the definition of done, as this project has them.
   read of (caniuse), not seen. The loops are recordings of other sites made on
   one day and do not change when those sites do. Playwright's media time is
   the browser's and not the clock's, so a loop's playing is asked of the
-  video (`currentTime`, `paused`), and the grown card's look picture holds
-  Chopdrop's loop paused at 2.0 s. Reopening a card asks the browser for the
-  loop again (the copy and its video are taken down, not kept); Netlify's
-  `immutable` header on `/_astro/*` is what answers that from cache, and
-  nothing here reads it.
+  video (`currentTime`, `paused`), and the card-loop look pictures hold the
+  loop paused at 2.0 s. A card that plays again asks the browser for its
+  loop again (the video is taken down, not kept); Netlify's `immutable`
+  header on `/_astro/*` is what answers that from cache, and nothing here
+  reads it. Autoplay of a card loop is held as the hero's is, in Chromium.
 - **Save-Data and touch are stood in** (the page's `navigator.connection`
   made to say so; a touch context and a dispatched `pointerenter`), not real;
   no real phone has been tried.
@@ -514,6 +568,26 @@ The nine points of the definition of done, as this project has them.
   buttons 12 to 15, left stick axes 0 and 1, first button 0); a pad with
   another mapping is ignored. The owner is to try one.
 - **No mutation gate.** Mutations are by hand, and reported.
+- **The cards were seen in Chromium alone.** A real phone, a real touch
+  flip, Safari's and Firefox's video and autoplay, anchor positioning (the
+  arrows' height; a browser without it has the 16 by 9), `@property` and the
+  foil's blend and mask are not seen elsewhere. A screen reader hearing the
+  flip, the face away being inert and the Pause button's name is a
+  person's to try; the tree is read from Chromium's own. Forced colours as
+  drawn are not pictured. When the cards' Pause button has focus and its
+  card scrolls away, the button goes with the card in focus and focus drops
+  to the page; nothing holds where it should go. A focused card at a desk's
+  width is brought to its own start, which may move a row more than a
+  reader expects; nothing pictures it.
+- **A phone card's picture is cropped** at its sides to fill the room its
+  row's tallest back leaves: the back's description lines and the Play
+  link set it. At 390 More to play shows 63% of each picture's width, its
+  tallest card Fruit Machine, with seven lines of description.
+- **An arrow can stand over a card the strip has come to rest on.** On a
+  phone the gutter is narrower than the arrow, and a Next press leaves the
+  card it comes to with its left 38px under Previous; a flipped card there
+  has the start of its words under the arrow. Nothing holds it yet: found
+  in the pass of `plans/cards.md` and left for the owner.
 
 - **A scrollbar is only seen with flags.** Headless Chromium on this Mac
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with
@@ -539,6 +613,13 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
   the panel token by `--share-waiting` so they stay inside the dark look.
 - **No print styles.** Preflight asks for them, and the page is not one to
   print.
+- **The foil has more colours than the look's five** (`--color-foil-*`), on
+  three cards only. They are decoration and say nothing by themselves:
+  "Top pick" says it beside them, in words, and replaces Play now in a best
+  card's label.
+- **The cards' Pause button is a mark** with its name hidden in it, where
+  the hero's is a word: it sits on a small picture, and a word would cover
+  it.
 
 ## How a change lands
 
