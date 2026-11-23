@@ -1,5 +1,6 @@
 // Holds that tokens.css says each of the plan's five colours exactly once, and
-// says the colour the plan agreed. Everything else reads these as custom
+// says the colour the plan agreed, and each of the best cards' foil colours
+// exactly once, as a #rrggbb (below). Everything else reads these as custom
 // properties, so a colour missing here draws as nothing and one said twice
 // can drift apart. The file is read as text, as the build reads it, and not
 // through a browser: this is the quick check's hold on the tokens.

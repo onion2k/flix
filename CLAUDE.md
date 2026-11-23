@@ -67,7 +67,10 @@ commit of its own that says what it is for.
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next arrows are live, where
   each goes, the row's stops (its pages: a window on from the last, the end standing
-  in for a stop with less than a card left) and which one it is at. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
+  in for a stop with less than a card left) and which one it is at; a press
+  is sent to a stop and the browser lands it on the card's start nearest it,
+  within half a card's step, which the rule already takes to be at that
+  stop. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
   `hero.ts` says what the moving hero does at load (play its loop, offer
@@ -128,7 +131,12 @@ commit of its own that says what it is for.
   `data-arrows` once it has, which is what hides the strip's scrollbar and
   what specs wait on to know script has run. The arrows take the top and
   height of the row's first picture by anchor positioning (`--row-frame`),
-  16 by 9 where a browser cannot. `src/scripts/pictures.ts` brings in the
+  16 by 9 where a browser cannot. **A strip rests on a card's start**
+  however it is moved, with motion or without: `.strip` in `site.css` snaps
+  `mandatory`, and its scroll padding is the gutter or an arrow's width
+  (`--size-arrow-width`, never less than `--size-target`), whichever is
+  wider, so a card at rest starts clear of Previous; the first card, at the
+  strip's very start, rests at the gutter, where no Previous shows. `src/scripts/pictures.ts` brings in the
   pictures of the **late rows**
   (every row after the second, `LATE_ROWS_FROM` in `Row.astro`): a late
   card's `<picture>` holds its addresses in `data-` attributes and the
@@ -328,7 +336,10 @@ Every new thing is taken through each of these that it can reach.
 - With script a row has no scrollbar and moves by its edge arrows, with
   script off it keeps its scrollbar and has no arrows or marks (a mouse
   with no sideways wheel has no other way along). Below 340px a row stacks
-  and has neither.
+  and has neither. At rest after an arrow press, a swipe, a wheel, a drag or
+  a key, with motion and without, no card wholly in the window has any of
+  itself under an arrow that shows, outside the bands named under What is
+  not held: try each side of 40rem and 64rem, and of a band.
 - A mouse, a touch screen and a pen: only a mouse drags a strip, and a
   press that does not move is a click.
 - By keyboard alone: order, a visible focus ring, nothing trapped. With
@@ -406,6 +417,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/page.spec.ts`            | the model drawn, labels, head, 404, footer, header     |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line   |
 | `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows     |
+| `tests/e2e/arrows.spec.ts`          | at rest no card wholly in is under an arrow: presses   |
+|                                     | to each end and back, 341 to 1920, both motions; swipe |
 | `tests/e2e/drag.spec.ts`            | a mouse drag, nothing flipped; touch left alone        |
 | `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll,          |
 |                                     | address, Tab, print, no observer; no address in markup |
@@ -583,11 +596,19 @@ The nine points of the definition of done, as this project has them.
   row's tallest back leaves: the back's description lines and the Play
   link set it. At 390 More to play shows 63% of each picture's width, its
   tallest card Fruit Machine, with seven lines of description.
-- **An arrow can stand over a card the strip has come to rest on.** On a
-  phone the gutter is narrower than the arrow, and a Next press leaves the
-  card it comes to with its left 38px under Previous; a flipped card there
-  has the start of its words under the arrow. Nothing holds it yet: found
-  in the pass of `plans/cards.md` and left for the owner.
+- **In four bands of window width a card at rest can have an edge under an
+  arrow.** Where a desk's card is 17rem (a window under about 1070px) or
+  25rem (over about 1574px), a window whose width leaves a card ending
+  within an arrow's width of its right edge has that card wholly in and its
+  last few px, up to 55, under Next at the strip's start, at the mirror
+  place under Previous at its end, and at a rest part way. At the strip's
+  start and end the strip cannot be anywhere else, so no snap or padding
+  mends it; only the card's width or the arrows', which the owner has
+  accepted, could. Measured without a scrollbar, by setting each rest's
+  scroll from 341 to 2600: 649 to 709, 959 to 1019, 1814 to 1873 and 2260 to
+  2319 (a classic scrollbar moves each up by its width, 15px). The phone's
+  widths, 341 to 640, have none. `arrows.spec.ts` tries each side of the
+  first two (645, 715, 955, 1023) and nothing holds a band itself.
 
 - **A scrollbar is only seen with flags.** Headless Chromium on this Mac
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with

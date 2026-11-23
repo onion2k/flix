@@ -16,11 +16,13 @@
 // touch, a real Tab and Enter, a real Escape. Every address outside the site is
 // routed, recorded and aborted, so that no test leaves it. What is in the
 // accessibility tree is asked of the browser itself (tree.ts). Each test
-// counts what it reached.
+// counts what it reached. A card flipped where an arrow press left it has its
+// words, Play and Close clear of both arrows (arrows.ts measures them).
 import { expect, type Locator, type Page } from '@playwright/test';
 import { DAY_ZERO, test } from '../clock';
 import { readRows } from './catalogue';
-import { atRest } from './scrolling';
+import { partsUnderArrows } from './arrows';
+import { atRest, untilScrolled } from './scrolling';
 import { inTree } from './tree';
 
 const catalogue = readRows();
@@ -1176,4 +1178,66 @@ test.describe('a card keeps one size', () => {
       );
     });
   }
+});
+
+// A card flipped where an arrow press left it: its back's words lie where its
+// picture was, so an arrow over the card's left would stand over the start of
+// every line of them. On a phone a press of Next used to leave the card it
+// came to with its left 38px under Previous. After a real click on Next, the
+// first linked card wholly in the window is flipped, and each line of its
+// description, its Play link and its Close button are measured clear of both
+// arrows, with motion allowed (once the turn has finished) and under reduced
+// motion (at once).
+test.describe('a card flipped where an arrow press left it', () => {
+  for (const width of [640, 390])
+    for (const motion of ['no-preference', 'reduce'] as const)
+      test(`at ${width} wide, motion ${motion}: its words, Play and Close are clear of both arrows`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height: 844 });
+        await page.emulateMedia({ reducedMotion: motion });
+        await ready(page);
+        const row = firstRow(page);
+        const list = row.getByRole('list');
+        await list.scrollIntoViewIfNeeded();
+        await untilScrolled(list, () =>
+          row.getByRole('button', { name: /^Next/ }).click(),
+        );
+        await atRest(list);
+        const place = await row.locator('li.card').evaluateAll((all) => {
+          const view = all[0]?.closest('ul')?.getBoundingClientRect();
+          if (view === undefined) return -1;
+          return all.findIndex((card) => {
+            const box = card.getBoundingClientRect();
+            return (
+              box.left >= view.left - 1 &&
+              box.right <= view.right + 1 &&
+              card.querySelector('a.card-link') !== null
+            );
+          });
+        });
+        expect(place, 'a linked card is wholly in the window').toBeGreaterThan(
+          0,
+        );
+        const card = cardAt(page, place);
+        await card.locator('button.card-flip').click();
+        await expect(card).toHaveAttribute('data-flipped', '');
+        await settled(card);
+        await atRest(list);
+        const words = await partsUnderArrows(
+          card.locator('.back .description'),
+          true,
+        );
+        expect(words.seen, 'lines of the description').toBeGreaterThan(1);
+        expect(words.under).toEqual([]);
+        const buttons = await partsUnderArrows(
+          card.locator('.back a.card-link, .back button.card-unflip'),
+        );
+        expect(buttons.seen, 'Play and Close').toBe(2);
+        expect(buttons.under).toEqual([]);
+        // And Previous is showing, so that there is an arrow to be under.
+        await expect(
+          row.getByRole('button', { name: /^Previous/ }),
+        ).toBeVisible();
+      });
 });

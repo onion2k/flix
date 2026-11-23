@@ -19,9 +19,12 @@
 // nearest the window's centre, the earlier on a tie; none while more than half
 // of the hero's frame is in the window. Every added video is seen by an
 // observer from before the page's scripts run, and no test may ever see two in
-// the rows at once. Each test counts what it reached.
+// the rows at once. Each test counts what it reached. A card playing where an
+// arrow press left it has its picture and Pause clear of both arrows.
 import { expect, type Locator, type Page } from '@playwright/test';
 import { DAY_ZERO, test } from '../clock';
+import { partsUnderArrows } from './arrows';
+import { untilScrolled } from './scrolling';
 
 /** One frame of the stepped clock, in ms: where Playwright's rAF falls. */
 const FRAME = 16;
@@ -673,6 +676,50 @@ test.describe('a touch screen at a phone’s width', () => {
     await expect.poll(() => isPlaying(videoIn(page))).toBe(true);
     await expect(cardAt(page, want).locator('button.card-pause')).toBeVisible();
     expect(asked).toHaveLength(1);
+    await oneAtMost(page);
+  });
+});
+
+// The card a press of Next leaves at a phone's width is the one wholly in the
+// window, and so the one that plays; on a phone the press used to leave it
+// with its left 38px under Previous, its loop among them. Row one is pressed
+// along with real clicks until the card it rests on has a loop, the settle
+// time is stepped, and the playing card's picture and its Pause button are
+// measured clear of both arrows.
+test.describe('a card playing where an arrow press left it', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('its picture and its Pause button are clear of both arrows', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await open(page);
+    await centreRow(page, 0);
+    await rowArrived(page, 0);
+    const row = page.locator('section.row').first();
+    const list = row.getByRole('list');
+    const ahead = row.getByRole('button', { name: /^Next/ });
+    let presses = 0;
+    let want = -1;
+    while (want < 0 && (await ahead.count()) > 0) {
+      presses += 1;
+      expect(presses, 'presses along row one').toBeLessThan(10);
+      await untilScrolled(list, () => ahead.click());
+      await step(page, SETTLE + FRAME * 6);
+      want = await named(page);
+    }
+    expect(
+      want,
+      'a card with a loop is left wholly in the window',
+    ).toBeGreaterThan(0);
+    expect(await playingAt(page)).toEqual([want]);
+    await expect(row.getByRole('button', { name: /^Previous/ })).toBeVisible();
+    const card = cardAt(page, want);
+    const parts = await partsUnderArrows(
+      card.locator('.frame, button.card-pause'),
+    );
+    expect(parts.seen, 'the picture and its Pause button').toBe(2);
+    expect(parts.under).toEqual([]);
     await oneAtMost(page);
   });
 });

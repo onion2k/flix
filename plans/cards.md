@@ -66,6 +66,10 @@ next starts.
 - `tokens.css`: `--card-width-phone: 58vw` (226px at 390: one card and 60%
   of the next), `--size-card-title-phone`. `Card.astro`'s `sizes` says 58vw.
 - The stack below 340px stays (WCAG 1.4.10), unchanged.
+- A strip comes to rest on a card's start however it is moved, with motion
+  or without, its start kept an arrow's width clear so that no card at rest
+  is under Previous, and the first card at the strip's very start rests at
+  the gutter as before.
 
 ### 3. The flip (replaces the grown card)
 
@@ -234,7 +238,7 @@ green. Headless pictures at 390 and 1440 are sent to the owner after parts
       `playing.spec.ts`, `weight-judging.test.ts`.
 - [x] 5. The best cards shine. `shine.test.ts`, `shine.spec.ts`,
       `rows.test.ts`.
-- [ ] 6. The pass: `npm run check`; look and weight baselines written again
+- [x] 6. The pass: `npm run check`; look and weight baselines written again
       on purpose and every picture read; mutations; `CLAUDE.md` (Commands,
       Layout, Test API, Edge cases, Gates, What is not held) moved on.
 

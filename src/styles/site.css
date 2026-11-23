@@ -395,6 +395,18 @@ p {
   box-shadow: 0 0 0 var(--size-ring-offset) var(--color-ground);
 }
 
+/* A strip comes to rest on a card's start, however it got there (an arrow,
+   a finger, a wheel, a drag, a key) and with or without motion: the snap is
+   mandatory, so an instant jump under reduced motion is pulled to a card as a
+   glide is. The start is kept clear of the Previous arrow, as wide as an
+   arrow is drawn (its width, and never less than a target) or the gutter if
+   that is wider, so that no card at rest has anything of itself under an
+   arrow: on a phone the gutter is a third of an arrow, and with the gutter
+   alone a card left there had its first 38px under Previous, the start of
+   every line of its back's words among them. The first card, at the strip's
+   very start, still rests at the gutter, where no Previous arrow shows; the
+   end is the strip's furthest, where none of Next does. The same room at the
+   other side is what a focused card is brought in clear of (whollyIn()). */
 .strip {
   display: flex;
   gap: var(--space-l);
@@ -402,8 +414,12 @@ p {
   padding: var(--space-m) var(--gutter) var(--space-xl);
   list-style: none;
   overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scroll-padding-inline: var(--gutter);
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: max(
+    var(--gutter),
+    var(--size-arrow-width),
+    var(--size-target)
+  );
 }
 
 /* The scrollbar goes once script has run and the row has its arrows (it marks

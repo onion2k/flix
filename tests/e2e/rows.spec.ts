@@ -14,6 +14,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import { test } from '../clock';
 import { readRows } from './catalogue';
+import { pageOf, pagesOf, stopsOf } from './arrows';
 import { atRest, untilScrolled } from './scrolling';
 
 const catalogue = readRows();
@@ -86,42 +87,6 @@ async function toMiddle(page: Page, list: Locator): Promise<void> {
   expect(at, 'the strip is neither at its start nor at its end').toBeLessThan(
     room - 2,
   );
-}
-
-/**
- * The row's stops, worked out here from the strip's own widths and the card's
- * and not from the rule under test: the start, a window on at a time, and the
- * end in place of any stop with less than a card of strip left after it.
- */
-function stopsOf(list: Locator): Promise<number[]> {
-  return list.evaluate((el) => {
-    const furthest = el.scrollWidth - el.clientWidth;
-    if (furthest <= 1) return [0];
-    const card = el.querySelector('li')?.getBoundingClientRect().width ?? 0;
-    const found = [0];
-    for (let at = el.clientWidth; at < furthest; at += el.clientWidth) {
-      if (furthest - at < card) break;
-      found.push(at);
-    }
-    found.push(furthest);
-    return found;
-  });
-}
-
-/** How many stops, and so marks, the strip has. */
-async function pagesOf(list: Locator): Promise<number> {
-  return (await stopsOf(list)).length;
-}
-
-/** The stop a strip is at or nearest to. */
-async function pageOf(list: Locator): Promise<number> {
-  const stops = await stopsOf(list);
-  const at = await left(list);
-  let best = 0;
-  stops.forEach((stop, index) => {
-    if (Math.abs(stop - at) < Math.abs((stops[best] ?? 0) - at)) best = index;
-  });
-  return best;
 }
 
 test.describe('at a desk', () => {
