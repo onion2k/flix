@@ -1,6 +1,6 @@
 # Cards that flip, play and shine
 
-State: building, part 6 of 6.
+State: landed on main at 7107a6a, 2026-11-23.
 
 Agreed in a harness's plan file and copied here the same day; this copy is
 the one ticked. Its facts hold on commit `6c8d3aa`.
