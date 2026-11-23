@@ -173,7 +173,9 @@ commit of its own that says what it is for.
   `flipping.ts`: `data-flipped` on the card, `inert` on the face turned
   away, focus as the rule says, and `data-turns` from the first press, which
   is what lets a face turn (`rotateY`, `--duration-flip`, in the
-  no-preference block only). Under `data-flips` the faces share one grid
+  no-preference block only). Under `data-flips` each face is a tile, the
+  panel colour inside the picture's edge, the same on every card, with the
+  front's label and title padded inside it. The faces share one grid
   cell, so a card is as tall as its taller face and one size flipped or
   not; a strip stretches a row's cards level, and the front's frame takes
   the room left (never shorter than 16 by 9, the picture cropped at its
@@ -199,7 +201,10 @@ commit of its own that says what it is for.
   a reflection on its frame (`.frame::before`: a bright rainbow and glints
   added onto the picture round the light, which is what shines on a dark
   picture), both stronger toward the card's edges (`--foil-edge`, from
-  `hypot()`), and a foil edge just outside the card, never under a word, from
+  `hypot()`) and both multiplied by the card's own picture, so that they
+  shine where it is light (`--foil-picture`, the file the card already shows,
+  set by `shine.ts` for every reader and laid in as a background, which is
+  not fetched again as a mask would be), never under a word, from
   `--shine-x`/`--shine-y` and a tilt of `.card-faces` from
   `--tilt-x`/`--tilt-y`, the four registered with `@property` in
   `tokens.css` so their first values are the resting place.
@@ -455,8 +460,9 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
 | `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
 | `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still;     |
-|                                     | its two layers, dimmed with their contrast kept; a     |
-|                                     | scroll before the script's first sight of the cards    |
+|                                     | its two layers, dimmed with their contrast kept; one   |
+|                                     | border; the picture laid in; a scroll before first     |
+|                                     | sight                                                  |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |

@@ -644,6 +644,20 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 1fr auto auto;
+  /* A tile, as the back is: the panel colour inside the picture's edge, the
+     same on every card (the owner, 2026-11-23), with the label and the title
+     padded inside it. */
+  background: var(--color-panel);
+  border: var(--size-edge) solid var(--color-picture-edge);
+}
+
+.card[data-flips] .front > :is(.label, .card-title) {
+  padding-inline: var(--space-m);
+}
+
+.card[data-flips] .front > .card-title {
+  margin-bottom: 0;
+  padding-bottom: var(--space-m);
 }
 
 /* Stretched both ways, so that the ratio sets neither side (a box with a ratio
@@ -842,9 +856,16 @@ p {
      and bands of light across it, blended by hue and hard light over a shade
      that darkens away from the light, given a hard contrast and dodged onto
      the picture. The rainbow follows the sheen up and down, the bands follow
-     it both ways, and the brightness rises toward the card's edges. Its
-     filter is a property of its own so that the house lights can add their
-     dim to it and not take its contrast away. */
+     it both ways, and the brightness rises toward the card's edges. Over all
+     of it lies the card's own picture, multiplied onto it, so that the foil
+     is drawn where the picture is light and not where it is dark: it shines
+     with the picture's shapes and not as lines across the card (the owner's
+     choice of 2026-11-23). The picture is the file the card already shows,
+     handed over by src/scripts/shine.ts as --foil-picture and laid in as a
+     background, which the browser answers from the copy it has (a mask would
+     ask for it again); without script it is a plain light layer, which
+     changes nothing. Its filter is a property of its own so that the house
+     lights can add their dim to it and not take its contrast away. */
   --foil-filter: brightness(
       calc(
         var(--brightness-foil) + var(--foil-edge) * var(--brightness-foil-edge)
@@ -852,6 +873,7 @@ p {
     )
     contrast(var(--contrast-foil)) saturate(var(--saturate-foil));
   background-image:
+    var(--foil-picture, linear-gradient(var(--color-foil-glare) 0 0)),
     repeating-linear-gradient(
       0deg,
       var(--color-foil-pale-rose) var(--size-foil-rainbow),
@@ -893,12 +915,14 @@ p {
         )
         var(--size-foil-shade-far)
     );
-  background-blend-mode: hue, hard-light;
+  background-blend-mode: multiply, hue, hard-light;
   background-size:
+    cover,
     var(--size-foil-rainbow-across) var(--size-foil-rainbow-up),
     var(--size-foil-light) var(--size-foil-light),
     var(--size-foil-shade) var(--size-foil-shade);
   background-position:
+    center,
     0 calc(var(--shine-y) * 100%),
     calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%),
     calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%);
@@ -947,8 +971,9 @@ p {
    bright rainbow, running across the card faster than the pointer, and glints
    of light crossing it, added onto the picture round the light. A dodge
    cannot light black, and two of the three best pictures are mostly dark; this
-   is what shines on them. It is the frame's size, takes no press, and is the
-   picture's alone, as the foil is. */
+   is what shines on them. As the foil is, it is multiplied by the card's own
+   picture, so that it is added where the picture is light. It is the frame's
+   size, takes no press, and is the picture's alone, as the foil is. */
 .card[data-best] .frame::before {
   content: '';
   position: absolute;
@@ -956,6 +981,7 @@ p {
   z-index: 1;
   pointer-events: none;
   background-image:
+    var(--foil-picture, linear-gradient(var(--color-foil-glare) 0 0)),
     repeating-linear-gradient(
       var(--angle-foil-light),
       transparent 0,
@@ -977,12 +1003,16 @@ p {
       var(--color-foil-violet),
       var(--color-foil-rose)
     );
+  background-blend-mode: multiply, normal;
   background-size:
+    cover,
     var(--size-foil-light) var(--size-foil-light),
     var(--size-foil-reflection) 100%;
   background-position:
+    center,
     calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%),
     calc((0.5 - var(--shine-x)) * var(--share-foil-run) + 50%) center;
+  /* Round the light. */
   mask-image: radial-gradient(
     farthest-corner circle at calc(var(--shine-x) * 100%)
       calc(var(--shine-y) * 100%),
@@ -1031,30 +1061,6 @@ p {
   position: relative;
   transform: perspective(var(--depth-tilt)) rotateX(var(--tilt-x))
     rotateY(var(--tilt-y));
-}
-
-/* The foil's edge, just outside the card, front and back: a frame of the same
-   colours, its middle cut away by a mask, so that it is never under a word. */
-.card[data-best] .card-faces::before {
-  content: '';
-  position: absolute;
-  inset: calc(var(--size-foil-edge) * -1);
-  padding: var(--size-foil-edge);
-  pointer-events: none;
-  background-image: linear-gradient(
-    var(--angle-foil),
-    var(--color-foil-rose),
-    var(--color-foil-gold),
-    var(--color-foil-mint),
-    var(--color-foil-sky),
-    var(--color-foil-violet),
-    var(--color-foil-rose)
-  );
-  background-size: var(--size-foil-band) var(--size-foil-band);
-  background-position: calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%);
-  mask:
-    linear-gradient(var(--color-ground) 0 0) content-box exclude,
-    linear-gradient(var(--color-ground) 0 0);
 }
 
 /* Hover is only for a card that is a control: a link without script, and
@@ -1316,10 +1322,9 @@ main {
     border-color: Highlight;
   }
 
-  /* No foil, no reflection and no foil edge: the card's own borders stand. */
+  /* No foil and no reflection: the card's own borders stand. */
   .foil,
-  .card[data-best] .frame::before,
-  .card[data-best] .card-faces::before {
+  .card[data-best] .frame::before {
     display: none;
   }
 }

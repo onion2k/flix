@@ -518,7 +518,7 @@ test('nothing is set while no best card is in the window, and the shine starts o
   await expect.poll(() => writes(page)).toBeGreaterThan(start);
 });
 
-test('where colours are forced there is no foil, no reflection and no foil edge, and the card’s own borders stand', async ({
+test('where colours are forced there is no foil and no reflection, and the card’s own borders stand', async ({
   page,
 }) => {
   await page.emulateMedia({ forcedColors: 'active' });
@@ -529,7 +529,7 @@ test('where colours are forced there is no foil, no reflection and no foil edge,
     expect(
       await card
         .locator('.card-faces')
-        .evaluate((el) => getComputedStyle(el, '::before').display),
+        .evaluate((el) => getComputedStyle(el, '::before').content),
     ).toBe('none');
     expect(
       await card
@@ -653,6 +653,137 @@ test.describe('the foil’s two layers', () => {
     }
     expect(reached).toBeGreaterThan(1);
   });
+});
+
+// Every card has the same border (the owner, 2026-11-23: the best cards'
+// rainbow edge was too strong), and a card's front is a tile as its back is:
+// the panel colour inside the picture's edge, with its label and title padded
+// inside it.
+test('every card has the same border and no edge of its own, and its front’s words are padded inside it', async ({
+  page,
+}) => {
+  await ready(page);
+  const fronts = await page.locator('li.card').evaluateAll((cards) =>
+    cards.map((card) => {
+      const front = card.querySelector('.front') as Element;
+      const style = getComputedStyle(front);
+      const label = getComputedStyle(front.querySelector('.label') as Element);
+      const title = getComputedStyle(
+        front.querySelector('.card-title') as Element,
+      );
+      return {
+        id: (card as HTMLElement).dataset['entry'] ?? '?',
+        border: `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor} ${style.borderLeftWidth} ${style.borderBottomWidth}`,
+        ground: style.backgroundColor,
+        edge: getComputedStyle(
+          card.querySelector('.card-faces') as Element,
+          '::before',
+        ).content,
+        padding: [
+          label.paddingLeft,
+          label.paddingRight,
+          title.paddingLeft,
+          title.paddingRight,
+        ],
+        foot: parseFloat(title.paddingBottom),
+      };
+    }),
+  );
+  expect(fronts.length).toBeGreaterThan(15);
+  const first = fronts[0];
+  for (const front of fronts) {
+    expect(front.border, front.id).toBe(first?.border);
+    expect(front.border, front.id).toMatch(/^1px solid rgb\(44, 61, 53\)/);
+    expect(front.ground, front.id).toBe('rgb(24, 37, 31)');
+    expect(front.edge, front.id).toBe('none');
+    expect(front.padding, front.id).toEqual(first?.padding);
+    expect(parseFloat(front.padding[0] ?? '0'), front.id).toBeGreaterThan(0);
+    expect(front.foot, front.id).toBeGreaterThan(0);
+  }
+});
+
+// The foil follows its own card's picture: the foil and the reflection are
+// multiplied by the picture, so that they shine where the picture is light
+// and not as lines across the card (the owner's choice A of 2026-11-23). The
+// picture is the file the card already shows, handed over by script and laid
+// in as a background, so its bytes cross the wire once: the browser's cache
+// answers the foil's ask (from the disk cache under Netlify's immutable
+// header; here, under the preview's no-cache, by a revalidation of a hundred
+// or so bytes). A mask would have fetched it whole again (masks are asked for
+// in another mode): three more pictures on a desk's first screen. Asks are
+// read from the browser's own network record, since a cache hit is an ask
+// too. It is not motion, so a reader who asked for less has it too.
+test.describe('the foil follows its card’s picture', () => {
+  for (const motion of ['no-preference', 'reduce'] as const)
+    test(`motion ${motion}: each best card's foil and reflection are multiplied by the file its picture shows, sent once`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ reducedMotion: motion });
+      const network = await page.context().newCDPSession(page);
+      await network.send('Network.enable');
+      const asks = new Map<string, { url: string; wire: number }>();
+      network.on('Network.requestWillBeSent', (event) =>
+        asks.set(event.requestId, { url: event.request.url, wire: 0 }),
+      );
+      network.on('Network.loadingFinished', (event) => {
+        const ask = asks.get(event.requestId);
+        if (ask !== undefined) ask.wire = event.encodedDataLength;
+      });
+      await ready(page);
+      let reached = 0;
+      for (const id of catalogue.best) {
+        const card = cardOf(page, id);
+        await card.scrollIntoViewIfNeeded();
+        await expect
+          .poll(() =>
+            card.evaluate((el: HTMLElement) =>
+              el.style.getPropertyValue('--foil-picture'),
+            ),
+          )
+          .not.toBe('');
+        const found = await card.evaluate((el: HTMLElement) => {
+          const picture = el.querySelector(
+            '.front .frame img',
+          ) as HTMLImageElement;
+          const foil = getComputedStyle(el.querySelector('.foil') as Element);
+          const reflection = getComputedStyle(
+            el.querySelector('.front .frame') as Element,
+            '::before',
+          );
+          return {
+            src: picture.currentSrc,
+            foil: foil.backgroundImage,
+            foilBlend: foil.backgroundBlendMode,
+            reflection: reflection.backgroundImage,
+            reflectionBlend: reflection.backgroundBlendMode,
+            masks: `${foil.maskImage} ${reflection.maskImage}`,
+          };
+        });
+        expect(found.src, id).not.toBe('');
+        // The picture is the top layer of each, multiplied onto the rest.
+        expect(found.foil, id).toMatch(/^url\(/);
+        expect(found.foil, id).toContain(found.src);
+        expect(found.foilBlend.split(',')[0]?.trim(), id).toBe('multiply');
+        expect(found.reflection, id).toMatch(/^url\(/);
+        expect(found.reflection, id).toContain(found.src);
+        expect(found.reflectionBlend.split(',')[0]?.trim(), id).toBe(
+          'multiply',
+        );
+        // No mask asks for a file: the reflection's is a gradient alone.
+        expect(found.masks, id).not.toContain('url(');
+        // Every ask has finished, and only one of them carried the picture.
+        await frames(page, 6);
+        const mine = [...asks.values()].filter((ask) => ask.url === found.src);
+        expect(mine.length, `${id}: asked for`).toBeGreaterThan(0);
+        const whole = mine.filter((ask) => ask.wire > 1000);
+        expect(
+          whole.length,
+          `${id}: its picture sent whole (${mine.map((ask) => ask.wire).join(', ')} bytes)`,
+        ).toBe(1);
+        reached += 1;
+      }
+      expect(reached).toBe(catalogue.best.length);
+    });
 });
 
 // The script's first answer from its IntersectionObserver says what is in the

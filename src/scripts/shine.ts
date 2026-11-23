@@ -17,8 +17,9 @@
 // write answers a reader's scroll or pointer, so there is no idle animation.
 // A reader who asked for less motion gets nothing from it at all, and the
 // stylesheet's still sheen at its resting place stands, as it does with script
-// off. What it keeps is the page's own best cards, the one pointed at and one
-// frame asked for, which cannot grow past them.
+// off. It also hands each best card the picture it shows, for the foil to be
+// multiplied by, for every reader. What it keeps is the page's own best cards, the one
+// pointed at and one frame asked for, which cannot grow past them.
 import { inWindow, underPointer, type Shine } from '../catalogue/shine';
 import { lessMotion } from './asked';
 
@@ -35,6 +36,27 @@ function write(card: HTMLElement, shine: Shine | null): void {
   card.style.setProperty('--shine-y', String(shine.y));
   card.style.setProperty('--tilt-x', `${shine.tiltX}deg`);
   card.style.setProperty('--tilt-y', `${shine.tiltY}deg`);
+}
+
+// Each best card's foil is multiplied by its own picture (the stylesheet lays
+// --foil-picture over the foil and the reflection as a background). The
+// picture is the file the card already shows, so its bytes are not sent
+// again: the browser's cache answers the foil's ask (a mask would be asked for
+// in another mode, and fetched whole a second time). It is handed over again
+// whenever the browser loads another (a late picture arriving, or a resize
+// choosing another width). A mask is not motion, so this is for every reader.
+for (const card of best) {
+  const picture = card.querySelector<HTMLImageElement>('.front .frame img');
+  if (picture === null) continue;
+  const give = (): void => {
+    if (picture.currentSrc === '') return;
+    card.style.setProperty(
+      '--foil-picture',
+      `url(${JSON.stringify(picture.currentSrc)})`,
+    );
+  };
+  give();
+  picture.addEventListener('load', give);
 }
 
 if (best.length > 0 && !lessMotion()) {

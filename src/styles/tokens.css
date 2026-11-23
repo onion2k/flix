@@ -153,8 +153,10 @@
    * picture round the light, which lights a dark picture, where a dodge
    * cannot; its rainbow runs across the card the factor below faster than the
    * pointer. The glare: a soft light where the pointer is. Each grows toward
-   * the edges, from its first share by up to its second. Round the card, front
-   * and back, an edge of the bright colours. A card tilts, under a mouse, as
+   * the edges, from its first share by up to its second. The foil and the
+   * reflection are multiplied by the card's own picture, so they are drawn
+   * where it is light. There is
+   * no edge of their own: every card has the same border. A card tilts, under a mouse, as
    * seen from the depth below (how far is MOST_TILT, src/catalogue/shine.ts),
    * and the sheen and the tilt ease after the pointer over the time below.
    * None of it carries words or tells a control apart, so no contrast is asked
@@ -176,7 +178,6 @@
   --color-foil-band: #8fa8a8;
   --color-foil-band-light: #b7dede;
   --color-foil-shade: #000000;
-  --angle-foil: 115deg;
   --angle-foil-light: 125deg;
   --angle-foil-reflection: 100deg;
   --size-foil-rainbow: 5%;
@@ -210,8 +211,6 @@
   --share-foil-glare-mid: 10%;
   --share-foil-glare: 0.35;
   --share-foil-glare-edge: 0.4;
-  --size-foil-band: 300%;
-  --size-foil-edge: 3px;
   --depth-tilt: 40rem;
   --duration-shine: 150ms;
 }

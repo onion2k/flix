@@ -1058,7 +1058,14 @@ test.describe('a card keeps one size', () => {
             const image = frame?.querySelector('img');
             if (!title || !frame || !image) return { problems: ['parts'] };
             const problems: string[] = [];
-            const under = parseFloat(getComputedStyle(title).marginBottom);
+            // What the stylesheet gives under the title: its margin and the
+            // front's own edge (its padding is inside the title's box).
+            const front = card.querySelector('.front');
+            const under =
+              parseFloat(getComputedStyle(title).marginBottom) +
+              (front
+                ? parseFloat(getComputedStyle(front).borderBottomWidth)
+                : NaN);
             const ground =
               card.getBoundingClientRect().bottom -
               title.getBoundingClientRect().bottom;
