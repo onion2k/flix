@@ -154,9 +154,6 @@ test('exactly the best cards carry data-best, the foil and “Top pick”, and n
     } else {
       plain += 1;
       expect(await card.getAttribute('data-best'), id).toBeNull();
-      // The spans are on every card (part 3 of plans/foils.md); until the
-      // finishes are drawn a plain card's are not displayed.
-      await expect(card.locator('.foil'), id).toBeHidden();
       expect(label, id).not.toContain('Top pick');
     }
   }
@@ -591,7 +588,7 @@ test('where colours are forced there is no foil and no reflection, and the card�
 // card in the row is pointed at all three are dimmed with the pictures and the
 // foil keeps its contrast.
 test.describe('the foil’s three layers', () => {
-  test('each best card has the dodged foil, the glitter and the wash over its picture, and no other card has any', async ({
+  test('each best card has the dodged foil, the glitter and the wash of the holo over its picture', async ({
     page,
   }) => {
     await ready(page);
@@ -677,9 +674,7 @@ test.describe('the foil’s three layers', () => {
         }
         best += 1;
       } else {
-        expect(layers.foil?.size?.width, id).toBe(0);
-        expect(layers.wash?.size?.width, id).toBe(0);
-        expect(layers.glitter?.content, id).toBe('none');
+        // Every card has the layers now, in its own finish (below).
         plain += 1;
       }
     }
@@ -729,14 +724,14 @@ test.describe('the foil’s three layers', () => {
 
 // The shine shows a little at rest and all of it while a mouse is on the card,
 // which lifts toward the reader a little, with a shadow under it; on a screen
-// where nothing hovers it shows most of it, and nothing lifts. A plain card
-// does none of this.
+// where nothing hovers it shows as at rest, and nothing lifts. Every card does
+// this, in its own finish.
 test.describe('the shine at rest and under a mouse', () => {
   const onOf = (card: Locator) =>
     card.evaluate((el) =>
       parseFloat(getComputedStyle(el).getPropertyValue('--foil-on')),
     );
-  test('a best card shows a little of it at rest, all of it under a mouse, and lifts; a plain card does not', async ({
+  test('a best card shows a little of it at rest, all of it under a mouse, and lifts, as a plain card does', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -774,11 +769,14 @@ test.describe('the shine at rest and under a mouse', () => {
       plainBox.x + plainBox.width / 2,
       plainBox.y + plainBox.height / 2,
     );
-    expect(
-      await plain
-        .locator('.card-faces')
-        .evaluate((el) => getComputedStyle(el).scale),
-    ).toBe('none');
+    // It lifts, as every card does: the plain card is a foil card too.
+    await expect
+      .poll(() =>
+        plain
+          .locator('.card-faces')
+          .evaluate((el) => parseFloat(getComputedStyle(el).scale)),
+      )
+      .toBeGreaterThan(1);
     await expect.poll(() => onOf(card)).toBeCloseTo(rest, 5);
   });
 
@@ -788,15 +786,22 @@ test.describe('the shine at rest and under a mouse', () => {
       isMobile: true,
       viewport: { width: 390, height: 844 },
     });
-    test('a best card shows most of it, with nothing to hover, and a tap lifts nothing', async ({
+    test('a card shows a little of it, as at rest, with nothing to hover, and a tap lifts nothing', async ({
       page,
     }) => {
       await ready(page);
       await firstRowInView(page);
       const card = cardOf(page, 'aquaclysm');
       const on = await onOf(card);
-      expect(on).toBeGreaterThan(0.5);
-      expect(on).toBeLessThan(1);
+      const rest = await page.evaluate(() =>
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            '--share-foil-rest',
+          ),
+        ),
+      );
+      expect(rest).toBeGreaterThan(0);
+      expect(on).toBeCloseTo(rest, 5);
       // A tap lands on the flip button laid over the whole front.
       await card.locator('button.card-flip').tap();
       await expect(card).toHaveAttribute('data-flipped', '');
@@ -923,4 +928,250 @@ test('a scroll that comes before the script’s first sight of the cards still m
   await expect
     .poll(async () => (await setOn(card))['--shine-y'] ?? '')
     .not.toBe('');
+});
+
+// Every card has a finish (data-finish, from the catalogue) and draws the three
+// layers in it: the holo, gold, galaxy and ice each draw a foil, a wash and the
+// glitter's rule over the picture, with the backgrounds that finish gives them;
+// the reverse draws none of the three and its front's tile carries the sheen.
+// Each finish is told from the others by what it draws, so that a finish that
+// drew another's look would fail, and each is counted as reached.
+test.describe('every finish draws its own layers', () => {
+  interface Drawn {
+    finish: string;
+    id: string;
+    foil: { display: string; image: string; blend: string; filter: string };
+    wash: { display: string; image: string; blend: string };
+    glitter: { display: string; image: string; sizes: string };
+    front: { image: string };
+  }
+
+  async function drawn(page: Page): Promise<Drawn[]> {
+    return page.locator('li.card').evaluateAll((cards) =>
+      cards.map((card) => {
+        const foil = getComputedStyle(card.querySelector('.foil') as Element);
+        const wash = getComputedStyle(
+          card.querySelector('.foil-wash') as Element,
+        );
+        const glitter = getComputedStyle(
+          card.querySelector('.front .frame') as Element,
+          '::before',
+        );
+        const front = getComputedStyle(card.querySelector('.front') as Element);
+        return {
+          finish: (card as HTMLElement).dataset['finish'] ?? '',
+          id: (card as HTMLElement).dataset['entry'] ?? '',
+          foil: {
+            display: foil.display,
+            image: foil.backgroundImage,
+            blend: foil.mixBlendMode,
+            filter: foil.filter,
+          },
+          wash: {
+            display: wash.display,
+            image: wash.backgroundImage,
+            blend: wash.mixBlendMode,
+          },
+          glitter: {
+            display: glitter.display,
+            image: glitter.backgroundImage,
+            sizes: glitter.backgroundSize,
+          },
+          front: { image: front.backgroundImage },
+        };
+      }),
+    );
+  }
+
+  test('each card draws the layers of its finish and no other’s', async ({
+    page,
+  }) => {
+    await ready(page);
+    const cards = await drawn(page);
+    const reached: Record<string, number> = {};
+    for (const card of cards) {
+      reached[card.finish] = (reached[card.finish] ?? 0) + 1;
+      const name = `${card.id} (${card.finish})`;
+      if (card.finish === 'reverse') {
+        expect(card.foil.display, name).toBe('none');
+        expect(card.wash.display, name).toBe('none');
+        expect(card.glitter.display, name).toBe('none');
+        // The sheen is the front's own: a light, bars and a rainbow.
+        expect(card.front.image, name).toContain('radial-gradient');
+        expect(card.front.image, name).toContain('repeating-linear-gradient');
+        expect(card.front.image, name).toContain('linear-gradient');
+        continue;
+      }
+      expect(card.foil.display, name).not.toBe('none');
+      expect(card.wash.display, name).not.toBe('none');
+      expect(card.glitter.display, name).not.toBe('none');
+      expect(card.front.image, name).toBe('none');
+      expect(card.glitter.image, name).toContain('gradient');
+      switch (card.finish) {
+        case 'holo':
+          expect(card.foil.blend, name).toBe('color-dodge');
+          expect(card.wash.blend, name).toBe('overlay');
+          expect(card.wash.image, name).toContain('rgb(255, 45, 117)');
+          expect(card.glitter.image, name).toContain('/foil-glitter.svg');
+          break;
+        case 'gold':
+          expect(card.wash.blend, name).toBe('soft-light');
+          expect(card.wash.image, name).toContain('rgb(107, 62, 0)');
+          expect(card.foil.image, name).toContain('rgb(255, 207, 106)');
+          expect(card.glitter.image, name).toContain('/foil-glitter.svg');
+          expect(card.glitter.sizes, name).toContain('180px');
+          break;
+        case 'galaxy':
+          expect(card.wash.blend, name).toBe('screen');
+          expect(card.wash.image.match(/radial-gradient/g)?.length, name).toBe(
+            3,
+          );
+          expect(card.foil.image, name).toContain('rgb(59, 42, 138)');
+          expect(card.glitter.image, name).toContain('/foil-glitter.svg');
+          expect(card.glitter.sizes, name).toContain('640px');
+          break;
+        case 'ice':
+          expect(card.foil.image, name).toContain('/foil-ice.svg');
+          expect(card.foil.filter, name).toContain('brightness(0.85)');
+          expect(card.glitter.image, name).toContain('/foil-ice.svg');
+          expect(card.glitter.image, name).not.toContain('/foil-glitter.svg');
+          break;
+        default:
+          throw new Error(`${name} has no known finish`);
+      }
+    }
+    expect(Object.keys(reached).sort()).toEqual([
+      'galaxy',
+      'gold',
+      'holo',
+      'ice',
+      'reverse',
+    ]);
+    expect(cards.length).toBe(
+      Object.values(reached).reduce((sum, count) => sum + count, 0),
+    );
+  });
+
+  test('with forced colours no finish is drawn, and a reverse card’s tile is a plain panel', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ forcedColors: 'active' });
+    await ready(page);
+    const cards = await drawn(page);
+    const finishes = new Set<string>();
+    for (const card of cards) {
+      finishes.add(card.finish);
+      const name = `${card.id} (${card.finish})`;
+      expect(card.foil.display, name).toBe('none');
+      expect(card.wash.display, name).toBe('none');
+      expect(card.glitter.display, name).toBe('none');
+      expect(card.front.image, name).toBe('none');
+    }
+    expect(finishes.size).toBe(5);
+  });
+
+  test('each finish shows a little at rest and all of it under a mouse, with the lift', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ready(page);
+    const rest = await page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--share-foil-rest',
+        ),
+      ),
+    );
+    expect(rest).toBeGreaterThan(0);
+    const onOf = (card: Locator) =>
+      card.evaluate((el) =>
+        parseFloat(getComputedStyle(el).getPropertyValue('--foil-on')),
+      );
+    let reached = 0;
+    for (const id of [
+      'aquaclysm',
+      'ooergolf',
+      'chopdrop',
+      'fruit-machine',
+      'chess',
+    ]) {
+      const card = page.locator(`li.card[data-entry="${id}"]`).first();
+      await card.evaluate((el) =>
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        }),
+      );
+      await page.mouse.move(2, 2);
+      expect(await onOf(card), id).toBeCloseTo(rest, 5);
+      const box = await card.locator('.front .card-title').boundingBox();
+      if (box === null) throw new Error('the title is not drawn');
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await expect.poll(() => onOf(card), id).toBe(1);
+      expect(
+        parseFloat(
+          await card
+            .locator('.card-faces')
+            .evaluate((el) => getComputedStyle(el).scale),
+        ),
+        id,
+      ).toBeGreaterThan(1);
+      expect(
+        await card
+          .locator('.front')
+          .evaluate((el) => getComputedStyle(el).boxShadow),
+        id,
+      ).not.toBe('none');
+      reached += 1;
+    }
+    expect(reached).toBe(5);
+  });
+
+  test('every card has the same border, under a mouse and at rest, whatever its finish', async ({
+    page,
+  }) => {
+    await ready(page);
+    const edges = await page.locator('li.card').evaluateAll((cards) =>
+      cards.map((card) => {
+        const style = getComputedStyle(card.querySelector('.front') as Element);
+        return `${style.borderTopWidth} ${style.borderTopStyle} ${style.borderTopColor}`;
+      }),
+    );
+    expect(edges.length).toBeGreaterThan(10);
+    expect(new Set(edges).size).toBe(1);
+  });
+});
+
+// The cracked-ice tile is the site's own small file, asked for from its own
+// address, and its bytes cross the wire once however many layers and cards
+// draw it.
+test('the cracked-ice tile is the site’s own file, sent once', async ({
+  page,
+}) => {
+  const network = await page.context().newCDPSession(page);
+  await network.send('Network.enable');
+  const asks = new Map<string, { url: string; wire: number }>();
+  network.on('Network.requestWillBeSent', (event) =>
+    asks.set(event.requestId, { url: event.request.url, wire: 0 }),
+  );
+  network.on('Network.loadingFinished', (event) => {
+    const ask = asks.get(event.requestId);
+    if (ask !== undefined) ask.wire = event.encodedDataLength;
+  });
+  await ready(page);
+  await page
+    .locator('li.card[data-finish="ice"]')
+    .first()
+    .evaluate((el) =>
+      el.scrollIntoView({ block: 'center', behavior: 'instant' }),
+    );
+  await frames(page, 6);
+  const mine = [...asks.values()].filter((ask) =>
+    ask.url.endsWith('/foil-ice.svg'),
+  );
+  expect(mine.length).toBeGreaterThan(0);
+  for (const ask of mine)
+    expect(new URL(ask.url).origin).toBe(new URL(page.url()).origin);
+  expect(mine.filter((ask) => ask.wire > 200).length).toBe(1);
 });

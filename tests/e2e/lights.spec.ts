@@ -293,6 +293,58 @@ test('with no preference the dim eases, so that the check above is not vacuous',
   );
 });
 
+// The finishes are pictures' layers, so they dim with the pictures: with a card
+// pointed at, the foil, the wash and the glitter of every other card in its row
+// are dimmed as its picture is, the finishes' own filters kept (the ice's and
+// the holo's), and the pointed card's are not. Words stay 7:1 (contrast.spec.ts
+// measures the page so, with a card hovered). The reverse holo has no such
+// layers, its sheen being the tile under the words, which is left as it is.
+test('hovering a card dims the other cards’ finishes in its row, and not its own', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await ready(page);
+  const row = page.locator('section.row').first();
+  const cards = row.locator('li.card');
+  // The first row: top picks (holo), gold, galaxy and reverse cards.
+  const finishes = await cards.evaluateAll((all) =>
+    all.map((card) => (card as HTMLElement).dataset['finish']),
+  );
+  expect(new Set(finishes).size).toBeGreaterThan(2);
+  const pointed = cards.nth(1);
+  await pointed.scrollIntoViewIfNeeded();
+  const box = await pointed.locator('.front .card-title').boundingBox();
+  if (box === null) throw new Error('the card is not drawn');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const dim = await dimmed(page);
+  const total = await cards.count();
+  let others = 0;
+  for (let at = 0; at < total; at += 1) {
+    const filters = await cards.nth(at).evaluate((el) => ({
+      foil: getComputedStyle(el.querySelector('.foil') as Element).filter,
+      wash: getComputedStyle(el.querySelector('.foil-wash') as Element).filter,
+      glitter: getComputedStyle(
+        el.querySelector('.front .frame') as Element,
+        '::before',
+      ).filter,
+      own: (el as HTMLElement).dataset['finish'],
+    }));
+    if (filters.own === 'reverse') continue;
+    if (at === 1) {
+      expect(filters.wash).toBe('none');
+      expect(filters.glitter).toBe('none');
+      expect(filters.foil).not.toContain(dim);
+      continue;
+    }
+    expect(filters.wash, `card ${at}`).toContain(dim);
+    expect(filters.glitter, `card ${at}`).toContain(dim);
+    expect(filters.foil, `card ${at}`).toContain(dim);
+    expect(filters.foil, `card ${at}`).toContain('contrast(');
+    others += 1;
+  }
+  expect(others).toBeGreaterThan(2);
+});
+
 test.describe('on a touch screen', () => {
   test.use({
     hasTouch: true,

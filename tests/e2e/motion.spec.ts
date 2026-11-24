@@ -151,16 +151,16 @@ test('with no preference the card settled on plays its loop, which eases into th
   ).not.toBe('0s');
 });
 
-// The best cards' shine (part 5 of plans/cards.md): its sheen and tilt ease only
+// Every card's shine (part 5 of plans/cards.md, then plans/foils.md): its sheen and tilt ease only
 // where motion is allowed, and with less motion asked for nothing about them has
 // a transition, so the walk above has reached them as well as passed them.
 for (const reducedMotion of ['reduce', 'no-preference'] as const) {
-  test(`with ${reducedMotion === 'reduce' ? 'reduced motion a best card’s sheen and tilt have no transition' : 'no preference a best card’s sheen and tilt ease'}`, async ({
+  test(`with ${reducedMotion === 'reduce' ? 'reduced motion every card’s sheen and tilt have no transition' : 'no preference every card’s sheen and tilt ease'}`, async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion });
     await page.goto('/');
-    const cards = page.locator('li.card[data-best]');
+    const cards = page.locator('li.card');
     expect(await cards.count()).toBeGreaterThan(0);
     let reached = 0;
     for (const card of await cards.all()) {

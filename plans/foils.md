@@ -102,7 +102,7 @@ green; pictures and recordings go to the owner after parts 1 and 4.
 - [x] 3. Tiers in the catalogue: `schema.ts`, `rows.ts` (`finish`, the four
       refusals), `Card.astro` (`data-finish`, layers on every card).
       `rows.test.ts`, `schema.test.ts`, `catalogue-file.test.ts`.
-- [ ] 4. The finishes in tokens and CSS, and their textures. `shine.spec.ts`
+- [x] 4. The finishes in tokens and CSS, and their textures. `shine.spec.ts`
       (each card carries its tier's finish and its layers; none on forced
       colours; still under reduced motion), `contrast.spec.ts` (words 7:1
       on every finish, reverse holo included), `motion.spec.ts`.

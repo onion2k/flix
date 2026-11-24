@@ -345,3 +345,133 @@ for (const width of WIDTHS) {
     });
   });
 }
+
+// A reverse holo card's sheen is the front's own background, under its label
+// and title, so the tokens' contrast says nothing and the text measure above,
+// which reads a flat colour, cannot see it. It is measured as drawn instead: at
+// full shine (a mouse on the card), with the light at the corners, the edges
+// and the middle, the words are hidden and the pixels they stand on are read,
+// and the brightest of them is the ground the words must hold 7:1 against.
+test.describe('a reverse holo card’s words, on its tile, as drawn', () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  const PLACES = [
+    [0, 0],
+    [1, 0],
+    [0.5, 0.5],
+    [0, 1],
+    [1, 1],
+    [0.3, 0.9],
+    [0.9, 0.3],
+  ] as const;
+
+  test('label and title are 7:1 or better against the brightest of their tile, the light anywhere, at full shine', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await page.evaluate(() => document.fonts.ready);
+    const cards = page.locator('li.card[data-finish="reverse"]');
+    expect(await cards.count()).toBeGreaterThan(5);
+    // The pixels are read in a blank page of their own: the site's policy
+    // does not allow a data: picture.
+    const reader = await page.context().newPage();
+    let measured = 0;
+    let worst = Infinity;
+    for (const at of [0, 1, 2]) {
+      const card = cards.nth(at);
+      await card.evaluate((el) =>
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        }),
+      );
+      const title = card.locator('.front .card-title');
+      const box = await title.boundingBox();
+      if (box === null) throw new Error('the title is not drawn');
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await expect
+        .poll(() =>
+          card.evaluate((el) =>
+            getComputedStyle(el).getPropertyValue('--foil-on'),
+          ),
+        )
+        .toBe('1');
+      for (const [x, y] of PLACES) {
+        await card.evaluate(
+          (el: HTMLElement, [x, y]) => {
+            el.style.setProperty('--shine-x', String(x));
+            el.style.setProperty('--shine-y', String(y));
+          },
+          [x, y],
+        );
+        for (const part of ['.label', '.card-title']) {
+          const words = card.locator(`.front ${part}`);
+          const colour = await words.evaluate(
+            (el) => getComputedStyle(el).color,
+          );
+          await words.evaluate((el) => (el.style.color = 'transparent'));
+          const shot = (await words.screenshot()).toString('base64');
+          await words.evaluate((el) => (el.style.color = ''));
+          const ratio = await reader.evaluate(
+            async ({ shot, colour }) => {
+              const luminance = (rgb: number[]): number =>
+                [0.2126, 0.7152, 0.0722].reduce((sum, weight, i) => {
+                  const v = (rgb[i] ?? 0) / 255;
+                  return (
+                    sum +
+                    weight *
+                      (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+                  );
+                }, 0);
+              const image = new Image();
+              image.src = `data:image/png;base64,${shot}`;
+              await image.decode();
+              const canvas = document.createElement('canvas');
+              canvas.width = image.width;
+              canvas.height = image.height;
+              const context = canvas.getContext('2d');
+              if (context === null) throw new Error('no canvas');
+              context.drawImage(image, 0, 0);
+              const { data } = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              let brightest = 0;
+              for (let i = 0; i < data.length; i += 4)
+                brightest = Math.max(
+                  brightest,
+                  luminance([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]),
+                );
+              const text = luminance(
+                colour.match(/[\d.]+/g)?.map(Number) ?? [],
+              );
+              return (text + 0.05) / (brightest + 0.05);
+            },
+            { shot, colour },
+          );
+          worst = Math.min(worst, ratio);
+          expect(
+            ratio,
+            `${await card.getAttribute('data-entry')} ${part} light at ${x},${y}`,
+          ).toBeGreaterThanOrEqual(7);
+          measured += 1;
+        }
+      }
+    }
+    await reader.close();
+    expect(measured).toBe(3 * PLACES.length * 2);
+    test.info().annotations.push({
+      type: 'measured',
+      description: `${measured} readings, worst ${worst.toFixed(2)}:1`,
+    });
+  });
+});

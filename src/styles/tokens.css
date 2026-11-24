@@ -182,9 +182,9 @@
    * The wash: the bright rainbow laid over the picture at the share below,
    * its angle turning and its place running as the pointer moves.
    *
-   * How much of all three shows: the rest share at rest, all of it while a
-   * mouse is on the card, which lifts toward the reader by the scale below
-   * with a shadow under it, and the touch share where nothing hovers. A card
+   * How much of all three shows: the rest share at rest, on every card and
+   * every screen, and all of it while a mouse is on the card, which lifts
+   * toward the reader by the scale below with a shadow under it. A card
    * tilts under a mouse as seen from the depth below (how far is MOST_TILT,
    * src/catalogue/shine.ts); the sheen and the tilt ease after the pointer
    * over the shine's time, the shine fades in and out over the fade's, and the
@@ -208,6 +208,7 @@
   --color-foil-light-mid: #777777;
   --color-foil-light-far: #111111;
   --image-foil-glitter: url('/foil-glitter.svg');
+  --image-foil-ice: url('/foil-ice.svg');
   --angle-foil-rainbow: 110deg;
   --angle-foil-bars: -55deg;
   --angle-foil-glitter: 125deg;
@@ -254,7 +255,6 @@
   --share-foil-wash-run: 200%;
   --share-foil-wash: 0.45;
   --share-foil-rest: 0.35;
-  --share-foil-touch: 0.75;
   --scale-foil-lift: 1.035;
   --size-foil-lift-drop: 18px;
   --size-foil-lift-blur: 30px;
@@ -264,6 +264,141 @@
   --duration-shine: 150ms;
   --duration-foil-fade: 320ms;
   --duration-foil-lift: 200ms;
+
+  /*
+   * The other finishes (plans/foils.md): every card has one, named by the
+   * catalogue and written on the card as data-finish, and the holo above is
+   * the top picks' own. Each of the others is the same three layers, the foil,
+   * the wash and the glitter, drawn from other values, and none carries a
+   * word or tells a control apart, so no contrast is asked of any of them but
+   * the reverse's, which is laid where words are and keeps them at 7:1.
+   *
+   * Gold glitter: a warm sheen of gold, from deep through amber to cream, over
+   * the picture (the wash, soft-lit), bars of pale gold dodged onto it (the
+   * foil), and the glitter file, larger and sparser than the holo's, tinted by
+   * four golds (the tint, run across by the holo's own shares).
+   */
+  --color-foil-gold-deep: #6b3e00;
+  --color-foil-gold-cream: #fff2c0;
+  --color-foil-gold-amber: #e09a00;
+  --color-foil-gold-mid: #ffcf6a;
+  --color-foil-gold-white: #fff7d6;
+  --color-foil-gold-dim: #776644;
+  --color-foil-gold-glare: #fff0c8;
+  --color-foil-gold-spark-a: #ffd24a;
+  --color-foil-gold-spark-b: #fff6d8;
+  --color-foil-gold-spark-c: #ffb400;
+  --color-foil-gold-spark-d: #ffe08a;
+  --angle-foil-gold-bars: 115deg;
+  --size-foil-gold-bar-stop: 7%;
+  --size-foil-gold-glitter: 180px;
+  --size-foil-gold-glitter-fine: 130px;
+  --share-foil-gold-wash: 0.9;
+  --share-foil-gold-dodge: 0.55;
+  --share-foil-gold-glare-near: 60%;
+  --share-foil-gold-glare-mid: 20%;
+  --share-foil-gold-mask-near: 85%;
+  --share-foil-gold-mask-mid: 45%;
+  --share-foil-gold-mask-far: 30%;
+  --size-foil-gold-mask-near: 30%;
+  --size-foil-gold-mask-mid: 70%;
+
+  /*
+   * Galaxy: a nebula of violet, sky and rose glowing on the picture (three
+   * soft pools of colour, each moved a little against the light, screened
+   * onto it), a deep blue-violet foil dodged over it, and stars: the glitter
+   * file at a large size in two depths, each moved by the light at its own
+   * rate, tinted pale blue. Each pool has its size, its place and how far
+   * the light moves it, across and down.
+   */
+  --color-foil-galaxy-indigo: #3b2a8a;
+  --color-foil-galaxy-blue: #1e6ad0;
+  --color-foil-galaxy-purple: #7a3aa8;
+  --color-foil-galaxy-cobalt: #2a4fb0;
+  --color-foil-galaxy-dim: #666666;
+  --color-foil-galaxy-frost-a: #eaf2ff;
+  --color-foil-galaxy-frost-b: #cfe0ff;
+  --color-foil-galaxy-glare: #dce6ff;
+  --angle-foil-galaxy: 140deg;
+  --angle-foil-galaxy-turn: 40deg;
+  --size-foil-nebula-1: 40% 55%;
+  --space-foil-nebula-1-x: 18%;
+  --space-foil-nebula-1-y: 30%;
+  --share-foil-nebula-1-run-x: 14%;
+  --share-foil-nebula-1-run-y: 10%;
+  --size-foil-nebula-2: 45% 50%;
+  --space-foil-nebula-2-x: 78%;
+  --space-foil-nebula-2-y: 62%;
+  --share-foil-nebula-2-run-x: 12%;
+  --share-foil-nebula-2-run-y: 8%;
+  --size-foil-nebula-3: 35% 40%;
+  --space-foil-nebula-3-x: 52%;
+  --space-foil-nebula-3-y: 95%;
+  --share-foil-nebula-3-run-x: 6%;
+  --share-foil-nebula-3-run-y: 12%;
+  --size-foil-galaxy-stars: 640px;
+  --size-foil-galaxy-stars-far: 1000px;
+  --size-foil-galaxy-stars-run: 150px;
+  --size-foil-galaxy-stars-run-far: 50px;
+  --space-foil-galaxy-stars-far-x: 90px;
+  --space-foil-galaxy-stars-far-y: 40px;
+  --share-foil-galaxy-wash: 0.5;
+  --share-foil-galaxy-dodge: 0.6;
+  --share-foil-galaxy-glare-near: 50%;
+  --share-foil-galaxy-glare-mid: 15%;
+  --share-foil-galaxy-mask-near: 80%;
+  --share-foil-galaxy-mask-mid: 67%;
+  --share-foil-galaxy-mask-far: 55%;
+  --size-foil-galaxy-mask-near: 40%;
+  --size-foil-galaxy-mask-mid: 70%;
+
+  /*
+   * Cracked ice: the picture seen through facets, a site file of triangles in
+   * six greys with pale cracks between (public/foil-ice.svg, made by
+   * tools/foil-ice.mjs), run a little against the light. The foil multiplies
+   * it with a rainbow and the light, dodged at the share below, and the
+   * glitter layer lays the cracks as light round the pointer only. Its filter
+   * is its own.
+   */
+  --size-foil-ice: 420px;
+  --size-foil-ice-run: 24px;
+  --brightness-foil-ice: 0.85;
+  --contrast-foil-ice: 1.4;
+  --share-foil-ice-wash: 0.35;
+  --share-foil-ice-dodge: 0.8;
+  --share-foil-ice-cracks: 0.4;
+  --share-foil-ice-glare-near: 55%;
+  --share-foil-ice-glare-mid: 15%;
+  --share-foil-ice-mask-near: 25%;
+  --share-foil-ice-mask-mid: 0%;
+  --size-foil-ice-mask-near: 20%;
+  --size-foil-ice-mask-mid: 45%;
+
+  /*
+   * Reverse holo, the common finish: the picture is left as it is, and the
+   * tile round it, where the label and title are, carries the sheen: a light
+   * where the pointer is, bars, and a rainbow, each laid over the panel as a
+   * share of its colour times how much of the shine shows, kept dark enough
+   * that every word on it stays 7:1 (the label's amber is the hardest: its
+   * ground may rise by about a fiftieth of a luminance, so the shares are
+   * small, and were set at the most that held, from the mock's) (tests/e2e/contrast.spec.ts measures it
+   * as drawn, with the light at several places). Only a card that flips has
+   * a tile: with script off the front is a plain panel.
+   */
+  --share-foil-reverse-light: 4%;
+  --size-foil-reverse-light: 45%;
+  --share-foil-reverse-bars: 2%;
+  --size-foil-reverse-bar-start: 9px;
+  --size-foil-reverse-bar-peak: 12px;
+  --size-foil-reverse-bar-end: 15px;
+  --size-foil-reverse-bar-period: 21px;
+  --size-foil-reverse-bars-run: 60px;
+  --size-foil-reverse-rainbow: 260%;
+  --share-foil-reverse-rose: 8%;
+  --share-foil-reverse-gold: 5%;
+  --share-foil-reverse-mint: 4%;
+  --share-foil-reverse-sky: 7%;
+  --share-foil-reverse-violet: 9%;
 }
 
 /*

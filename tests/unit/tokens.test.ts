@@ -59,4 +59,30 @@ describe('tokens.css foil colours', () => {
       expect(found[0], name).toMatch(/^#[0-9a-f]{6}$/);
     }
   });
+
+  it('has colours for each finish, gold, galaxy and ice', () => {
+    for (const finish of ['gold', 'galaxy']) {
+      expect(
+        names.filter((name) => name.startsWith(`--color-foil-${finish}-`))
+          .length,
+        finish,
+      ).toBeGreaterThanOrEqual(4);
+    }
+    // The ice and the reverse holo are drawn from the shared colours and a
+    // texture, a share and a size apiece, which are also said once.
+    for (const name of [
+      '--image-foil-ice',
+      '--share-foil-ice-dodge',
+      '--share-foil-reverse-light',
+      '--share-foil-reverse-rose',
+    ]) {
+      expect(declarations(name).length, name).toBe(1);
+    }
+    expect(declarations('--image-foil-ice')[0]).toBe("url('/foil-ice.svg')");
+  });
+
+  it('says no value of a foil token twice under two names that mean the same colour', () => {
+    const values = names.map((name) => declarations(name)[0]);
+    expect(new Set(values).size).toBe(values.length);
+  });
 });
