@@ -97,15 +97,14 @@ export async function darkestUnderWords(
 }
 
 /**
- * The darkest pixel of a face's tile, the whole of it but a few pixels in at
- * its edge: everything in the face is hidden while it is photographed.
+ * A photograph of a face's tile, the whole of it but a few pixels in at its
+ * edge: everything in the face is hidden while it is taken.
  */
-export async function darkestOfTile(
+export async function tileShot(
   page: Page,
-  reader: Page,
   face: Locator,
   inset = 4,
-): Promise<number> {
+): Promise<Buffer> {
   const box = await face.boundingBox();
   if (box === null) throw new Error('the face is not drawn');
   await face.evaluate((el) => {
@@ -124,7 +123,17 @@ export async function darkestOfTile(
     for (const child of el.children)
       (child as HTMLElement).style.visibility = '';
   });
-  return darkestOf(reader, shot);
+  return shot;
+}
+
+/** The luminance of the darkest pixel of a face's tile. */
+export async function darkestOfTile(
+  page: Page,
+  reader: Page,
+  face: Locator,
+  inset = 4,
+): Promise<number> {
+  return darkestOf(reader, await tileShot(page, face, inset));
 }
 
 /**

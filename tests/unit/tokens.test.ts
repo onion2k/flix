@@ -95,8 +95,11 @@ describe('tokens.css foil colours', () => {
 });
 
 describe('tokens.css foil files and tile', () => {
-  it('names the file the finishes draw from, and no glitter', () => {
+  it('names the two files the finishes draw from, and no glitter', () => {
     expect(declarations('--image-foil-ice')).toEqual(["url('/foil-ice.svg')"]);
+    expect(declarations('--image-foil-sparkle')).toEqual([
+      "url('/foil-sparkle.svg')",
+    ]);
     expect(tokens).not.toMatch(/glitter/i);
   });
 

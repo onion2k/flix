@@ -187,6 +187,7 @@
    * picture's thin ring are the ink at a share of itself.
    */
   --color-foil-glare: #ffffff;
+  --image-foil-sparkle: url('/foil-sparkle.svg');
   --color-foil-shade: #000000;
   --space-tile-inset: 7px;
   --share-tile-edge: 35%;
@@ -205,6 +206,59 @@
   --duration-shine: 150ms;
   --duration-foil-fade: 320ms;
   --duration-foil-lift: 200ms;
+
+  /*
+   * The sparkles, on every finish (public/foil-sparkle.svg, made by
+   * tools/foil-sparkle.mjs): the file's soft points are a mask, at two sizes
+   * and drifting a little against the light, and what shows through them is
+   * two sets of narrow bands of light, of the finish's two sparkle colours
+   * with white between, that sweep fast as the light moves, so that each point
+   * lights and fades. The mask is also faded away from the light, by the shares
+   * below. The bands are a gap, a rise to the core, a fall and a period (the
+   * first set, then the second), each set turned and run by the light by its
+   * own figures. Each finish sets its own sizes and strength (a share of the
+   * layer's opacity, which is that times how much of the shine shows): gold
+   * and galaxy the strongest, ice and the reverse a little less.
+   */
+  --angle-foil-spark-a: 62deg;
+  --size-foil-spark-a-gap: 10px;
+  --size-foil-spark-a-rise: 14px;
+  --size-foil-spark-a-core: 17px;
+  --size-foil-spark-a-fall: 20px;
+  --size-foil-spark-a-end: 24px;
+  --size-foil-spark-a-period: 34px;
+  --size-foil-spark-a-run-x: 520px;
+  --size-foil-spark-a-run-y: 300px;
+  --angle-foil-spark-b: -35deg;
+  --size-foil-spark-b-gap: 14px;
+  --size-foil-spark-b-rise: 18px;
+  --size-foil-spark-b-core: 21px;
+  --size-foil-spark-b-fall: 24px;
+  --size-foil-spark-b-end: 28px;
+  --size-foil-spark-b-period: 46px;
+  --size-foil-spark-b-run-x: -420px;
+  --size-foil-spark-b-run-y: 520px;
+  --share-foil-spark-mask-mid: 70%;
+  --share-foil-spark-mask-far: 30%;
+  --size-foil-spark-mask-mid: 35%;
+  --size-foil-spark: 320px;
+  --size-foil-spark-fine: 240px;
+  --size-foil-spark-run: -26px;
+  --size-foil-spark-fine-run: -12px;
+  --space-foil-spark-fine-x: 70px;
+  --space-foil-spark-fine-y: 40px;
+  --share-foil-spark: 1;
+  --size-foil-gold-spark: 240px;
+  --size-foil-gold-spark-fine: 200px;
+  --size-foil-galaxy-spark: 420px;
+  --size-foil-galaxy-spark-fine: 640px;
+  --share-foil-spark-ice: 0.6;
+  --share-foil-spark-reverse: 0.5;
+  --color-foil-gold-spark: #fff1b8;
+  --color-foil-gold-flake: #ffd24a;
+  --color-foil-galaxy-spark: #e6dcff;
+  --color-foil-ice-spark: #cfefff;
+  --color-foil-reverse-spark: #e8f0ff;
 
   /*
    * Holo, the top picks': a vivid rainbow of five pale stops and bars of
@@ -285,14 +339,27 @@
    * Cracked ice: silver shards, the site's own file of triangles in sixteen
    * greys (public/foil-ice.svg, made by tools/foil-ice.mjs) under an overlay
    * of the base at the share below, run a little against the light. The
-   * overlay is how light the darkest shard can be: at 88% of the base over
-   * black the ink holds 7:1 on it.
+   * overlay is how light the darkest shard can be: at 80% of the base over
+   * black the ink holds 7:1 on it. The lit shards: a uniform grey set by the
+   * light (the weights of its two places), differenced with the file, so that
+   * the shards of nearly that grey are black, inverted to white, given a hard
+   * contrast so that only those few stay, tinted (sepia, then a hue the light
+   * turns) and laid on with a screen, which only lightens: so a lit shard is
+   * never darker than the tile under it, and the words stay 7:1.
    */
-  --color-foil-ice-base: #b0bac6;
+  --color-foil-ice-base: #c4cfdb;
   --image-foil-ice: url('/foil-ice.svg');
-  --share-foil-ice-overlay: 88%;
+  --share-foil-ice-overlay: 80%;
   --size-foil-ice: 300px;
   --size-foil-ice-run: 18px;
+  --share-foil-ice-weight-x: 0.62;
+  --share-foil-ice-weight-y: 0.38;
+  --brightness-foil-ice-lit: 0.56;
+  --contrast-foil-ice-lit: 7;
+  --sepia-foil-ice-lit: 0.35;
+  --angle-foil-ice-lit-turn: 300deg;
+  --saturate-foil-ice-lit: 3;
+  --share-foil-ice-lit: 0.9;
 
   /*
    * Reverse holo, the common finish: silver with a softer rainbow of five
