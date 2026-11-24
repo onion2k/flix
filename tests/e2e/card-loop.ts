@@ -1,5 +1,6 @@
 // Brings a card's loop on, as a reader does: the first row is put in the middle
-// of the window, and the page's own settle time runs in real time until the
+// of the window, the mouse is put on its first card (at a desk only a card the
+// mouse is over, or that holds keyboard focus, plays), and the page's own settle time runs in real time until the
 // card it names shows its Pause button (and, unless the reader asked for less
 // motion, plays). For the specs that need a card loop to be there to hold the
 // page to something else (its ring, its contrast, axe, the policy); what plays
@@ -20,6 +21,16 @@ export async function centreFirstRow(page: Page): Promise<void> {
   });
 }
 
+/** Puts the mouse on the first card's picture, as a reader points at a card. */
+export async function pointAtFirstCard(page: Page): Promise<void> {
+  const box = await page
+    .locator('section.row li.card .frame')
+    .first()
+    .boundingBox();
+  if (box === null) throw new Error('no card');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+}
+
 /**
  * Settles on the first row and waits for the Pause button, and for the loop
  * to play where `playing` is asked. Gives back the card that holds them.
@@ -30,6 +41,7 @@ export async function settleOnFirstRow(
 ): Promise<Locator> {
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
   await centreFirstRow(page);
+  await pointAtFirstCard(page);
   const pause = page.locator('section.row button.card-pause');
   await expect(pause).toBeVisible();
   // The inner locator of `has` is read inside each card.

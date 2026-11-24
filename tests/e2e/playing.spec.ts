@@ -121,60 +121,97 @@ async function centreRow(page: Page, row: number): Promise<void> {
 }
 
 /** The card the rule names now, by its place among the page's cards, or -1. */
-function named(page: Page, pointed = -1): Promise<number> {
-  return page.evaluate((pointedAt) => {
-    const width = document.documentElement.clientWidth;
-    const height = document.documentElement.clientHeight;
-    const hero = document
-      .querySelector('section.feature:not([hidden]) .feature-frame')
-      ?.getBoundingClientRect();
-    if (hero !== undefined && hero.width * hero.height > 0) {
-      const across = Math.max(
-        0,
-        Math.min(hero.right, width) - Math.max(hero.left, 0),
-      );
-      const down = Math.max(
-        0,
-        Math.min(hero.bottom, height) - Math.max(hero.top, 0),
-      );
-      if ((across * down) / (hero.width * hero.height) > 0.5) return -1;
-    }
-    const cards = [...document.querySelectorAll<HTMLElement>('li.card')];
-    const able = cards.flatMap((card, at) => {
-      const image = card.querySelector<HTMLImageElement>('.frame img');
-      const box = card.querySelector('.frame')?.getBoundingClientRect();
-      const ok =
-        card.dataset['loop'] !== undefined &&
-        image !== null &&
-        image.complete &&
-        image.naturalWidth > 0 &&
-        !card.hasAttribute('data-flipped') &&
-        box !== undefined &&
-        box.left >= -1 &&
-        box.top >= -1 &&
-        box.right <= width + 1 &&
-        box.bottom <= height + 1;
-      if (!ok || box === undefined) return [];
-      return [
-        {
-          at,
-          distance: Math.hypot(
-            box.left + box.width / 2 - width / 2,
-            box.top + box.height / 2 - height / 2,
-          ),
-        },
-      ];
-    });
-    if (able.some((card) => card.at === pointedAt)) return pointedAt;
-    let best = -1;
-    let nearest = Infinity;
-    for (const card of able)
-      if (card.distance < nearest) {
-        nearest = card.distance;
-        best = card.at;
+function named(
+  page: Page,
+  pointed = -1,
+  nearestToo: boolean | null = null,
+): Promise<number> {
+  return page.evaluate(
+    ([pointedAt, nearestAsked]) => {
+      // A mouse names the card it means and no other plays; without one the
+      // nearest the window's centre does (unless a test asks for it either way).
+      const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
+      const nearestPlays = nearestAsked ?? !mouse;
+      const width = document.documentElement.clientWidth;
+      const height = document.documentElement.clientHeight;
+      const hero = document
+        .querySelector('section.feature:not([hidden]) .feature-frame')
+        ?.getBoundingClientRect();
+      if (hero !== undefined && hero.width * hero.height > 0) {
+        const across = Math.max(
+          0,
+          Math.min(hero.right, width) - Math.max(hero.left, 0),
+        );
+        const down = Math.max(
+          0,
+          Math.min(hero.bottom, height) - Math.max(hero.top, 0),
+        );
+        if ((across * down) / (hero.width * hero.height) > 0.5) return -1;
       }
-    return best;
-  }, pointed);
+      const cards = [...document.querySelectorAll<HTMLElement>('li.card')];
+      const able = cards.flatMap((card, at) => {
+        const image = card.querySelector<HTMLImageElement>('.frame img');
+        const box = card.querySelector('.frame')?.getBoundingClientRect();
+        const ok =
+          card.dataset['loop'] !== undefined &&
+          image !== null &&
+          image.complete &&
+          image.naturalWidth > 0 &&
+          !card.hasAttribute('data-flipped') &&
+          box !== undefined &&
+          box.left >= -1 &&
+          box.top >= -1 &&
+          box.right <= width + 1 &&
+          box.bottom <= height + 1;
+        if (!ok || box === undefined) return [];
+        return [
+          {
+            at,
+            distance: Math.hypot(
+              box.left + box.width / 2 - width / 2,
+              box.top + box.height / 2 - height / 2,
+            ),
+          },
+        ];
+      });
+      if (able.some((card) => card.at === pointedAt)) return pointedAt;
+      if (!nearestPlays) return -1;
+      let best = -1;
+      let nearest = Infinity;
+      for (const card of able)
+        if (card.distance < nearest) {
+          nearest = card.distance;
+          best = card.at;
+        }
+      return best;
+    },
+    [pointed, nearestToo] as const,
+  );
+}
+
+/**
+ * Puts a mouse on the first card of a row, as a reader points at one, and says
+ * its place among the page's cards. A page with no mouse (a touch screen) is
+ * left alone and the answer is -1: nothing is pointed there.
+ */
+async function pointAt(page: Page, row: number): Promise<number> {
+  const mouse = await page.evaluate(
+    () => matchMedia('(hover: hover) and (pointer: fine)').matches,
+  );
+  if (!mouse) return -1;
+  const card = page.locator('section.row').nth(row).locator('li.card').first();
+  const box = await card.locator('.frame').boundingBox();
+  if (box === null) throw new Error(`no card in row ${row}`);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  return page.evaluate(
+    (at) =>
+      [...document.querySelectorAll('li.card')].indexOf(
+        document
+          .querySelectorAll('section.row')
+          [at]?.querySelector('li.card') as Element,
+      ),
+    row,
+  );
 }
 
 /** The places among the page's cards of every card holding a video. */
@@ -215,14 +252,18 @@ async function rowArrived(page: Page, row: number): Promise<void> {
     .toBe(true);
 }
 
-/** Settles on a row: puts it in the middle, waits for its pictures, steps past the settle time. */
+/**
+ * Settles on a row: puts it in the middle, waits for its pictures, puts a mouse
+ * on its first card (where there is a mouse), steps past the settle time.
+ */
 async function settleOn(page: Page, row: number): Promise<number> {
   await centreRow(page, row);
   await rowArrived(page, row);
+  const at = await pointAt(page, row);
   // Arrival may come after the scroll: a frame to hear it, then the wait.
   await step(page, FRAME * 2);
   await step(page, SETTLE + FRAME * 4);
-  return named(page);
+  return named(page, at);
 }
 
 /** At most one video was ever in the rows. */
@@ -258,8 +299,9 @@ test.describe('at a desk’s width', () => {
     await open(page);
     await centreRow(page, 0);
     await rowArrived(page, 0);
-    const want = await named(page);
-    expect(want, 'a card qualifies').toBeGreaterThanOrEqual(0);
+    const at = await pointAt(page, 0);
+    const want = await named(page, at);
+    expect(want, 'the pointed card qualifies').toBe(at);
     // Short of the settle time nothing is asked for.
     await step(page, SETTLE - FRAME * 3);
     expect(asked, 'asked for before 600ms').toEqual([]);
@@ -297,6 +339,49 @@ test.describe('at a desk’s width', () => {
     await expect(pauseButton(page)).toHaveAccessibleName(
       'Pause the card videos',
     );
+    await oneAtMost(page);
+  });
+
+  test('with the mouse off the cards no card plays however long, though cards qualify', async ({
+    page,
+  }) => {
+    const asked = watchLoops(page);
+    await open(page);
+    await centreRow(page, 0);
+    await rowArrived(page, 0);
+    await page.mouse.move(2, 2);
+    expect(
+      await named(page, -1, true),
+      'cards qualify, and the nearest would play on a touch screen',
+    ).toBeGreaterThanOrEqual(0);
+    expect(await named(page), 'but with a mouse none is named').toBe(-1);
+    await step(page, SETTLE * 6);
+    await expect(videoIn(page)).toHaveCount(0);
+    await expect(pauseButton(page)).toHaveCount(0);
+    expect(asked).toEqual([]);
+    expect((await seen(page)).made).toEqual([]);
+  });
+
+  test('the mouse leaving the playing card takes its loop down at once, and nothing else starts', async ({
+    page,
+  }) => {
+    const asked = watchLoops(page);
+    await open(page);
+    const first = await settleOn(page, 0);
+    expect(await playingAt(page)).toEqual([first]);
+    await page.mouse.move(2, 2);
+    await step(page, FRAME * 2);
+    await expect(videoIn(page)).toHaveCount(0);
+    await expect(pauseButton(page)).toHaveCount(0);
+    await step(page, SETTLE * 3);
+    await expect(videoIn(page)).toHaveCount(0);
+    expect(asked).toHaveLength(1);
+    // Back on a card, it plays again after the settle time and not before.
+    await pointAt(page, 0);
+    await step(page, SETTLE - FRAME * 3);
+    await expect(videoIn(page)).toHaveCount(0);
+    await step(page, FRAME * 8);
+    expect(await playingAt(page)).toEqual([first]);
     await oneAtMost(page);
   });
 
@@ -354,13 +439,22 @@ test.describe('at a desk’s width', () => {
     await oneAtMost(page);
   });
 
-  test('keyboard focus takes it over the same way; Pause is the Tab stop after its card’s flip button', async ({
+  test('keyboard focus plays a card with the mouse nowhere, and takes over the same way; Pause is the Tab stop after its card’s flip button', async ({
     page,
   }) => {
     await open(page);
     const first = await settleOn(page, 0);
     expect(await playingAt(page)).toEqual([first]);
+    // The mouse goes, and its loop with it; keyboard focus brings one back.
+    await page.mouse.move(2, 2);
+    await step(page, FRAME * 2);
+    expect(await playingAt(page)).toEqual([]);
     await cardAt(page, first).locator('button.card-flip').focus();
+    expect(await named(page, first), 'the focused card qualifies').toBe(first);
+    await step(page, SETTLE - FRAME * 3);
+    expect(await playingAt(page)).toEqual([]);
+    await step(page, FRAME * 8);
+    expect(await playingAt(page)).toEqual([first]);
     await page.keyboard.press('Tab');
     expect(
       await page.evaluate(() => document.activeElement?.className),
@@ -422,6 +516,10 @@ test.describe('at a desk’s width', () => {
   test('a press on Pause does not flip its card', async ({ page }) => {
     await open(page);
     const first = await settleOn(page, 0);
+    // The mouse is on a card that lifts under it: let it come to rest, as the
+    // other Pause tests do by waiting for the loop, so that the click is not
+    // made on a button still moving.
+    await expect.poll(() => isPlaying(videoIn(page))).toBe(true);
     await pauseButton(page).click();
     await step(page, FRAME * 2);
     await expect(cardAt(page, first)).not.toHaveAttribute('data-flipped');
@@ -556,16 +654,17 @@ test.describe('at a desk’s width', () => {
       await route.continue().catch(() => undefined);
     });
     await centreRow(page, 2);
+    const at = await pointAt(page, 2);
     await expect.poll(() => waiting.length).toBeGreaterThan(0);
     await step(page, SETTLE * 2);
-    expect(await named(page), 'nothing qualifies while it waits').toBe(-1);
+    expect(await named(page, at), 'nothing qualifies while it waits').toBe(-1);
     expect(await playingAt(page)).toEqual([]);
     released = true;
     for (const done of waiting) done();
     await rowArrived(page, 2);
     await step(page, FRAME * 2);
-    const want = await named(page);
-    expect(want).toBeGreaterThanOrEqual(0);
+    const want = await named(page, at);
+    expect(want, 'the pointed card, its picture come').toBe(at);
     await step(page, SETTLE + FRAME * 4);
     expect(await playingAt(page)).toEqual([want]);
   });
@@ -705,8 +804,18 @@ test.describe('a card playing where an arrow press left it', () => {
       presses += 1;
       expect(presses, 'presses along row one').toBeLessThan(10);
       await untilScrolled(list, () => ahead.click());
+      await step(page, FRAME * 2);
+      // The press leaves the mouse on the arrow: it is put on the card the
+      // nearest-the-middle rule finds wholly in the window.
+      const rest = await named(page, -1, true);
+      if (rest < 0) continue;
+      const box = await cardAt(page, rest).locator('.frame').boundingBox();
+      await page.mouse.move(
+        (box?.x ?? 0) + (box?.width ?? 0) / 2,
+        (box?.y ?? 0) + (box?.height ?? 0) / 2,
+      );
       await step(page, SETTLE + FRAME * 6);
-      want = await named(page);
+      want = await named(page, rest);
     }
     expect(
       want,

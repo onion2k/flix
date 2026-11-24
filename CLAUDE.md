@@ -88,8 +88,9 @@ commit of its own that says what it is for.
   flipped next, which was turned back, and where focus goes. `playing.ts`
   says which card's loop plays (`inFocus`: one with a loop, its picture
   arrived, its frame wholly in the window and its front showing; the
-  pointed or focused card first, else the nearest the window's centre; none
-  while more than half the hero's frame shows) and when (`settled`,
+  pointed or focused card first; failing that, with no mouse (`nearest`, the
+  default), the nearest the window's centre, and with one none; none while
+  more than half the hero's frame shows) and when (`settled`,
   `SETTLE_MS`, time handed in). `shine.ts` says where a card's sheen is
   and how far it tilts (`MOST_TILT`), under a mouse or from its place in the
   window. `today.ts` says which candidate is the day's feature, from a
@@ -207,6 +208,10 @@ commit of its own that says what it is for.
   `playsinline`, `aria-hidden`), made with its `src` from the card's
   `data-loop` when the card is settled on (the first any browser hears of
   it) and taken down when another takes over or its card stops qualifying.
+  **With a mouse (hover and fine pointer) only the card it is over, or that
+  holds keyboard focus, plays:** with the mouse on no card none does, and a
+  loop goes when the mouse leaves its card; with no mouse (a touch screen)
+  the card nearest the window's middle plays. Both wait out the settle.
   Whether it plays, waits for Play or is never offered is `heroStart`'s,
   from `asked.ts`. The one Pause button (`button.card-pause` in a
   `.card-pause-place` laid over the picture) is made by script and moved
@@ -375,8 +380,8 @@ it finds there. The page is the same on every load: it has no chance.
 What is in the accessibility tree is asked of the browser's own tree over
 the DevTools protocol (`tests/e2e/tree.ts`), since Playwright's reading of
 roles counts an `inert` face as there. `tests/e2e/card-loop.ts` brings a
-card loop on in real time (the first row centred, the settle waited out)
-for the specs that need one there; `playing.spec.ts` and `flip.spec.ts`
+card loop on in real time (the first row centred, the mouse put on its first
+card, the settle waited out) for the specs that need one there; `playing.spec.ts` and `flip.spec.ts`
 step the clock instead, as below. `moving.spec.ts` stands a gamepad in with
 `addInitScript` (`navigator.getGamepads` returns what the test sets on
 `window.__pad`: standard mapping, 17 buttons, 4 axes, and a count of
@@ -429,8 +434,9 @@ Every new thing is taken through each of these that it can reach.
   tree; one size flipped or not, at a desk and a phone; reduced motion (the
   faces swap at once); a late card before and after its picture; text
   spacing with a card flipped; script off (no flip, one link).
-- The card most in focus playing: none while the hero's half shows, none
-  short of the settle, none for a flipped card or one whose picture has not
+- The card most in focus playing: with a mouse, only the card it is over (or
+  that holds focus) and none with it on no card; the nearest the middle with
+  no mouse; none while the hero's half shows, none short of the settle, none for a flipped card or one whose picture has not
   come; mouse and focus taking over; Pause holding every card for the visit
   and Play; reduced motion (Play, fetched on press), Save-Data (nothing), a
   loop that fails, a late row, a touch screen, script off.
@@ -492,7 +498,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`;      |
 |                                     | `trim`, every rest of every width 341 to 2600           |
 | `tests/unit/flipping.test.ts`       | every press from every state: flipped, focus            |
-| `tests/unit/playing.test.ts`        | which card plays or shines, the hero's half, the settle |
+| `tests/unit/playing.test.ts`        | which card plays or shines, mouse or none, hero's half  |
 | `tests/unit/shine.test.ts`          | the sheen's place and the tilt, clamped; at rest        |
 | `tests/unit/hero.test.ts`           | the start rule, every case; both buttons' words         |
 | `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry        |
@@ -534,7 +540,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip         |
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour       |
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size        |
-| `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not       |
+| `tests/e2e/playing.spec.ts`         | the pointed card plays, stepped; Pause; when not        |
 | `tests/e2e/shine.spec.ts`           | each finish's tile, rest and mouse, forced colours;     |
 |                                     | nothing over a picture (its pixels the same); the       |
 |                                     | sheen and tilt under a mouse; touch: one card in focus; |

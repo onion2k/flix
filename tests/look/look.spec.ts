@@ -402,8 +402,10 @@ test('the top of the home page at 1440 with the hero’s loop held at 2.0 second
 // playing loop is a different frame every time, so it is held as the hero's
 // is: paused by the reader's own control, set to 2.0 seconds and waited for to
 // have drawn that frame (`seeked`), and the button therefore shows its play
-// mark, which is what a held card loop shows. The mouse is off the row, so that
-// no card is hovered and none of the others is dimmed.
+// mark, which is what a held card loop shows. At a desk only the card a mouse
+// is over plays, so the mouse is on the first card, and stays on it (on its
+// Pause button, which is in it) for the picture: that card is hovered, and the
+// others in its row are dimmed, as a reader pointing at it sees it.
 for (const [width, height] of [
   [1440, 1000],
   [390, 844],
@@ -428,7 +430,12 @@ for (const [width, height] of [
         behavior: 'instant',
       });
     });
-    await page.mouse.move(2, 2);
+    const frame = await row.locator('li.card .frame').first().boundingBox();
+    if (frame === null) throw new Error('no card');
+    await page.mouse.move(
+      frame.x + frame.width / 2,
+      frame.y + frame.height / 2,
+    );
     const video = row.locator('video');
     await expect(video).toHaveCount(1);
     await expect
@@ -440,7 +447,6 @@ for (const [width, height] of [
       .toBe(true);
     const pause = row.locator('button.card-pause');
     await pause.click();
-    await page.mouse.move(2, 2);
     await video.evaluate(async (el: HTMLVideoElement) => {
       const seeked = new Promise((done) =>
         el.addEventListener('seeked', done, { once: true }),

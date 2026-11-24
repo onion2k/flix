@@ -94,6 +94,7 @@ if (start !== 'still') {
   let frame: number | null = null;
   let mouse: HTMLElement | null = null;
   let focused: HTMLElement | null = null;
+  const pointer = matchMedia('(hover: hover) and (pointer: fine)');
 
   /** Says what pressing the button will do: its mark and its name. */
   const say = (playing: boolean): void => {
@@ -196,6 +197,9 @@ if (start !== 'still') {
           window_,
           heroBox(),
           pointed === null ? null : String(cards.indexOf(pointed)),
+          // A mouse names the card it means and no other plays; a touch
+          // screen has no pointer, so the card in the window's middle does.
+          !pointer.matches,
         );
     const want = id === null ? null : (cards[Number(id)] ?? null);
     // A card that may no longer play stops at once; one that still may waits
@@ -248,7 +252,6 @@ if (start !== 'still') {
 
   // Only a mouse points: a touch screen's hover sticks after a tap, and the
   // card in the window's middle is the one in focus there.
-  const pointer = matchMedia('(hover: hover) and (pointer: fine)');
   for (const card of cards) {
     card.addEventListener('pointerenter', (event) => {
       if (event.pointerType !== 'mouse' || !pointer.matches) return;

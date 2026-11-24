@@ -93,28 +93,33 @@ export function heroHolds(hero: Box | null, window: Window): boolean {
 /**
  * The card whose loop should play, or null for none. None while the hero
  * holds. Otherwise the pointed card (a mouse on it, or keyboard focus in it)
- * where it qualifies, and failing that the qualifying card whose picture's
- * centre is nearest the window's, the earlier in the page on a tie.
+ * where it qualifies. Failing that, where `nearest` is true (the default: a
+ * touch screen, which has no pointer to name a card), the qualifying card whose
+ * picture's centre is nearest the window's, the earlier in the page on a tie;
+ * where it is false (a mouse, which says what it means), none: a card the
+ * mouse is not over does not play, and nor does another for one that cannot.
  */
 export function inFocus(
   cards: readonly PlayCard[],
   window: Window,
   hero: Box | null,
   pointed: string | null,
+  nearest = true,
 ): string | null {
   if (heroHolds(hero, window)) return null;
   const able = cards.filter((card) => qualifies(card, window));
   const chosen = able.find((card) => card.id === pointed);
   if (chosen !== undefined) return chosen.id;
+  if (!nearest) return null;
   let best: string | null = null;
-  let nearest = Number.POSITIVE_INFINITY;
+  let least = Number.POSITIVE_INFINITY;
   for (const card of able) {
     const x = (card.frame.left + card.frame.right) / 2 - window.width / 2;
     const y = (card.frame.top + card.frame.bottom) / 2 - window.height / 2;
     const distance = Math.hypot(x, y);
     // Strictly nearer, so that on a tie the earlier card stands.
-    if (distance < nearest) {
-      nearest = distance;
+    if (distance < least) {
+      least = distance;
       best = card.id;
     }
   }

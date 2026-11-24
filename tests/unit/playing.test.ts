@@ -186,6 +186,59 @@ describe('inFocus', () => {
   });
 });
 
+describe('inFocus, with a mouse (nothing nearest)', () => {
+  const ask = (
+    cards: PlayCard[],
+    pointed: string | null,
+    heroBox: Box | null = null,
+  ) => inFocus(cards, window_, heroBox, pointed, false);
+  const row = () => [
+    card('a', 20, 400),
+    card('b', 520, 400),
+    card('c', 1000, 400),
+  ];
+
+  it('names the pointed card where it qualifies, wherever it is', () => {
+    expect(ask(row(), 'a')).toBe('a');
+    expect(ask(row(), 'c')).toBe('c');
+  });
+
+  it('names none with nobody pointed, though cards qualify and one is nearest the middle', () => {
+    expect(inFocus(row(), window_, null, null, true)).toBe('b');
+    expect(ask(row(), null)).toBeNull();
+  });
+
+  it('names none, and no other card, when the pointed card does not qualify', () => {
+    const faults = [
+      { flipped: true },
+      { hasLoop: false },
+      { arrived: false },
+    ] as const;
+    expect(faults).toHaveLength(3);
+    for (const fault of faults)
+      expect(
+        ask([card('a', 20, 400), card('b', 520, 400, fault)], 'b'),
+        JSON.stringify(fault),
+      ).toBeNull();
+  });
+
+  it('names none for a card cut off at the window’s edge, or a name that is no card', () => {
+    expect(ask([card('a', 20, 400), card('b', -50, 400)], 'b')).toBeNull();
+    expect(ask(row(), 'nowhere')).toBeNull();
+  });
+
+  it('names none while more than half of the hero is in the window, pointed or not', () => {
+    const cards = [card('a', 20, 600), card('b', 520, 600)];
+    expect(ask(cards, 'a', hero(301))).toBeNull();
+    expect(ask(cards, 'a', hero(300))).toBe('a');
+    expect(ask(cards, null, hero(300))).toBeNull();
+  });
+
+  it('names none for no cards', () => {
+    expect(ask([], 'a')).toBeNull();
+  });
+});
+
 describe('settled', () => {
   it('is 600ms, said once', () => {
     expect(SETTLE_MS).toBe(600);
