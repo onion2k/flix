@@ -1261,18 +1261,18 @@ p {
   opacity: calc(var(--share-foil-galaxy-dodge) * var(--foil-on));
 }
 
-/* Cracked ice: facets of the picture lit in the rainbow, each of a different
-   strength, and the cracks between them catching the light. */
+/* Cracked ice: facets of the picture, each of a different strength, lit in the
+   rainbow where the picture is dark (the foil, dodged) and darkened where it is
+   light (the wash, multiplied: a dodge takes a light picture to white, which
+   gave the facets nothing to show), and the cracks between them catching the
+   light. */
 .card[data-finish='ice'] .foil-wash {
-  background-image: linear-gradient(
-    calc(var(--angle-foil-wash) + var(--shine-x) * var(--angle-foil-wash-turn)),
-    var(--color-foil-pale-sky),
-    var(--color-foil-pale-violet),
-    var(--color-foil-glare),
-    var(--color-foil-pale-green),
-    var(--color-foil-pale-sky)
-  );
-  opacity: calc(var(--share-foil-ice-wash) * var(--foil-on));
+  background-image: var(--image-foil-ice);
+  background-size: var(--size-foil-ice) var(--size-foil-ice);
+  background-position: calc(var(--shine-x) * var(--size-foil-ice-run) * -1)
+    calc(var(--shine-y) * var(--size-foil-ice-run) * -1);
+  mix-blend-mode: multiply;
+  opacity: calc(var(--share-foil-ice-facets) * var(--foil-on));
 }
 
 .card[data-finish='ice'] .foil {
@@ -1405,38 +1405,38 @@ p {
       ),
       color-mix(
         in srgb,
-        var(--color-foil-rose)
-          calc(var(--share-foil-reverse-rose) * var(--foil-on)),
+        var(--color-foil-deep-rose)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       ),
       color-mix(
         in srgb,
-        var(--color-foil-gold)
-          calc(var(--share-foil-reverse-gold) * var(--foil-on)),
+        var(--color-foil-deep-amber)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       ),
       color-mix(
         in srgb,
-        var(--color-foil-mint)
-          calc(var(--share-foil-reverse-mint) * var(--foil-on)),
+        var(--color-foil-deep-teal)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       ),
       color-mix(
         in srgb,
-        var(--color-foil-sky)
-          calc(var(--share-foil-reverse-sky) * var(--foil-on)),
+        var(--color-foil-deep-sky)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       ),
       color-mix(
         in srgb,
-        var(--color-foil-violet)
-          calc(var(--share-foil-reverse-violet) * var(--foil-on)),
+        var(--color-foil-deep-violet)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       ),
       color-mix(
         in srgb,
-        var(--color-foil-rose)
-          calc(var(--share-foil-reverse-rose) * var(--foil-on)),
+        var(--color-foil-deep-rose)
+          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
         transparent
       )
     );

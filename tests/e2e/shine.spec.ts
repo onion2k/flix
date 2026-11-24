@@ -1032,6 +1032,8 @@ test.describe('every finish draws its own layers', () => {
           break;
         case 'ice':
           expect(card.foil.image, name).toContain('/foil-ice.svg');
+          expect(card.wash.blend, name).toBe('multiply');
+          expect(card.wash.image, name).toContain('/foil-ice.svg');
           expect(card.foil.filter, name).toContain('brightness(0.85)');
           expect(card.glitter.image, name).toContain('/foil-ice.svg');
           expect(card.glitter.image, name).not.toContain('/foil-glitter.svg');
@@ -1126,6 +1128,121 @@ test.describe('every finish draws its own layers', () => {
       reached += 1;
     }
     expect(reached).toBe(5);
+  });
+
+  // Cracked ice on a light picture: a dodge takes a light picture to white
+  // (Coinpusher's, a pale one, was white over a fifth of its frame under a
+  // mouse), so under a mouse at full the share of the frame's pixels at or
+  // near pure white must stay small, and its facets must still be readable, a
+  // spread of grey the picture alone does not have. The pixels are read in a
+  // blank page, since the site's policy does not allow a data: picture. The
+  // light is put at three places by hand, since only the top picks' sheen is
+  // moved by the pointer until the shine drives every card.
+  test('cracked ice keeps a light picture: under a mouse, little of its frame goes white and its facets show', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ready(page);
+    const reader = await page.context().newPage();
+    // The share of the frame at or near white, and how far it is from the
+    // picture alone, in grey levels (the facets showing is the frame no longer
+    // being the picture's own).
+    const read = async (shot: Buffer, base: Buffer) =>
+      reader.evaluate(
+        async ([shot, base]) => {
+          const pixels = async (b64: string) => {
+            const image = new Image();
+            image.src = `data:image/png;base64,${b64}`;
+            await image.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext('2d');
+            if (context === null) throw new Error('no canvas');
+            context.drawImage(image, 0, 0);
+            return context.getImageData(0, 0, canvas.width, canvas.height).data;
+          };
+          const [now, then] = [
+            await pixels(shot ?? ''),
+            await pixels(base ?? ''),
+          ];
+          let white = 0;
+          let away = 0;
+          for (let i = 0; i < now.length; i += 4) {
+            const [r, g, b] = [now[i] ?? 0, now[i + 1] ?? 0, now[i + 2] ?? 0];
+            if (Math.min(r, g, b) >= 245) white += 1;
+            const grey = (r: number, g: number, b: number) =>
+              0.2126 * r + 0.7152 * g + 0.0722 * b;
+            away += Math.abs(
+              grey(r, g, b) -
+                grey(then[i] ?? 0, then[i + 1] ?? 0, then[i + 2] ?? 0),
+            );
+          }
+          const count = now.length / 4;
+          return { white: white / count, away: away / count };
+        },
+        [shot.toString('base64'), base.toString('base64')],
+      );
+    const card = page.locator('li.card[data-entry="coinpusher"]').first();
+    expect(await card.getAttribute('data-finish')).toBe('ice');
+    await card.evaluate((el) =>
+      el.scrollIntoView({
+        block: 'center',
+        inline: 'center',
+        behavior: 'instant',
+      }),
+    );
+    const frame = card.locator('.front .frame');
+    await page.mouse.move(2, 2);
+    // The picture alone: none of the shine shown, whatever the mouse does.
+    await card.evaluate((el: HTMLElement) =>
+      el.style.setProperty('--foil-on', '0'),
+    );
+    const plain = await frame.screenshot();
+    await card.evaluate((el: HTMLElement) =>
+      el.style.removeProperty('--foil-on'),
+    );
+    const title = await card.locator('.front .card-title').boundingBox();
+    if (title === null) throw new Error('the title is not drawn');
+    await page.mouse.move(
+      title.x + title.width / 2,
+      title.y + title.height / 2,
+    );
+    await expect
+      .poll(() =>
+        card.evaluate((el) =>
+          getComputedStyle(el).getPropertyValue('--foil-on'),
+        ),
+      )
+      .toBe('1');
+    const seen: string[] = [];
+    let reached = 0;
+    for (const [x, y] of [
+      [0.2, 0.2],
+      [0.5, 0.5],
+      [0.8, 0.5],
+    ] as const) {
+      await card.evaluate(
+        (el: HTMLElement, [x, y]) => {
+          el.style.setProperty('--shine-x', String(x));
+          el.style.setProperty('--shine-y', String(y));
+        },
+        [x, y],
+      );
+      const drawn = await read(await frame.screenshot(), plain);
+      seen.push(
+        `${x},${y}: ${drawn.white.toFixed(3)} white, ${drawn.away.toFixed(1)} grey levels from the picture`,
+      );
+      expect(drawn.white, `light at ${x},${y}`).toBeLessThan(0.05);
+      expect(drawn.away, `light at ${x},${y}`).toBeGreaterThan(20);
+      reached += 1;
+    }
+    await reader.close();
+    expect(reached).toBe(3);
+    test.info().annotations.push({
+      type: 'measured',
+      description: seen.join('; '),
+    });
   });
 
   test('every card has the same border, under a mouse and at rest, whatever its finish', async ({

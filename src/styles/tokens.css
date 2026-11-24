@@ -205,6 +205,11 @@
   --color-foil-pale-violet: #b4a8ff;
   --color-foil-bar-dark: #222222;
   --color-foil-bar-light: #ddffee;
+  --color-foil-deep-rose: #5c0f2e;
+  --color-foil-deep-amber: #5a1e00;
+  --color-foil-deep-teal: #003826;
+  --color-foil-deep-sky: #002a5a;
+  --color-foil-deep-violet: #30106a;
   --color-foil-light-mid: #777777;
   --color-foil-light-far: #111111;
   --image-foil-glitter: url('/foil-glitter.svg');
@@ -356,16 +361,19 @@
    * Cracked ice: the picture seen through facets, a site file of triangles in
    * six greys with pale cracks between (public/foil-ice.svg, made by
    * tools/foil-ice.mjs), run a little against the light. The foil multiplies
-   * it with a rainbow and the light, dodged at the share below, and the
-   * glitter layer lays the cracks as light round the pointer only. Its filter
-   * is its own.
+   * it with a rainbow and the light, dodged at the share below (which lights a
+   * dark picture and would take a light one, such as Coinpusher, to white, so
+   * the share is small), the wash multiplies the file itself onto the picture
+   * at the facets share (which shows its facets on a light picture), and the
+   * glitter layer lays the cracks as light round the pointer only. The
+   * foil's filter is its own.
    */
   --size-foil-ice: 420px;
   --size-foil-ice-run: 24px;
   --brightness-foil-ice: 0.85;
   --contrast-foil-ice: 1.4;
-  --share-foil-ice-wash: 0.35;
-  --share-foil-ice-dodge: 0.8;
+  --share-foil-ice-facets: 0.3;
+  --share-foil-ice-dodge: 0.4;
   --share-foil-ice-cracks: 0.4;
   --share-foil-ice-glare-near: 55%;
   --share-foil-ice-glare-mid: 15%;
@@ -376,29 +384,26 @@
 
   /*
    * Reverse holo, the common finish: the picture is left as it is, and the
-   * tile round it, where the label and title are, carries the sheen: a light
-   * where the pointer is, bars, and a rainbow, each laid over the panel as a
-   * share of its colour times how much of the shine shows, kept dark enough
-   * that every word on it stays 7:1 (the label's amber is the hardest: its
-   * ground may rise by about a fiftieth of a luminance, so the shares are
-   * small, and were set at the most that held, from the mock's) (tests/e2e/contrast.spec.ts measures it
-   * as drawn, with the light at several places). Only a card that flips has
-   * a tile: with script off the front is a plain panel.
+   * tile round it, where the label and title are, carries the sheen: an
+   * iridescent dark foil of five deep hues (their luminance is under what the
+   * label's amber allows its ground, about 0.036, the panel being 0.016),
+   * run across the tile as the light moves and laid over the panel at the hues
+   * share times how much of the shine shows, with a small share of light where
+   * the pointer is and of bars. Every word on it stays 7:1 (the contrast spec
+   * measures it as drawn, with the light at several places); light and bars
+   * are the shares that lighten the ground, and so are small. Only a card
+   * that flips has a tile: with script off the front is a plain panel.
    */
-  --share-foil-reverse-light: 4%;
+  --share-foil-reverse-light: 2%;
   --size-foil-reverse-light: 45%;
-  --share-foil-reverse-bars: 2%;
+  --share-foil-reverse-hues: 80%;
+  --share-foil-reverse-bars: 1%;
   --size-foil-reverse-bar-start: 9px;
   --size-foil-reverse-bar-peak: 12px;
   --size-foil-reverse-bar-end: 15px;
   --size-foil-reverse-bar-period: 21px;
   --size-foil-reverse-bars-run: 60px;
   --size-foil-reverse-rainbow: 260%;
-  --share-foil-reverse-rose: 8%;
-  --share-foil-reverse-gold: 5%;
-  --share-foil-reverse-mint: 4%;
-  --share-foil-reverse-sky: 7%;
-  --share-foil-reverse-violet: 9%;
 }
 
 /*

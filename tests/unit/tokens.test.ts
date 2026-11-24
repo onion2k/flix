@@ -74,7 +74,8 @@ describe('tokens.css foil colours', () => {
       '--image-foil-ice',
       '--share-foil-ice-dodge',
       '--share-foil-reverse-light',
-      '--share-foil-reverse-rose',
+      '--share-foil-reverse-hues',
+      '--color-foil-deep-rose',
     ]) {
       expect(declarations(name).length, name).toBe(1);
     }
