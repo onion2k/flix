@@ -1,6 +1,6 @@
 # Foils for every card
 
-State: agreed 2026-11-24; landed 2026-11-24 (parts 1 to 6, with two tunings after part 4: cracked ice on a light picture, the reverse holo as dark iridescence). Round two (the light tiles, parts 7 to 10) agreed 2026-11-24.
+State: agreed 2026-11-24; landed 2026-11-24 (parts 1 to 6, with two tunings after part 4: cracked ice on a light picture, the reverse holo as dark iridescence). Round two (the light tiles, parts 7 to 10) agreed 2026-11-24 and pushed; the sparkles (part 8) then taken out at the owner's word, 2026-11-24, as adding little.
 
 (On approval this file is copied to `plans/foils.md` in the project, and that
 copy is the one ticked. Facts hold on commit `3b51efe`.)

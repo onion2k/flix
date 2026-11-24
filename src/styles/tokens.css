@@ -187,7 +187,6 @@
    * picture's thin ring are the ink at a share of itself.
    */
   --color-foil-glare: #ffffff;
-  --image-foil-sparkle: url('/foil-sparkle.svg');
   --color-foil-shade: #000000;
   --space-tile-inset: 7px;
   --share-tile-edge: 35%;
@@ -206,59 +205,6 @@
   --duration-shine: 150ms;
   --duration-foil-fade: 320ms;
   --duration-foil-lift: 200ms;
-
-  /*
-   * The sparkles, on every finish (public/foil-sparkle.svg, made by
-   * tools/foil-sparkle.mjs): the file's soft points are a mask, at two sizes
-   * and drifting a little against the light, and what shows through them is
-   * two sets of narrow bands of light, of the finish's two sparkle colours
-   * with white between, that sweep fast as the light moves, so that each point
-   * lights and fades. The mask is also faded away from the light, by the shares
-   * below. The bands are a gap, a rise to the core, a fall and a period (the
-   * first set, then the second), each set turned and run by the light by its
-   * own figures. Each finish sets its own sizes and strength (a share of the
-   * layer's opacity, which is that times how much of the shine shows): gold
-   * and galaxy the strongest, ice and the reverse a little less.
-   */
-  --angle-foil-spark-a: 62deg;
-  --size-foil-spark-a-gap: 10px;
-  --size-foil-spark-a-rise: 14px;
-  --size-foil-spark-a-core: 17px;
-  --size-foil-spark-a-fall: 20px;
-  --size-foil-spark-a-end: 24px;
-  --size-foil-spark-a-period: 34px;
-  --size-foil-spark-a-run-x: 520px;
-  --size-foil-spark-a-run-y: 300px;
-  --angle-foil-spark-b: -35deg;
-  --size-foil-spark-b-gap: 14px;
-  --size-foil-spark-b-rise: 18px;
-  --size-foil-spark-b-core: 21px;
-  --size-foil-spark-b-fall: 24px;
-  --size-foil-spark-b-end: 28px;
-  --size-foil-spark-b-period: 46px;
-  --size-foil-spark-b-run-x: -420px;
-  --size-foil-spark-b-run-y: 520px;
-  --share-foil-spark-mask-mid: 70%;
-  --share-foil-spark-mask-far: 30%;
-  --size-foil-spark-mask-mid: 35%;
-  --size-foil-spark: 320px;
-  --size-foil-spark-fine: 240px;
-  --size-foil-spark-run: -26px;
-  --size-foil-spark-fine-run: -12px;
-  --space-foil-spark-fine-x: 70px;
-  --space-foil-spark-fine-y: 40px;
-  --share-foil-spark: 1;
-  --size-foil-gold-spark: 240px;
-  --size-foil-gold-spark-fine: 200px;
-  --size-foil-galaxy-spark: 420px;
-  --size-foil-galaxy-spark-fine: 640px;
-  --share-foil-spark-ice: 0.6;
-  --share-foil-spark-reverse: 0.5;
-  --color-foil-gold-spark: #fff1b8;
-  --color-foil-gold-flake: #ffd24a;
-  --color-foil-galaxy-spark: #e6dcff;
-  --color-foil-ice-spark: #cfefff;
-  --color-foil-reverse-spark: #e8f0ff;
 
   /*
    * Holo, the top picks': a vivid rainbow of five pale stops and bars of

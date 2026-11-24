@@ -662,7 +662,7 @@ test.describe('a press on a tile', () => {
   });
 });
 
-test('where colours are forced there is no finish, no sparkle and no glare, and the card’s own borders stand', async ({
+test('where colours are forced there is no finish and no glare, and the card’s own borders stand', async ({
   page,
 }) => {
   await page.emulateMedia({ forcedColors: 'active' });
@@ -672,7 +672,7 @@ test('where colours are forced there is no finish, no sparkle and no glare, and 
     const id = (await card.getAttribute('data-entry')) ?? '?';
     const front = await card.locator('.front').evaluate((el) => ({
       image: getComputedStyle(el).backgroundImage,
-      before: getComputedStyle(el, '::before').display,
+      before: getComputedStyle(el, '::before').content,
       after: getComputedStyle(el, '::after').display,
     }));
     expect(front, id).toEqual({ image: 'none', before: 'none', after: 'none' });
@@ -1244,117 +1244,35 @@ test('the cracked-ice tile is the site’s own file, sent once', async ({
   expect(mine.filter((ask) => ask.wire > 200).length).toBe(1);
 });
 
-// The sparkle file is the site's own small file, asked for from its own
-// address, and its bytes cross the wire once however many cards draw it.
-test('the sparkle file is the site’s own, sent once', async ({ page }) => {
-  const network = await page.context().newCDPSession(page);
-  await network.send('Network.enable');
-  const asks = new Map<string, { url: string; wire: number }>();
-  network.on('Network.requestWillBeSent', (event) =>
-    asks.set(event.requestId, { url: event.request.url, wire: 0 }),
-  );
-  network.on('Network.loadingFinished', (event) => {
-    const ask = asks.get(event.requestId);
-    if (ask !== undefined) ask.wire = event.encodedDataLength;
-  });
+// The sparkles went (the owner, 2026-11-24: they added little): no tile
+// draws a layer before its words, and no card asks for a sparkle file.
+test('no tile draws sparkles, and no sparkle file is asked for', async ({
+  page,
+}) => {
+  const asked: string[] = [];
+  page.on('request', (request) => asked.push(request.url()));
   await ready(page);
   await firstRowInView(page);
   await frames(page, 6);
-  const mine = [...asks.values()].filter((ask) =>
-    ask.url.endsWith('/foil-sparkle.svg'),
+  const layers = await page.evaluate(() =>
+    [...document.querySelectorAll('li.card[data-finish]')].flatMap((card) =>
+      ['.front', '.back'].map((face) => {
+        const el = card.querySelector(face);
+        return el === null ? 'none' : getComputedStyle(el, '::before').content;
+      }),
+    ),
   );
-  expect(mine.length).toBeGreaterThan(0);
-  for (const ask of mine)
-    expect(new URL(ask.url).origin).toBe(new URL(page.url()).origin);
-  expect(mine.filter((ask) => ask.wire > 200).length).toBe(1);
+  expect(layers.length).toBeGreaterThan(30);
+  for (const content of layers) expect(content).toBe('none');
+  expect(asked.filter((url) => /sparkle/i.test(url))).toEqual([]);
 });
 
-// The light on the tile (part 8 of plans/foils.md): sparkles that flash as
-// bands of light sweep over them, and, on the ice, the few shards that catch
-// the light. Each finish has its sparkles at its own sizes and strength, at
-// the rest share of it at rest; the lit shards are a grey the pointer sets,
-// differenced with the shard file, so that moving the light changes which
-// shards are lit.
+// The light on the ice's tile (part 8 of plans/foils.md): the few shards
+// that catch the light, a grey the pointer sets differenced with the shard
+// file, so that moving the light changes which shards are lit.
 test.describe('the light on a tile', () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-  });
-
-  const SPARKLES: Record<string, { sizes: string[]; share: number }> = {
-    holo: { sizes: ['320px', '240px'], share: 1 },
-    gold: { sizes: ['240px', '200px'], share: 1 },
-    galaxy: { sizes: ['420px', '640px'], share: 1 },
-    ice: { sizes: ['320px', '240px'], share: 0.6 },
-    reverse: { sizes: ['320px', '240px'], share: 0.5 },
-  };
-  const IDS: Record<string, string> = {
-    holo: 'aquaclysm',
-    gold: 'ooergolf',
-    galaxy: 'chopdrop',
-    ice: 'fruit-machine',
-    reverse: 'chess',
-  };
-
-  test('each finish draws its sparkles through the sparkle file at its own sizes and strength, at the rest share of it at rest', async ({
-    page,
-  }) => {
-    await ready(page);
-    const rest = await page.evaluate(() =>
-      parseFloat(
-        getComputedStyle(document.documentElement).getPropertyValue(
-          '--share-foil-rest',
-        ),
-      ),
-    );
-    let reached = 0;
-    for (const [finish, want] of Object.entries(SPARKLES)) {
-      const id = IDS[finish] ?? '';
-      const card = page.locator(`li.card[data-entry="${id}"]`).first();
-      await card.evaluate((el) =>
-        el.scrollIntoView({
-          block: 'center',
-          inline: 'center',
-          behavior: 'instant',
-        }),
-      );
-      await page.mouse.move(2, 2);
-      const layer = () =>
-        card.evaluate((el) => {
-          const style = getComputedStyle(
-            el.querySelector('.front') as Element,
-            '::before',
-          );
-          return {
-            content: style.content,
-            mask: style.maskImage,
-            sizes: style.maskSize,
-            composite: style.maskComposite,
-            image: style.backgroundImage,
-            opacity: parseFloat(style.opacity),
-            presses: style.pointerEvents,
-          };
-        });
-      const atRest = await layer();
-      expect(atRest.content, finish).not.toBe('none');
-      expect(atRest.presses, finish).toBe('none');
-      expect(atRest.mask.match(/foil-sparkle\.svg/g)?.length, finish).toBe(2);
-      expect(atRest.mask, finish).toContain('radial-gradient');
-      // The list is cycled to the three layers: the fade intersects the points.
-      expect(atRest.composite, finish).toMatch(/^intersect, add/);
-      expect(atRest.image.match(/repeating-linear-gradient/g)?.length).toBe(2);
-      for (const size of want.sizes)
-        expect(atRest.sizes, finish).toContain(size);
-      // At rest the layer is the rest share of its strength.
-      expect(atRest.opacity, finish).toBeCloseTo(want.share * rest, 3);
-      const box = await card.locator('.front .card-title').boundingBox();
-      if (box === null) throw new Error('the title is not drawn');
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await expect
-        .poll(async () => (await layer()).opacity, finish)
-        .toBeCloseTo(want.share, 3);
-      reached += 1;
-    }
-    expect(reached).toBe(5);
   });
 
   test.describe('moved', () => {
@@ -1368,68 +1286,6 @@ test.describe('the light on a tile', () => {
         },
         [x, y],
       );
-
-    // The tile with nothing on it but its sparkles: the finish's own layers
-    // and the glare are taken off for the look, so that what changes between
-    // two lights is the sparkles alone.
-    test('the sparkles move with the light and are there at all, on a tile of nothing else', async ({
-      page,
-    }) => {
-      await ready(page);
-      await page.addStyleTag({
-        content:
-          '.card[data-finish] .front{background-image:none!important}.card[data-finish] .front::after{display:none!important}',
-      });
-      const reader = await newReader(page);
-      let reached = 0;
-      for (const finish of ['holo', 'gold', 'galaxy', 'reverse']) {
-        const card = page
-          .locator(`li.card[data-entry="${IDS[finish] ?? ''}"]`)
-          .first();
-        await card.evaluate((el) =>
-          el.scrollIntoView({
-            block: 'center',
-            inline: 'center',
-            behavior: 'instant',
-          }),
-        );
-        const box = await card.locator('.front .card-title').boundingBox();
-        if (box === null) throw new Error('the title is not drawn');
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-        await expect
-          .poll(() =>
-            card.evaluate((el) =>
-              getComputedStyle(el).getPropertyValue('--foil-on'),
-            ),
-          )
-          .toBe('1');
-        const front = card.locator('.front');
-        await light(card, 0.2, 0.2);
-        const first = await tileShot(page, front);
-        await light(card, 0.8, 0.7);
-        const second = await tileShot(page, front);
-        const moved = await differBy(reader, first, second);
-        // Pale points on a light tile, the reverse's half strength the least: a
-        // dozen levels is plain against an unchanged tile, which is none.
-        expect(moved.greatest, `${finish} moved`).toBeGreaterThan(12);
-        expect(moved.share, `${finish} moved`).toBeGreaterThan(0.005);
-        // And the layer is there: with it taken off the tile is another.
-        await page.addStyleTag({
-          content: '.card[data-finish] .front::before{display:none!important}',
-        });
-        await light(card, 0.2, 0.2);
-        const none = await tileShot(page, front);
-        const there = await differBy(reader, first, none);
-        expect(there.greatest, `${finish} sparkles`).toBeGreaterThan(12);
-        await page.evaluate(() => {
-          const sheets = document.head.querySelectorAll('style');
-          sheets[sheets.length - 1]?.remove();
-        });
-        reached += 1;
-      }
-      await reader.close();
-      expect(reached).toBe(4);
-    });
 
     test('on the ice, moving the light changes which shards are lit, a few at a time, and none are at no shine', async ({
       page,
@@ -1455,10 +1311,6 @@ test.describe('the light on a tile', () => {
               el.style.setProperty('--foil-on', value),
             value,
           );
-        // The sparkles are put out, so that it is the shards alone.
-        await page.addStyleTag({
-          content: '.card[data-finish] .front::before{display:none!important}',
-        });
         await on('0');
         await light(card, 0.2, 0.2);
         const dark = await tileShot(page, front);
@@ -1494,10 +1346,6 @@ test.describe('the light on a tile', () => {
         const moved = await differBy(reader, a, b);
         expect(moved.greatest, `${id} moved`).toBeGreaterThan(40);
         expect(moved.share, `${id} moved`).toBeGreaterThan(0.02);
-        await page.evaluate(() => {
-          const sheets = document.head.querySelectorAll('style');
-          sheets[sheets.length - 1]?.remove();
-        });
         reached += 1;
       }
       await reader.close();
@@ -1508,7 +1356,7 @@ test.describe('the light on a tile', () => {
 
 // A phone's back is a sheet fixed to the foot of the window and is not a face
 // of the card: it stays the dark panel with its light words and its accent
-// label, with no tile, no sparkle and no glare under them, whatever the
+// label, with no tile and no glare under them, whatever the
 // card's finish, and its words are 7:1 as they were.
 test.describe('a phone’s sheet', () => {
   test.use({
@@ -1547,7 +1395,7 @@ test.describe('a phone’s sheet', () => {
           image: style.backgroundImage,
           ink: style.color,
           label: getComputedStyle(el.querySelector('.label') as Element).color,
-          before: getComputedStyle(el, '::before').display,
+          before: getComputedStyle(el, '::before').content,
           after: getComputedStyle(el, '::after').display,
           link: getComputedStyle(el.querySelector('a.card-link') as Element)
             .borderTopColor,

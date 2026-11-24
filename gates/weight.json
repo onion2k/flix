@@ -1,7 +1,7 @@
 {
   "note": "Page weight of the built home page, without scrolling, at 1440x1000 on each day that gives a different feature (day 0 as \"1440x1000\") and at 390x844 on day 0. Counts are held exactly. Bytes are held exactly too, since two builds from one commit gave the same figures. Held both ways: a drop fails as a rise does. The hero's loop is the \"media\" kind: it is asked for after the page has loaded, and has a budget of its own. A card's loop is the \"cardLoop\" kind, told from the hero's by its built name, and each one has a budget of its own. Written by npm run weight:update, only for a change meant to move it.",
   "budgets": {
-    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. The picture budget was 150000 until later that day, when the owner raised it to 200000 for the moving hero's full-width still, with the feature's pictures drawn at AVIF quality 40. The hero loop has a budget of its own, 450000, which the owner agreed in plans/motion.md the same day: it arrives only after the page has loaded and is neither a picture nor part of the page without pictures. KB here is 1000 bytes. Each card's loop has a budget of its own, 250000, which the owner agreed on 2026-11-23 in plans/cards.md, when the largest card loop was 218,443 bytes: one card plays at a time, and its loop is asked for only once a reader has scrolled past the hero and settled on a card, so no first screen measured here asks for one. The page with fonts and no pictures was 60000 (59,232 measured on 2026-11-24) until the owner raised it that day, in the interview for plans/foils.md, to 63000 for the finishes (every card draws the foil's layers and their rules, and the cracked-ice tile is a file of its own): 61,276 measured, rounded up to the next thousand and a thousand of room. The picture budget and count were not moved: the tile is 3,028 bytes of the first screen's pictures, 162,359 of 200000. Round two of plans/foils.md (2026-11-24) moved the figures without moving a budget: the finishes are now the card's own tile, so the foil's layers went (the document is 5,911 bytes smaller, 107,928) and the glitter file with them, and the sparkle file came (7,633 bytes) with the ice tile at sixteen greys (3,027): the page with fonts and no pictures is 60,897 of 63000 and the first screen's pictures 169,404 of 200000.",
+    "status": "Agreed figures, set by the owner on 2026-11-22 from the measurements of that day. The picture budget was 150000 until later that day, when the owner raised it to 200000 for the moving hero's full-width still, with the feature's pictures drawn at AVIF quality 40. The hero loop has a budget of its own, 450000, which the owner agreed in plans/motion.md the same day: it arrives only after the page has loaded and is neither a picture nor part of the page without pictures. KB here is 1000 bytes. Each card's loop has a budget of its own, 250000, which the owner agreed on 2026-11-23 in plans/cards.md, when the largest card loop was 218,443 bytes: one card plays at a time, and its loop is asked for only once a reader has scrolled past the hero and settled on a card, so no first screen measured here asks for one. The page with fonts and no pictures was 60000 (59,232 measured on 2026-11-24) until the owner raised it that day, in the interview for plans/foils.md, to 63000 for the finishes (every card draws the foil's layers and their rules, and the cracked-ice tile is a file of its own): 61,276 measured, rounded up to the next thousand and a thousand of room. The picture budget and count were not moved: the tile is 3,028 bytes of the first screen's pictures, 162,359 of 200000. Round two of plans/foils.md (2026-11-24) moved the figures without moving a budget: the finishes are now the card's own tile, so the foil's layers went (the document is 5,911 bytes smaller, 107,928) and the glitter file with them, and the sparkle file came (7,633 bytes) with the ice tile at sixteen greys (3,027): the page with fonts and no pictures is 60,897 of 63000 and the first screen's pictures 169,404 of 200000. Written again on 2026-11-24, without moving a budget, when the owner had the sparkles taken out: their rules went (the document is 4,160 bytes smaller, 103,768, 16,436 compressed) and the sparkle file with them (one picture fewer, 14): the page with fonts and no pictures is 60,245 of 63000 and the first screen's pictures 161,771 of 200000.",
     "pageWithFontsNoPicturesBytes": 63000,
     "firstScreenPicturesDeskBytes": 200000,
     "heroLoopBytes": 450000,
@@ -11,8 +11,8 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 107928,
-        "gzip": 17088
+        "bytes": 103768,
+        "gzip": 16436
       },
       "script": {
         "count": 1,
@@ -29,8 +29,8 @@
         "bytes": 36840
       },
       "image": {
-        "count": 15,
-        "bytes": 169404
+        "count": 14,
+        "bytes": 161771
       },
       "media": {
         "count": 1,
@@ -48,8 +48,8 @@
     "1440x1000 day 1": {
       "document": {
         "count": 1,
-        "bytes": 107928,
-        "gzip": 17088
+        "bytes": 103768,
+        "gzip": 16436
       },
       "script": {
         "count": 1,
@@ -66,8 +66,8 @@
         "bytes": 36840
       },
       "image": {
-        "count": 15,
-        "bytes": 148331
+        "count": 14,
+        "bytes": 140698
       },
       "media": {
         "count": 1,
@@ -85,8 +85,8 @@
     "1440x1000 day 2": {
       "document": {
         "count": 1,
-        "bytes": 107928,
-        "gzip": 17088
+        "bytes": 103768,
+        "gzip": 16436
       },
       "script": {
         "count": 1,
@@ -103,8 +103,8 @@
         "bytes": 36840
       },
       "image": {
-        "count": 15,
-        "bytes": 125891
+        "count": 14,
+        "bytes": 118258
       },
       "media": {
         "count": 1,
@@ -122,8 +122,8 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 107928,
-        "gzip": 17088
+        "bytes": 103768,
+        "gzip": 16436
       },
       "script": {
         "count": 1,
@@ -140,8 +140,8 @@
         "bytes": 36840
       },
       "image": {
-        "count": 15,
-        "bytes": 87702
+        "count": 14,
+        "bytes": 80069
       },
       "media": {
         "count": 1,

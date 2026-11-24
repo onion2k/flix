@@ -356,7 +356,7 @@ for (const width of WIDTHS) {
 
 // Every card is a light tile in its finish, with dark words, so the tokens
 // say nothing of what is under a word: the tile moves with the light and the
-// finish is a picture of bands, sparkles and shards. It is measured as drawn.
+// finish is a picture of rainbows, bars and shards. It is measured as drawn.
 // For one card of each finish (cracked ice on two), at rest and at full
 // shine (a mouse on the card), with the light at the corners, the edges and the
 // middle, the words are hidden and the pixels they stood on are read; the

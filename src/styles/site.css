@@ -900,11 +900,6 @@ p {
 .card[data-finish] {
   --foil-tile-size: 100% 100%;
   --foil-tile-place: center;
-  --foil-spark: var(--color-foil-glare);
-  --foil-spark-b: var(--color-foil-glare);
-  --foil-spark-size: var(--size-foil-spark);
-  --foil-spark-size-b: var(--size-foil-spark-fine);
-  --foil-spark-share: var(--share-foil-spark);
 }
 
 .card[data-finish][data-flips] .front {
@@ -968,84 +963,6 @@ p {
   mix-blend-mode: soft-light;
 }
 
-/* The sparkles: the sparkle file's points as a mask at two sizes (run a
-   little against the light), through which two sets of narrow bands of light
-   show, sweeping fast with the pointer, so that each point lights and fades;
-   the mask is also faded away from the light. Behind the words and the
-   picture, on every finish, strongest on gold and galaxy; the layer is a share
-   of its strength at rest and all of it under a mouse. */
-.card[data-finish][data-flips] .front::before,
-.card[data-finish][data-flips] .back::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    repeating-linear-gradient(
-      var(--angle-foil-spark-a),
-      transparent 0,
-      transparent var(--size-foil-spark-a-gap),
-      var(--foil-spark) var(--size-foil-spark-a-rise),
-      var(--color-foil-glare) var(--size-foil-spark-a-core),
-      var(--foil-spark) var(--size-foil-spark-a-fall),
-      transparent var(--size-foil-spark-a-end),
-      transparent var(--size-foil-spark-a-period)
-    ),
-    repeating-linear-gradient(
-      var(--angle-foil-spark-b),
-      transparent 0,
-      transparent var(--size-foil-spark-b-gap),
-      var(--foil-spark-b) var(--size-foil-spark-b-rise),
-      var(--color-foil-glare) var(--size-foil-spark-b-core),
-      var(--foil-spark-b) var(--size-foil-spark-b-fall),
-      transparent var(--size-foil-spark-b-end),
-      transparent var(--size-foil-spark-b-period)
-    );
-  background-position:
-    calc(var(--shine-x) * var(--size-foil-spark-a-run-x))
-      calc(var(--shine-y) * var(--size-foil-spark-a-run-y)),
-    calc(var(--shine-x) * var(--size-foil-spark-b-run-x))
-      calc(var(--shine-y) * var(--size-foil-spark-b-run-y));
-  mask-image:
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      var(--color-foil-shade) 0,
-      color-mix(
-          in srgb,
-          var(--color-foil-shade) var(--share-foil-spark-mask-mid),
-          transparent
-        )
-        var(--size-foil-spark-mask-mid),
-      color-mix(
-          in srgb,
-          var(--color-foil-shade) var(--share-foil-spark-mask-far),
-          transparent
-        )
-        100%
-    ),
-    var(--image-foil-sparkle), var(--image-foil-sparkle);
-  mask-size:
-    100% 100%,
-    var(--foil-spark-size) var(--foil-spark-size),
-    var(--foil-spark-size-b) var(--foil-spark-size-b);
-  mask-position:
-    center,
-    calc(var(--shine-x) * var(--size-foil-spark-run))
-      calc(var(--shine-y) * var(--size-foil-spark-run)),
-    calc(
-        var(--shine-x) * var(--size-foil-spark-fine-run) +
-          var(--space-foil-spark-fine-x)
-      )
-      calc(
-        var(--shine-y) * var(--size-foil-spark-fine-run) +
-          var(--space-foil-spark-fine-y)
-      );
-  mask-composite: intersect, add;
-  opacity: calc(var(--foil-spark-share) * var(--foil-on));
-}
-
 /* At a desk the back is a face of the card, and the same tile, with the same
    dark words. Its Play link is amber with dark words and, on a light tile,
    gets the ink for its edge (3:1 on the darkest of any tile), as the Close
@@ -1087,8 +1004,6 @@ p {
 /* Holo, the top picks': bars of light and a vivid rainbow on silver. */
 .card[data-finish='holo'] {
   --foil-base: var(--color-foil-holo-base);
-  --foil-spark: var(--color-foil-sky);
-  --foil-spark-b: var(--color-foil-rose);
   --foil-run: calc(
     var(--shine-x) * var(--size-foil-holo-run-x) + var(--shine-y) *
       var(--size-foil-holo-run-y)
@@ -1134,10 +1049,6 @@ p {
    lines only: the deep stop is as dark as a tile may be. */
 .card[data-finish='gold'] {
   --foil-base: var(--color-foil-gold-base);
-  --foil-spark: var(--color-foil-gold-spark);
-  --foil-spark-b: var(--color-foil-gold-flake);
-  --foil-spark-size: var(--size-foil-gold-spark);
-  --foil-spark-size-b: var(--size-foil-gold-spark-fine);
   --foil-run: calc(var(--shine-x) * var(--size-foil-gold-run));
   --foil-tile:
     repeating-linear-gradient(
@@ -1172,9 +1083,6 @@ p {
 /* Galaxy: three clouds of a pale nebula drifting over lilac. */
 .card[data-finish='galaxy'] {
   --foil-base: var(--color-foil-galaxy-base);
-  --foil-spark-b: var(--color-foil-galaxy-spark);
-  --foil-spark-size: var(--size-foil-galaxy-spark);
-  --foil-spark-size-b: var(--size-foil-galaxy-spark-fine);
   --foil-tile:
     radial-gradient(
       var(--size-foil-nebula-1) at
@@ -1220,8 +1128,6 @@ p {
 /* Cracked ice: silver shards, the base laid over the site's file of them. */
 .card[data-finish='ice'] {
   --foil-base: var(--color-foil-ice-base);
-  --foil-spark-b: var(--color-foil-ice-spark);
-  --foil-spark-share: var(--share-foil-spark-ice);
   --foil-ice-grey: calc(
     var(--shine-x) * var(--share-foil-ice-weight-x) + var(--shine-y) *
       var(--share-foil-ice-weight-y)
@@ -1280,8 +1186,6 @@ p {
 /* Reverse holo, the common finish: silver with a softer rainbow and bars. */
 .card[data-finish='reverse'] {
   --foil-base: var(--color-foil-reverse-base);
-  --foil-spark-b: var(--color-foil-reverse-spark);
-  --foil-spark-share: var(--share-foil-spark-reverse);
   --foil-run: calc(var(--shine-x) * var(--size-foil-reverse-run));
   --foil-hue-rose: color-mix(
     in srgb,
@@ -1592,7 +1496,6 @@ main {
   }
 
   /* The sheet is the dark panel, with no tile's light under its words. */
-  .card[data-finish][data-flips] .back::before,
   .card[data-finish][data-flips] .back::after {
     display: none;
   }
@@ -1672,13 +1575,12 @@ main {
     border-color: Highlight;
   }
 
-  /* No finish: no tile image, no sparkle and no glare, on the front or the
-     back, and the words are the system's; the card's own borders stand. */
+  /* No finish: no tile image and no glare, on the front or the back, and the
+     words are the system's; the card's own borders stand. */
   .card[data-finish][data-flips] :is(.front, .back) {
     background-image: none;
   }
 
-  .card[data-finish][data-flips] :is(.front, .back)::before,
   .card[data-finish][data-flips] :is(.front, .back)::after {
     display: none;
   }

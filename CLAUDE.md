@@ -224,16 +224,14 @@ commit of its own that says what it is for.
   in `--color-ground`, the ink (the accent cannot be on a light tile). At a
   desk (`width > 40rem`) the back is the same tile with the same ink, its Play
   link given the ink for its edge and a ring inside it the ink; a phone's back
-  is the sheet and stays the dark panel, with no tile, sparkle or glare. With
+  is the sheet and stays the dark panel, with no tile or glare. With
   script off a card is as it was, no tile and no finish. **Nothing is laid
   over a picture or a loop** (the owner's choice, below): no layer span in
   the markup, no `.frame::before`. `data-best` is the label's and no longer
   decides a look. Every tile has a glare (`.front::after`, a soft light where
-  the pointer is) and sparkles (`.front::before`: bands of light, which sweep
-  fast as the pointer moves, seen through `public/foil-sparkle.svg` at two
-  sizes, which `tools/foil-sparkle.mjs` makes, intersected with a falloff
-  round the light; each finish's sizes and strength are tokens); the ice's
-  `::after` is instead its lit shards (a grey set by the light, differenced
+  the pointer is; the tiles had sparkles too, and the owner had them taken
+  out on 2026-11-24 as adding little, so nothing draws a tile's `::before`);
+  the ice's `::after` is instead its lit shards (a grey set by the light, differenced
   with `public/foil-ice.svg`, sixteen greys, made by `tools/foil-ice.mjs`,
   then inverted, given a hard contrast and tinted: a few shards at a time).
   Rainbows are moved by their stops and never by their tile's place, so no
@@ -248,8 +246,8 @@ hover)` query, so a tap leaves nothing stuck) and, where nothing hovers, on
   and at full shine with the light anywhere (`contrast.spec.ts` reads the
   darkest pixel under each word with the words hidden); the colours are all
   light enough, gold's deep stop only just (7.2:1), so nothing darker is laid
-  over a tile (the gold's brushing is light lines only, and the sparkles and
-  shards only lighten). The ice's overlay share and base are what hold it.
+  over a tile (the gold's brushing is light lines only, and the shards only
+  lighten). The ice's overlay share and base are what hold it.
   `src/scripts/shine.ts` drives every card through the CSSOM, at
   most once a frame and only while a card is in the window: a mouse (hover
   and fine pointer) moves the sheen and tilt of the card it is on and
@@ -260,7 +258,7 @@ hover)` query, so a tap leaves nothing stuck) and, where nothing hovers, on
   tilt; the card that loses it has the mark and its sheen taken off.
   `src/scripts/reading.ts` is what it and `playing.ts` both read the page
   with. Under reduced motion it sets nothing (the fade and the lift then
-  change at once). Forced colours draw no tile image, sparkle or glare. The
+  change at once). Forced colours draw no tile image or glare. The
   holo's look is round seven of the owner's mocks of 2026-11-23, after
   simeydotme's pen of trading cards, whose code (GPL-3.0) is not used; the
   tiles are the owner's mock of 2026-11-24, built as mocked. House lights
@@ -438,7 +436,7 @@ Every new thing is taken through each of these that it can reach.
   loop that fails, a late row, a touch screen, script off.
 - The shine and the tile: every card a light tile in its own finish, the best
   cards holo; at rest (a little) and under a mouse (all of it, the lift,
-  sheen, sparkles and tilt), touch (one card in focus whole by its place, the
+  sheen and tilt), touch (one card in focus whole by its place, the
   rest at rest, none while the hero's half shows, no tilt, a tap lifts
   nothing), reduced motion (still), script off (no tile), forced colours
   (none), a phone's sheet (dark); nothing over a picture, and a picture's
@@ -540,9 +538,9 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/shine.spec.ts`           | each finish's tile, rest and mouse, forced colours;     |
 |                                     | nothing over a picture (its pixels the same); the       |
 |                                     | sheen and tilt under a mouse; touch: one card in focus; |
-|                                     | sparkles at their sizes and share, moving with the      |
-|                                     | light; the ice's lit shards; a phone's sheet dark;      |
-|                                     | both textures sent once; one border                     |
+|                                     | the ice's lit shards; no sparkle layer or file; a       |
+|                                     | phone's sheet dark; the ice texture sent once; one      |
+|                                     | border                                                  |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off     |
 | `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures, no   |
 |                                     | tile; a tap does not                                    |
@@ -707,10 +705,9 @@ The nine points of the definition of done, as this project has them.
   flip, Safari's and Firefox's video and autoplay, anchor positioning (the
   arrows' height; a browser without it has the 16 by 9), `@property`, and
   the tile's blends (`soft-light`, `screen`), `mask-composite`, `color-mix()`
-  and the ice's filter are not seen elsewhere. The sparkles' points stretch
-  a little while a card is tilted, as the browser samples a turned layer. The
-  light on a tile moves through the CSSOM each frame and repaints masks and
-  gradients on up to a row of cards; frame times were not measured again after
+  and the ice's filter are not seen elsewhere. The
+  light on a tile moves through the CSSOM each frame and repaints gradients on
+  up to a row of cards; frame times were not measured again after
   the tiles (the figures above are the round before), so a slow phone is untried. A screen reader hearing the
   flip, the face away being inert and the Pause button's name is a
   person's to try; the tree is read from Chromium's own. Forced colours as
