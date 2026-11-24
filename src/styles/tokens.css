@@ -111,9 +111,10 @@
   --card-width-phone: max(36vw, 7.75rem);
   /* The narrowest a phone card may be made to keep it clear of a row's arrows
      (rows.ts): no word of a label or a title breaks above it, measured as
-     about 5.8rem at every text size (COINPUSHER the longest), with a little
-     room. */
-  --card-least-phone: 6rem;
+     about 5.8rem at every text size (COINPUSHER the longest) before the tile
+     set the picture in by its inset on each side (7px, about 0.9rem in all),
+     which the card needs too, with a little room. */
+  --card-least-phone: 7rem;
   --zoom-hover: 1.04;
   --duration-hover: 250ms;
 
@@ -160,106 +161,41 @@
   --space-pause-inset: 0rem;
 
   /*
-   * The shine of the best cards, a holographic trading card's foil: round
-   * seven of the mocks the owner chose on 2026-11-23, after simeydotme's pen of
-   * trading cards (its code is not used: it is GPL-3.0). Three layers over the
-   * picture, and none under a word.
+   * The card's tile and its finish (plans/foils.md, round two; the owner,
+   * 2026-11-24): every card that flips is a light tile in the finish its
+   * data-finish names, the picture set into it by a small inset as a trading
+   * card's is, and its label and title are the ground's own dark, so that the
+   * light pops and the picture and its loop are left alone. At a desk the back
+   * is the same tile. Nothing is laid over a picture. The mock these figures
+   * come from is the owner's, approved as mocked.
    *
-   * The foil: a pale rainbow and diagonal bars of light, run across the card
-   * as the pointer moves (the rainbow by the first pair of shares, the bars by
-   * the second), darkened away from the light, given a contrast and dodged
-   * onto the picture at the share below, so that it lights the picture's
-   * bright parts; its brightness rises toward the card's edges, from the first
-   * figure by up to the second. Inside it a flare of white where the pointer
-   * is, which the dodge turns to light even on a dark picture.
-   *
-   * The glitter: the site's own glitter file at two sizes, the second set off
-   * from the first, each run a little with the pointer, tinted by the bright
-   * rainbow (run across it by its shares) and added onto the picture, strong
-   * round the light and faint away from it, with a glare of light added on
-   * top: it is what shines on a dark picture, where a dodge cannot.
-   *
-   * The wash: the bright rainbow laid over the picture at the share below,
-   * its angle turning and its place running as the pointer moves.
-   *
-   * How much of all three shows: the rest share at rest, on every card and
-   * every screen, and all of it while a mouse is on the card, which lifts
-   * toward the reader by the scale below with a shadow under it. A card
-   * tilts under a mouse as seen from the depth below (how far is MOST_TILT,
+   * A tile is its base colour under its layers, and the layers are moved by
+   * where the light is (--shine-x, --shine-y, src/scripts/shine.ts), the
+   * rainbows by their stops and never by their tile's place, so that no seam
+   * shows. How much of the shine shows is --foil-on: the rest share at rest, on
+   * every card and screen, and all of it under a mouse, or in focus on a touch
+   * screen. A mouse lifts the card by the scale below, with a shadow under it,
+   * and tilts it as seen from the depth below (how far is MOST_TILT,
    * src/catalogue/shine.ts); the sheen and the tilt ease after the pointer
    * over the shine's time, the shine fades in and out over the fade's, and the
-   * lift over the lift's. None of it carries words or tells a control apart,
-   * so no contrast is asked of it; the label says "Top pick" in words.
+   * lift over the lift's.
+   *
+   * Every word on a tile is 7:1 (the ground's ink on its darkest colour, held
+   * by tests/unit/contrast.test.ts, and as drawn, with the light anywhere and
+   * the shine whole, by tests/e2e/contrast.spec.ts): the colours here are all
+   * light enough for that, gold's deep stop only just. The tile's edge and the
+   * picture's thin ring are the ink at a share of itself.
    */
-  --color-foil-rose: #ff2d75;
-  --color-foil-gold: #ffc400;
-  --color-foil-mint: #00f5a0;
-  --color-foil-sky: #00b3ff;
-  --color-foil-violet: #8a4dff;
   --color-foil-glare: #ffffff;
   --color-foil-shade: #000000;
-  --color-foil-pale-rose: #ff9ab4;
-  --color-foil-pale-gold: #ffe29a;
-  --color-foil-pale-green: #a8ffb4;
-  --color-foil-pale-sky: #9af0ff;
-  --color-foil-pale-violet: #b4a8ff;
-  --color-foil-bar-dark: #222222;
-  --color-foil-bar-light: #ddffee;
-  --color-foil-deep-rose: #5c0f2e;
-  --color-foil-deep-amber: #5a1e00;
-  --color-foil-deep-teal: #003826;
-  --color-foil-deep-sky: #002a5a;
-  --color-foil-deep-violet: #30106a;
-  --color-foil-light-mid: #777777;
-  --color-foil-light-far: #111111;
-  --image-foil-glitter: url('/foil-glitter.svg');
-  --image-foil-ice: url('/foil-ice.svg');
-  --angle-foil-rainbow: 110deg;
-  --angle-foil-bars: -55deg;
-  --angle-foil-glitter: 125deg;
-  --angle-foil-wash: 100deg;
-  --angle-foil-wash-turn: 60deg;
-  --size-foil-rainbow-stop: 8%;
-  --size-foil-rainbow: 260%;
-  --share-foil-rainbow-run-x: 220%;
-  --share-foil-rainbow-run-y: 140%;
-  --size-foil-bar: 3%;
-  --size-foil-bars: 240%;
-  --share-foil-bars-run-x: 110%;
-  --share-foil-bars-run-y: 70%;
-  --size-foil-light-mid: 25%;
-  --size-foil-light-far: 75%;
-  --brightness-foil: 0.72;
-  --brightness-foil-edge: 0.25;
-  --contrast-foil: 1.5;
-  --saturate-foil: 1.1;
-  --share-foil-dodge: 0.7;
-  --share-foil-flare-near: 75%;
-  --share-foil-flare-mid: 19%;
-  --size-foil-flare-mid: 16%;
-  --size-foil-flare: 48%;
-  --size-foil-glitter: 300px;
-  --size-foil-glitter-fine: 220px;
-  --size-foil-glitter-run: 70px;
-  --size-foil-glitter-run-fine: 55px;
-  --space-foil-glitter-x: 30px;
-  --space-foil-glitter-y: 70px;
-  --size-foil-glitter-tint: 400%;
-  --share-foil-glitter-run-x: 300%;
-  --share-foil-glitter-run-y: 200%;
-  --share-foil-glitter-near: 73%;
-  --share-foil-glitter-mid: 20%;
-  --share-foil-glitter-far: 7%;
-  --size-foil-glitter-near: 22%;
-  --size-foil-glitter-mid: 55%;
-  --share-foil-glare-near: 75%;
-  --share-foil-glare-mid: 25%;
-  --size-foil-glare-mid: 18%;
-  --size-foil-glare: 55%;
-  --size-foil-wash: 220%;
-  --share-foil-wash-run: 200%;
-  --share-foil-wash: 0.45;
+  --space-tile-inset: 7px;
+  --share-tile-edge: 35%;
+  --share-tile-frame: 45%;
   --share-foil-rest: 0.35;
+  --share-foil-glare-near: 75%;
+  --share-foil-glare-mid: 20%;
+  --size-foil-glare-mid: 25%;
+  --size-foil-glare: 55%;
   --scale-foil-lift: 1.035;
   --size-foil-lift-drop: 18px;
   --size-foil-lift-blur: 30px;
@@ -271,139 +207,124 @@
   --duration-foil-lift: 200ms;
 
   /*
-   * The other finishes (plans/foils.md): every card has one, named by the
-   * catalogue and written on the card as data-finish, and the holo above is
-   * the top picks' own. Each of the others is the same three layers, the foil,
-   * the wash and the glitter, drawn from other values, and none carries a
-   * word or tells a control apart, so no contrast is asked of any of them but
-   * the reverse's, which is laid where words are and keeps them at 7:1.
-   *
-   * Gold glitter: a warm sheen of gold, from deep through amber to cream, over
-   * the picture (the wash, soft-lit), bars of pale gold dodged onto it (the
-   * foil), and the glitter file, larger and sparser than the holo's, tinted by
-   * four golds (the tint, run across by the holo's own shares).
+   * Holo, the top picks': a vivid rainbow of five pale stops and bars of
+   * light, on silver. The rainbow's stops are run along by the light (the
+   * first run is across, the second down), its angle turns with it, and the
+   * bars are a share of white at rest and more as the shine comes on.
    */
-  --color-foil-gold-deep: #6b3e00;
-  --color-foil-gold-cream: #fff2c0;
-  --color-foil-gold-amber: #e09a00;
-  --color-foil-gold-mid: #ffcf6a;
-  --color-foil-gold-white: #fff7d6;
-  --color-foil-gold-dim: #776644;
-  --color-foil-gold-glare: #fff0c8;
-  --color-foil-gold-spark-a: #ffd24a;
-  --color-foil-gold-spark-b: #fff6d8;
-  --color-foil-gold-spark-c: #ffb400;
-  --color-foil-gold-spark-d: #ffe08a;
-  --angle-foil-gold-bars: 115deg;
-  --size-foil-gold-bar-stop: 7%;
-  --size-foil-gold-glitter: 180px;
-  --size-foil-gold-glitter-fine: 130px;
-  --share-foil-gold-wash: 0.9;
-  --share-foil-gold-dodge: 0.55;
-  --share-foil-gold-glare-near: 60%;
-  --share-foil-gold-glare-mid: 20%;
-  --share-foil-gold-mask-near: 85%;
-  --share-foil-gold-mask-mid: 45%;
-  --share-foil-gold-mask-far: 30%;
-  --size-foil-gold-mask-near: 30%;
-  --size-foil-gold-mask-mid: 70%;
+  --color-foil-holo-base: #cfd5de;
+  --color-foil-rose: #ff9ab4;
+  --color-foil-cream: #ffe29a;
+  --color-foil-mint: #a8ffb4;
+  --color-foil-sky: #9af0ff;
+  --color-foil-violet: #b4a8ff;
+  --angle-foil-bars: -55deg;
+  --size-foil-holo-bar-start: 9px;
+  --size-foil-holo-bar-peak: 12px;
+  --size-foil-holo-bar-end: 15px;
+  --size-foil-holo-bar-period: 22px;
+  --size-foil-holo-bars-run: 60px;
+  --share-foil-holo-bars: 25%;
+  --share-foil-holo-bars-on: 30%;
+  --angle-foil-holo: 110deg;
+  --angle-foil-holo-turn: 30deg;
+  --size-foil-holo-stop: 60px;
+  --size-foil-holo-run-x: -420px;
+  --size-foil-holo-run-y: -160px;
 
   /*
-   * Galaxy: a nebula of violet, sky and rose glowing on the picture (three
-   * soft pools of colour, each moved a little against the light, screened
-   * onto it), a deep blue-violet foil dodged over it, and stars: the glitter
-   * file at a large size in two depths, each moved by the light at its own
-   * rate, tinted pale blue. Each pool has its size, its place and how far
-   * the light moves it, across and down.
+   * Gold: brushed gold, bands of deep, mid and pale gold across it, with
+   * fine light lines like the grain of brushing. Its deep stop is the darkest
+   * colour of any tile and sits near the limit of 7:1, so nothing darker is
+   * laid over it (the brushing's lines are light only).
    */
-  --color-foil-galaxy-indigo: #3b2a8a;
-  --color-foil-galaxy-blue: #1e6ad0;
-  --color-foil-galaxy-purple: #7a3aa8;
-  --color-foil-galaxy-cobalt: #2a4fb0;
-  --color-foil-galaxy-dim: #666666;
-  --color-foil-galaxy-frost-a: #eaf2ff;
-  --color-foil-galaxy-frost-b: #cfe0ff;
-  --color-foil-galaxy-glare: #dce6ff;
-  --angle-foil-galaxy: 140deg;
-  --angle-foil-galaxy-turn: 40deg;
-  --size-foil-nebula-1: 40% 55%;
-  --space-foil-nebula-1-x: 18%;
-  --space-foil-nebula-1-y: 30%;
-  --share-foil-nebula-1-run-x: 14%;
-  --share-foil-nebula-1-run-y: 10%;
-  --size-foil-nebula-2: 45% 50%;
-  --space-foil-nebula-2-x: 78%;
-  --space-foil-nebula-2-y: 62%;
-  --share-foil-nebula-2-run-x: 12%;
-  --share-foil-nebula-2-run-y: 8%;
-  --size-foil-nebula-3: 35% 40%;
-  --space-foil-nebula-3-x: 52%;
-  --space-foil-nebula-3-y: 95%;
-  --share-foil-nebula-3-run-x: 6%;
-  --share-foil-nebula-3-run-y: 12%;
-  --size-foil-galaxy-stars: 640px;
-  --size-foil-galaxy-stars-far: 1000px;
-  --size-foil-galaxy-stars-run: 150px;
-  --size-foil-galaxy-stars-run-far: 50px;
-  --space-foil-galaxy-stars-far-x: 90px;
-  --space-foil-galaxy-stars-far-y: 40px;
-  --share-foil-galaxy-wash: 0.5;
-  --share-foil-galaxy-dodge: 0.6;
-  --share-foil-galaxy-glare-near: 50%;
-  --share-foil-galaxy-glare-mid: 15%;
-  --share-foil-galaxy-mask-near: 80%;
-  --share-foil-galaxy-mask-mid: 67%;
-  --share-foil-galaxy-mask-far: 55%;
-  --size-foil-galaxy-mask-near: 40%;
-  --size-foil-galaxy-mask-mid: 70%;
+  --color-foil-gold-base: #d8ab42;
+  --color-foil-gold-deep: #c99a33;
+  --color-foil-gold-mid: #ecc867;
+  --color-foil-gold-pale: #fbe7a6;
+  --color-foil-gold-warm: #d6a63e;
+  --color-foil-gold-soft: #efd07c;
+  --size-foil-gold-brush-line: 2px;
+  --size-foil-gold-brush-period: 5px;
+  --share-foil-gold-brush: 7%;
+  --angle-foil-gold-brush: 90deg;
+  --angle-foil-gold: 115deg;
+  --angle-foil-gold-turn: 30deg;
+  --size-foil-gold-stop-1: 70px;
+  --size-foil-gold-stop-2: 120px;
+  --size-foil-gold-stop-3: 190px;
+  --size-foil-gold-stop-4: 260px;
+  --size-foil-gold-stop-5: 330px;
+  --size-foil-gold-run: -500px;
 
   /*
-   * Cracked ice: the picture seen through facets, a site file of triangles in
-   * six greys with pale cracks between (public/foil-ice.svg, made by
-   * tools/foil-ice.mjs), run a little against the light. The foil multiplies
-   * it with a rainbow and the light, dodged at the share below (which lights a
-   * dark picture and would take a light one, such as Coinpusher, to white, so
-   * the share is small), the wash multiplies the file itself onto the picture
-   * at the facets share (which shows its facets on a light picture), and the
-   * glitter layer lays the cracks as light round the pointer only. The
-   * foil's filter is its own.
+   * Galaxy: a pale nebula of three clouds drifting over a lilac base, each
+   * moved by the light by its own run (a share of the tile's width and height).
    */
-  --size-foil-ice: 420px;
-  --size-foil-ice-run: 24px;
-  --brightness-foil-ice: 0.85;
-  --contrast-foil-ice: 1.4;
-  --share-foil-ice-facets: 0.3;
-  --share-foil-ice-dodge: 0.4;
-  --share-foil-ice-cracks: 0.4;
-  --share-foil-ice-glare-near: 55%;
-  --share-foil-ice-glare-mid: 15%;
-  --share-foil-ice-mask-near: 25%;
-  --share-foil-ice-mask-mid: 0%;
-  --size-foil-ice-mask-near: 20%;
-  --size-foil-ice-mask-mid: 45%;
+  --color-foil-galaxy-base: #aaa6e2;
+  --color-foil-galaxy-pink: #e79ccc;
+  --color-foil-galaxy-blue: #8fc0f5;
+  --color-foil-galaxy-lilac: #d7c2ff;
+  --size-foil-nebula-1: 45% 60%;
+  --space-foil-nebula-1-x: 15%;
+  --space-foil-nebula-1-y: 25%;
+  --share-foil-nebula-1-run-x: 25%;
+  --share-foil-nebula-1-run-y: 20%;
+  --size-foil-nebula-2: 50% 55%;
+  --space-foil-nebula-2-x: 85%;
+  --space-foil-nebula-2-y: 70%;
+  --share-foil-nebula-2-run-x: 25%;
+  --share-foil-nebula-2-run-y: 15%;
+  --size-foil-nebula-3: 40% 45%;
+  --space-foil-nebula-3-x: 50%;
+  --space-foil-nebula-3-y: 100%;
+  --share-foil-nebula-3-run-x: 10%;
+  --share-foil-nebula-3-run-y: 25%;
 
   /*
-   * Reverse holo, the common finish: the picture is left as it is, and the
-   * tile round it, where the label and title are, carries the sheen: an
-   * iridescent dark foil of five deep hues (their luminance is under what the
-   * label's amber allows its ground, about 0.036, the panel being 0.016),
-   * run across the tile as the light moves and laid over the panel at the hues
-   * share times how much of the shine shows, with a small share of light where
-   * the pointer is and of bars. Every word on it stays 7:1 (the contrast spec
-   * measures it as drawn, with the light at several places); light and bars
-   * are the shares that lighten the ground, and so are small. Only a card
-   * that flips has a tile: with script off the front is a plain panel.
+   * Cracked ice: silver shards, the site's own file of triangles in sixteen
+   * greys (public/foil-ice.svg, made by tools/foil-ice.mjs) under an overlay
+   * of the base at the share below, run a little against the light. The
+   * overlay is how light the darkest shard can be: at 88% of the base over
+   * black the ink holds 7:1 on it.
    */
-  --share-foil-reverse-light: 2%;
-  --size-foil-reverse-light: 45%;
-  --share-foil-reverse-hues: 80%;
-  --share-foil-reverse-bars: 1%;
-  --size-foil-reverse-bar-start: 9px;
-  --size-foil-reverse-bar-peak: 12px;
-  --size-foil-reverse-bar-end: 15px;
-  --size-foil-reverse-bar-period: 21px;
-  --size-foil-reverse-bars-run: 60px;
-  --size-foil-reverse-rainbow: 260%;
+  --color-foil-ice-base: #b0bac6;
+  --image-foil-ice: url('/foil-ice.svg');
+  --share-foil-ice-overlay: 88%;
+  --size-foil-ice: 300px;
+  --size-foil-ice-run: 18px;
+
+  /*
+   * Reverse holo, the common finish: silver with a softer rainbow of five
+   * hues laid over it at a share of each, and light bars; the silver itself
+   * is four greys at an angle the light tilts.
+   */
+  --color-foil-reverse-base: #c9ced6;
+  --color-foil-reverse-silver-light: #d9dee5;
+  --color-foil-reverse-silver-dark: #aeb6c1;
+  --color-foil-reverse-silver-pale: #dfe3e9;
+  --color-foil-reverse-silver-mid: #b4bcc7;
+  --color-foil-reverse-rose: #ffbed6;
+  --color-foil-reverse-amber: #ffe8aa;
+  --color-foil-reverse-mint: #bef6d8;
+  --color-foil-reverse-sky: #b0defa;
+  --color-foil-reverse-violet: #d6c8fc;
+  --share-foil-reverse-hue-strong: 55%;
+  --share-foil-reverse-hue-soft: 45%;
+  --share-foil-reverse-bars: 35%;
+  --size-foil-reverse-bar-start: 10px;
+  --size-foil-reverse-bar-peak: 14px;
+  --size-foil-reverse-bar-end: 18px;
+  --size-foil-reverse-bar-period: 26px;
+  --size-foil-reverse-bars-run: 80px;
+  --angle-foil-reverse: 100deg;
+  --angle-foil-reverse-turn: 40deg;
+  --size-foil-reverse-stop: 80px;
+  --size-foil-reverse-run: -480px;
+  --angle-foil-reverse-silver: 160deg;
+  --angle-foil-reverse-silver-turn: 30deg;
+  --share-foil-reverse-silver-mid: 45%;
+  --share-foil-reverse-silver-far: 60%;
 }
 
 /*

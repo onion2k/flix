@@ -849,166 +849,14 @@ p {
 }
 
 /* The shine of every card, in the finish its data-finish says (tokens.css says
-   what each part is, and each finish): three layers over its picture, a lift and a tilt toward a mouse, and how much of it shows
-   (--foil-on). Where the sheen is and how far the card tilts are properties
-   registered in tokens.css, whose first values are the resting place, and
-   which src/scripts/shine.ts sets on the card. The layers lie over the picture
-   alone, never under the label, the title, the back's words or its buttons;
-   they let every press through to the flip button, which is above them, and
-   the Pause button is above all. They are drawn over a playing loop as over the
-   still, and blend with whichever is under them. */
-
-/* The foil: a pale rainbow and bars of light, darkened away from the light,
-   given a contrast and dodged onto the picture, which lights its bright parts.
-   Its filter is a property of its own so that the house lights can add their
-   dim to it and not take its contrast away. */
-.foil {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  pointer-events: none;
-  --foil-filter: brightness(
-      calc(
-        var(--brightness-foil) + var(--foil-edge) * var(--brightness-foil-edge)
-      )
-    )
-    contrast(var(--contrast-foil)) saturate(var(--saturate-foil));
-  background-image:
-    repeating-linear-gradient(
-      var(--angle-foil-rainbow),
-      var(--color-foil-pale-rose) 0,
-      var(--color-foil-pale-gold) var(--size-foil-rainbow-stop),
-      var(--color-foil-pale-green) calc(var(--size-foil-rainbow-stop) * 2),
-      var(--color-foil-pale-sky) calc(var(--size-foil-rainbow-stop) * 3),
-      var(--color-foil-pale-violet) calc(var(--size-foil-rainbow-stop) * 4),
-      var(--color-foil-pale-rose) calc(var(--size-foil-rainbow-stop) * 5)
-    ),
-    repeating-linear-gradient(
-      var(--angle-foil-bars),
-      var(--color-foil-bar-dark) 0,
-      var(--color-foil-bar-dark) calc(var(--size-foil-bar) * 3),
-      var(--color-foil-bar-light) calc(var(--size-foil-bar) * 4),
-      var(--color-foil-bar-dark) calc(var(--size-foil-bar) * 5),
-      var(--color-foil-bar-dark) calc(var(--size-foil-bar) * 7)
-    ),
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      var(--color-foil-glare) 0,
-      var(--color-foil-light-mid) var(--size-foil-light-mid),
-      var(--color-foil-light-far) var(--size-foil-light-far)
-    );
-  background-blend-mode: soft-light, multiply;
-  background-size:
-    var(--size-foil-rainbow) var(--size-foil-rainbow),
-    var(--size-foil-bars) var(--size-foil-bars),
-    100% 100%;
-  background-position:
-    calc(50% - var(--shine-x) * var(--share-foil-rainbow-run-x))
-      calc(50% - var(--shine-y) * var(--share-foil-rainbow-run-y)),
-    calc(var(--shine-x) * var(--share-foil-bars-run-x))
-      calc(var(--shine-y) * var(--share-foil-bars-run-y)),
-    center;
-  filter: var(--foil-filter);
-  mix-blend-mode: color-dodge;
-  opacity: calc(var(--share-foil-dodge) * var(--foil-on));
-}
-
-/* The flare: a hot spot of white where the pointer is, inside the foil, so
-   that the dodge lights the picture round it even where the picture is dark
-   (dodged with white, all but black goes to light). */
-.foil::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(
-    circle at calc(var(--shine-x) * 100%) calc(var(--shine-y) * 100%),
-    color-mix(
-        in srgb,
-        var(--color-foil-glare) var(--share-foil-flare-near),
-        transparent
-      )
-      0,
-    color-mix(
-        in srgb,
-        var(--color-foil-glare) var(--share-foil-flare-mid),
-        transparent
-      )
-      var(--size-foil-flare-mid),
-    transparent var(--size-foil-flare)
-  );
-  mix-blend-mode: soft-light;
-}
-
-/* The wash: the bright rainbow laid over the picture, its angle turning and
-   its place running as the pointer moves. Under the glitter and the foil, and
-   over the picture: it is placed as the foil is, a step lower. */
-.foil-wash {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  pointer-events: none;
-  background-image: linear-gradient(
-    calc(var(--angle-foil-wash) + var(--shine-x) * var(--angle-foil-wash-turn)),
-    var(--color-foil-rose),
-    var(--color-foil-gold),
-    var(--color-foil-mint),
-    var(--color-foil-sky),
-    var(--color-foil-violet),
-    var(--color-foil-rose)
-  );
-  background-size: var(--size-foil-wash) 100%;
-  background-position: calc(50% - var(--shine-x) * var(--share-foil-wash-run))
-    center;
-  mix-blend-mode: overlay;
-  opacity: calc(var(--share-foil-wash) * var(--foil-on));
-}
-
-/* How far the sheen is from the card's middle: 0 there, 1 at a corner. The
-   foil grows brighter toward the edges by it, as light off foil does. And how
-   much of the shine shows: a little at rest, on every screen, and all of it
-   while a mouse is on the card (below). The rest are what the glitter's rule
-   below reads, set for the holo, the top picks' finish, which the other
-   finishes then change (each in its own rule, after it). */
+   what each part is, and each finish): the card is a light tile in it, a lift
+   and a tilt toward a mouse, and how much of the light shows (--foil-on).
+   Where the sheen is and how far the card tilts are properties registered in
+   tokens.css, whose first values are the resting place, and which
+   src/scripts/shine.ts sets on the card. Nothing is laid over a picture or a
+   loop: the finish is the tile round the picture, under its words. */
 .card {
-  --foil-edge: min(
-    1,
-    calc(hypot(calc(var(--shine-x) - 0.5), calc(var(--shine-y) - 0.5)) * 1.4142)
-  );
   --foil-on: var(--share-foil-rest);
-  --foil-glare-tint: var(--color-foil-glare);
-  --foil-glare-near: var(--share-foil-glare-near);
-  --foil-glare-mid: var(--share-foil-glare-mid);
-  --foil-tint: repeating-linear-gradient(
-    var(--angle-foil-glitter),
-    var(--color-foil-rose),
-    var(--color-foil-gold),
-    var(--color-foil-mint),
-    var(--color-foil-sky),
-    var(--color-foil-violet),
-    var(--color-foil-rose)
-  );
-  --foil-glitter-size: var(--size-foil-glitter);
-  --foil-glitter-fine-size: var(--size-foil-glitter-fine);
-  --foil-glitter-run: var(--size-foil-glitter-run);
-  --foil-glitter-run-fine: var(--size-foil-glitter-run-fine);
-  --foil-glitter-space-x: var(--space-foil-glitter-x);
-  --foil-glitter-space-y: var(--space-foil-glitter-y);
-  --foil-tint-size: var(--size-foil-glitter-tint);
-  --foil-tint-run-x: var(--share-foil-glitter-run-x);
-  --foil-tint-run-y: var(--share-foil-glitter-run-y);
-  --foil-mask-near: var(--share-foil-glitter-near);
-  --foil-mask-mid: var(--share-foil-glitter-mid);
-  --foil-mask-far: var(--share-foil-glitter-far);
-  --foil-mask-near-size: var(--size-foil-glitter-near);
-  --foil-mask-mid-size: var(--size-foil-glitter-mid);
 }
 
 /* Under a mouse (and only where one hovers: a tap would leave it stuck) the
@@ -1043,164 +891,199 @@ p {
   }
 }
 
-/* The glitter, on the picture's frame: the site's glitter file at two sizes,
-   run a little with the pointer and tinted by the bright rainbow, added onto
-   the picture, strong round the light and faint away from it, with a glare of
-   light added on top. A dodge cannot light black, and two of the three best
-   pictures are mostly dark: this is what shines on them. */
-.card .frame::before {
+/* The tile. A card that flips (script marks it) has the front of a light tile
+   in its finish: the base colour, the finish's layers over it (each finish
+   sets --foil-tile, with its size and place, below), a dark edge, and the
+   picture set into it by the inset, with the thin ring round the frame a
+   trading card has. Without script the card is as it was, a panel, with no
+   finish at all. */
+.card[data-finish][data-flips] {
+  --foil-tile-size: 100% 100%;
+  --foil-tile-place: center;
+}
+
+.card[data-finish][data-flips] .front {
+  padding: var(--space-tile-inset) var(--space-tile-inset) 0;
+  background-color: var(--foil-base);
+  background-image: var(--foil-tile);
+  background-size: var(--foil-tile-size);
+  background-position: var(--foil-tile-place);
+  border-color: color-mix(
+    in srgb,
+    var(--color-ground) var(--share-tile-edge),
+    transparent
+  );
+}
+
+.card[data-flips] .front > .frame {
+  box-shadow: 0 0 0 var(--size-edge)
+    color-mix(in srgb, var(--color-ground) var(--share-tile-frame), transparent);
+}
+
+/* The words on a tile are the ground's own dark, which every tile is light
+   enough for (7:1, as drawn: tests/e2e/contrast.spec.ts). The label cannot be
+   the accent here, which is 1.5:1 on a light tile. The flip button's words are
+   hidden and are the ink too, so that a measure of every text node holds. */
+.card[data-flips] .front > :is(.label, .card-title, .card-flip) {
+  color: var(--color-ground);
+}
+
+.card[data-flips] .front > .label {
+  font-weight: 800;
+}
+
+/* The glare: a soft light where the pointer is, behind the picture and the
+   words, on the front and (where it is a face of the card) the back. */
+.card[data-finish][data-flips] .front::after,
+.card[data-finish][data-flips] .back::after {
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: -1;
   pointer-events: none;
-  background-image:
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
+  background: radial-gradient(
+    farthest-corner circle at calc(var(--shine-x) * 100%)
+      calc(var(--shine-y) * 100%),
+    color-mix(
+        in srgb,
+        var(--color-foil-glare)
+          calc(var(--share-foil-glare-near) * var(--foil-on)),
+        transparent
+      )
+      0,
+    color-mix(
+        in srgb,
+        var(--color-foil-glare)
+          calc(var(--share-foil-glare-mid) * var(--foil-on)),
+        transparent
+      )
+      var(--size-foil-glare-mid),
+    transparent var(--size-foil-glare)
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* At a desk the back is a face of the card, and the same tile, with the same
+   dark words. Its Play link is amber with dark words and, on a light tile,
+   gets the ink for its edge (3:1 on the darkest of any tile), as the Close
+   button does, and a ring inside the back is the ink and not the accent.
+   A phone's back is a sheet fixed to the foot of the window and stays the
+   dark panel with its light words, which is below 40rem. */
+@media (width > 40rem) {
+  .card[data-finish][data-flips] .back {
+    background-color: var(--foil-base);
+    background-image: var(--foil-tile);
+    background-size: var(--foil-tile-size);
+    background-position: var(--foil-tile-place);
+    border-color: color-mix(
+      in srgb,
+      var(--color-ground) var(--share-tile-edge),
+      transparent
+    );
+    color: var(--color-ground);
+  }
+
+  .card[data-flips] .back .label {
+    color: var(--color-ground);
+    font-weight: 800;
+  }
+
+  .card[data-flips] .back .card-link {
+    border-color: var(--color-ground);
+  }
+
+  .card[data-flips] .back .card-unflip {
+    box-shadow: 0 0 0 var(--size-edge) var(--color-ground);
+  }
+
+  .card[data-flips] .back :focus-visible {
+    outline-color: var(--color-ground);
+  }
+}
+
+/* Holo, the top picks': bars of light and a vivid rainbow on silver. */
+.card[data-finish='holo'] {
+  --foil-base: var(--color-foil-holo-base);
+  --foil-run: calc(
+    var(--shine-x) * var(--size-foil-holo-run-x) + var(--shine-y) *
+      var(--size-foil-holo-run-y)
+  );
+  --foil-tile:
+    repeating-linear-gradient(
+      var(--angle-foil-bars),
+      transparent 0,
+      transparent var(--size-foil-holo-bar-start),
       color-mix(
           in srgb,
-          var(--foil-glare-tint) var(--foil-glare-near),
+          var(--color-foil-glare)
+            calc(
+              var(--share-foil-holo-bars) + var(--share-foil-holo-bars-on) *
+                var(--foil-on)
+            ),
+          transparent
+        )
+        var(--size-foil-holo-bar-peak),
+      transparent var(--size-foil-holo-bar-end),
+      transparent var(--size-foil-holo-bar-period)
+    ),
+    repeating-linear-gradient(
+      calc(
+        var(--angle-foil-holo) + var(--shine-x) * var(--angle-foil-holo-turn)
+      ),
+      var(--color-foil-rose) var(--foil-run),
+      var(--color-foil-cream) calc(var(--foil-run) + var(--size-foil-holo-stop)),
+      var(--color-foil-mint)
+        calc(var(--foil-run) + var(--size-foil-holo-stop) * 2),
+      var(--color-foil-sky)
+        calc(var(--foil-run) + var(--size-foil-holo-stop) * 3),
+      var(--color-foil-violet)
+        calc(var(--foil-run) + var(--size-foil-holo-stop) * 4),
+      var(--color-foil-rose)
+        calc(var(--foil-run) + var(--size-foil-holo-stop) * 5)
+    );
+  --foil-tile-place:
+    calc(var(--shine-x) * var(--size-foil-holo-bars-run)) 0, 0 0;
+}
+
+/* Gold: brushed gold, bands from deep to pale across it. The brushing is light
+   lines only: the deep stop is as dark as a tile may be. */
+.card[data-finish='gold'] {
+  --foil-base: var(--color-foil-gold-base);
+  --foil-run: calc(var(--shine-x) * var(--size-foil-gold-run));
+  --foil-tile:
+    repeating-linear-gradient(
+      var(--angle-foil-gold-brush),
+      color-mix(
+          in srgb,
+          var(--color-foil-glare) var(--share-foil-gold-brush),
           transparent
         )
         0,
-      color-mix(
-          in srgb,
-          var(--foil-glare-tint) var(--foil-glare-mid),
-          transparent
-        )
-        var(--size-foil-glare-mid),
-      transparent var(--size-foil-glare)
+      transparent var(--size-foil-gold-brush-line),
+      transparent var(--size-foil-gold-brush-period)
     ),
-    var(--image-foil-glitter), var(--image-foil-glitter), var(--foil-tint);
-  background-blend-mode: screen, multiply, screen;
-  background-size:
-    100% 100%,
-    var(--foil-glitter-size) var(--foil-glitter-size),
-    var(--foil-glitter-fine-size) var(--foil-glitter-fine-size),
-    var(--foil-tint-size) var(--foil-tint-size);
-  background-position:
-    center,
-    calc(var(--shine-x) * var(--foil-glitter-run) * -1)
-      calc(var(--shine-y) * var(--foil-glitter-run) * -1),
-    calc(
-        var(--shine-x) * var(--foil-glitter-run-fine) +
-          var(--foil-glitter-space-x)
-      )
-      calc(
-        var(--shine-y) * var(--foil-glitter-run-fine) +
-          var(--foil-glitter-space-y)
-      ),
-    calc(50% - var(--shine-x) * var(--foil-tint-run-x))
-      calc(50% - var(--shine-y) * var(--foil-tint-run-y));
-  mask-image: radial-gradient(
-    farthest-corner circle at calc(var(--shine-x) * 100%)
-      calc(var(--shine-y) * 100%),
-    var(--color-ground) 0,
-    color-mix(in srgb, var(--color-ground) var(--foil-mask-near), transparent)
-      var(--foil-mask-near-size),
-    color-mix(in srgb, var(--color-ground) var(--foil-mask-mid), transparent)
-      var(--foil-mask-mid-size),
-    color-mix(in srgb, var(--color-ground) var(--foil-mask-far), transparent)
-      100%
-  );
-  mix-blend-mode: screen;
-  opacity: var(--foil-on);
-}
-
-/* The finishes. The holo, the top picks', is what is written above. Each of
-   the others changes only what the three layers draw, and is a set of
-   values for the glitter's rule above where its shape is the same (gold and
-   galaxy), and rules of its own where it is not. Under forced colours none is
-   drawn, and the reverse's tile is a plain panel (below). */
-
-/* Gold glitter. */
-.card[data-finish='gold'] {
-  --foil-glare-tint: var(--color-foil-gold-glare);
-  --foil-glare-near: var(--share-foil-gold-glare-near);
-  --foil-glare-mid: var(--share-foil-gold-glare-mid);
-  --foil-tint: repeating-linear-gradient(
-    var(--angle-foil-glitter),
-    var(--color-foil-gold-spark-a),
-    var(--color-foil-gold-spark-b),
-    var(--color-foil-gold-spark-c),
-    var(--color-foil-gold-spark-d),
-    var(--color-foil-gold-spark-a)
-  );
-  --foil-glitter-size: var(--size-foil-gold-glitter);
-  --foil-glitter-fine-size: var(--size-foil-gold-glitter-fine);
-  --foil-mask-near: var(--share-foil-gold-mask-near);
-  --foil-mask-mid: var(--share-foil-gold-mask-mid);
-  --foil-mask-far: var(--share-foil-gold-mask-far);
-  --foil-mask-near-size: var(--size-foil-gold-mask-near);
-  --foil-mask-mid-size: var(--size-foil-gold-mask-mid);
-}
-
-.card[data-finish='gold'] .foil-wash {
-  background-image: linear-gradient(
-    calc(var(--angle-foil-wash) + var(--shine-x) * var(--angle-foil-wash-turn)),
-    var(--color-foil-gold-deep),
-    var(--color-foil-gold),
-    var(--color-foil-gold-cream),
-    var(--color-foil-gold-amber),
-    var(--color-foil-gold-cream),
-    var(--color-foil-gold),
-    var(--color-foil-gold-deep)
-  );
-  mix-blend-mode: soft-light;
-  opacity: calc(var(--share-foil-gold-wash) * var(--foil-on));
-}
-
-.card[data-finish='gold'] .foil {
-  background-image:
     repeating-linear-gradient(
-      var(--angle-foil-gold-bars),
-      var(--color-foil-pale-gold) 0,
-      var(--color-foil-gold-mid) var(--size-foil-gold-bar-stop),
-      var(--color-foil-gold-white) calc(var(--size-foil-gold-bar-stop) * 2),
-      var(--color-foil-pale-gold) calc(var(--size-foil-gold-bar-stop) * 3)
-    ),
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      var(--color-foil-glare) 0,
-      var(--color-foil-gold-dim) var(--size-foil-light-mid),
-      var(--color-foil-light-far) var(--size-foil-light-far)
+      calc(
+        var(--angle-foil-gold) + var(--shine-x) * var(--angle-foil-gold-turn)
+      ),
+      var(--color-foil-gold-deep) var(--foil-run),
+      var(--color-foil-gold-mid)
+        calc(var(--foil-run) + var(--size-foil-gold-stop-1)),
+      var(--color-foil-gold-pale)
+        calc(var(--foil-run) + var(--size-foil-gold-stop-2)),
+      var(--color-foil-gold-warm)
+        calc(var(--foil-run) + var(--size-foil-gold-stop-3)),
+      var(--color-foil-gold-soft)
+        calc(var(--foil-run) + var(--size-foil-gold-stop-4)),
+      var(--color-foil-gold-deep)
+        calc(var(--foil-run) + var(--size-foil-gold-stop-5))
     );
-  background-blend-mode: multiply;
-  background-size:
-    var(--size-foil-rainbow) var(--size-foil-rainbow),
-    100% 100%;
-  opacity: calc(var(--share-foil-gold-dodge) * var(--foil-on));
 }
 
-/* Galaxy: a nebula and stars. */
+/* Galaxy: three clouds of a pale nebula drifting over lilac. */
 .card[data-finish='galaxy'] {
-  --foil-glare-tint: var(--color-foil-galaxy-glare);
-  --foil-glare-near: var(--share-foil-galaxy-glare-near);
-  --foil-glare-mid: var(--share-foil-galaxy-glare-mid);
-  --foil-tint: linear-gradient(
-    var(--color-foil-galaxy-frost-a),
-    var(--color-foil-galaxy-frost-b)
-  );
-  --foil-glitter-size: var(--size-foil-galaxy-stars);
-  --foil-glitter-fine-size: var(--size-foil-galaxy-stars-far);
-  --foil-glitter-run: var(--size-foil-galaxy-stars-run);
-  --foil-glitter-run-fine: var(--size-foil-galaxy-stars-run-far);
-  --foil-glitter-space-x: var(--space-foil-galaxy-stars-far-x);
-  --foil-glitter-space-y: var(--space-foil-galaxy-stars-far-y);
-  --foil-tint-size: 100%;
-  --foil-tint-run-x: 0%;
-  --foil-tint-run-y: 0%;
-  --foil-mask-near: var(--share-foil-galaxy-mask-near);
-  --foil-mask-mid: var(--share-foil-galaxy-mask-mid);
-  --foil-mask-far: var(--share-foil-galaxy-mask-far);
-  --foil-mask-near-size: var(--size-foil-galaxy-mask-near);
-  --foil-mask-mid-size: var(--size-foil-galaxy-mask-mid);
-}
-
-.card[data-finish='galaxy'] .foil-wash {
-  background-image:
+  --foil-base: var(--color-foil-galaxy-base);
+  --foil-tile:
     radial-gradient(
       var(--size-foil-nebula-1) at
         calc(
@@ -1211,7 +1094,7 @@ p {
           var(--space-foil-nebula-1-y) + var(--shine-y) *
             var(--share-foil-nebula-1-run-y)
         ),
-      var(--color-foil-violet),
+      var(--color-foil-galaxy-pink),
       transparent
     ),
     radial-gradient(
@@ -1224,7 +1107,7 @@ p {
           var(--space-foil-nebula-2-y) - var(--shine-y) *
             var(--share-foil-nebula-2-run-y)
         ),
-      var(--color-foil-sky),
+      var(--color-foil-galaxy-blue),
       transparent
     ),
     radial-gradient(
@@ -1237,170 +1120,46 @@ p {
           var(--space-foil-nebula-3-y) - var(--shine-y) *
             var(--share-foil-nebula-3-run-y)
         ),
-      var(--color-foil-rose),
+      var(--color-foil-galaxy-lilac),
       transparent
     );
-  background-size: auto;
-  background-position: 0 0;
-  mix-blend-mode: screen;
-  opacity: calc(var(--share-foil-galaxy-wash) * var(--foil-on));
 }
 
-.card[data-finish='galaxy'] .foil {
-  background-image:
-    linear-gradient(
-      calc(
-        var(--angle-foil-galaxy) + var(--shine-x) *
-          var(--angle-foil-galaxy-turn)
-      ),
-      var(--color-foil-galaxy-indigo),
-      var(--color-foil-galaxy-blue),
-      var(--color-foil-galaxy-purple),
-      var(--color-foil-galaxy-cobalt)
-    ),
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      var(--color-foil-glare) 0,
-      var(--color-foil-galaxy-dim) var(--size-foil-light-mid),
-      var(--color-foil-light-far) var(--size-foil-light-far)
-    );
-  background-blend-mode: multiply;
-  background-size: 100% 100%;
-  opacity: calc(var(--share-foil-galaxy-dodge) * var(--foil-on));
-}
-
-/* Cracked ice: facets of the picture, each of a different strength, lit in the
-   rainbow where the picture is dark (the foil, dodged) and darkened where it is
-   light (the wash, multiplied: a dodge takes a light picture to white, which
-   gave the facets nothing to show), and the cracks between them catching the
-   light. */
-.card[data-finish='ice'] .foil-wash {
-  background-image: var(--image-foil-ice);
-  background-size: var(--size-foil-ice) var(--size-foil-ice);
-  background-position: calc(var(--shine-x) * var(--size-foil-ice-run) * -1)
-    calc(var(--shine-y) * var(--size-foil-ice-run) * -1);
-  mix-blend-mode: multiply;
-  opacity: calc(var(--share-foil-ice-facets) * var(--foil-on));
-}
-
-.card[data-finish='ice'] .foil {
-  --foil-filter: brightness(var(--brightness-foil-ice))
-    contrast(var(--contrast-foil-ice));
-  background-image:
-    var(--image-foil-ice),
-    repeating-linear-gradient(
-      var(--angle-foil-rainbow),
-      var(--color-foil-pale-rose) 0,
-      var(--color-foil-pale-gold) var(--size-foil-rainbow-stop),
-      var(--color-foil-pale-green) calc(var(--size-foil-rainbow-stop) * 2),
-      var(--color-foil-pale-sky) calc(var(--size-foil-rainbow-stop) * 3),
-      var(--color-foil-pale-violet) calc(var(--size-foil-rainbow-stop) * 4),
-      var(--color-foil-pale-rose) calc(var(--size-foil-rainbow-stop) * 5)
-    ),
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      var(--color-foil-glare) 0,
-      var(--color-foil-light-mid) var(--size-foil-light-mid),
-      var(--color-foil-light-far) var(--size-foil-light-far)
-    );
-  background-blend-mode: multiply, multiply;
-  background-size:
-    var(--size-foil-ice) var(--size-foil-ice),
-    var(--size-foil-rainbow) var(--size-foil-rainbow),
-    100% 100%;
-  background-position:
-    calc(var(--shine-x) * var(--size-foil-ice-run) * -1)
-      calc(var(--shine-y) * var(--size-foil-ice-run) * -1),
-    calc(50% - var(--shine-x) * var(--share-foil-rainbow-run-x))
-      calc(50% - var(--shine-y) * var(--share-foil-rainbow-run-y)),
-    center;
-  opacity: calc(var(--share-foil-ice-dodge) * var(--foil-on));
-}
-
-.card[data-finish='ice'] .frame::before {
-  background-image:
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      color-mix(
-          in srgb,
-          var(--color-foil-glare) var(--share-foil-ice-glare-near),
-          transparent
-        )
-        0,
-      color-mix(
-          in srgb,
-          var(--color-foil-glare) var(--share-foil-ice-glare-mid),
-          transparent
-        )
-        var(--size-foil-glare-mid),
-      transparent var(--size-foil-glare)
-    ),
+/* Cracked ice: silver shards, the base laid over the site's file of them. */
+.card[data-finish='ice'] {
+  --foil-base: var(--color-foil-ice-base);
+  --foil-ice-overlay: color-mix(
+    in srgb,
+    var(--color-foil-ice-base) var(--share-foil-ice-overlay),
+    transparent
+  );
+  --foil-tile:
+    linear-gradient(var(--foil-ice-overlay), var(--foil-ice-overlay)),
     var(--image-foil-ice);
-  background-blend-mode: normal;
-  background-size:
-    100% 100%,
-    var(--size-foil-ice) var(--size-foil-ice);
-  background-position:
+  --foil-tile-size: 100% 100%, var(--size-foil-ice) var(--size-foil-ice);
+  --foil-tile-place:
     center,
     calc(var(--shine-x) * var(--size-foil-ice-run) * -1)
       calc(var(--shine-y) * var(--size-foil-ice-run) * -1);
-  mask-image: radial-gradient(
-    farthest-corner circle at calc(var(--shine-x) * 100%)
-      calc(var(--shine-y) * 100%),
-    var(--color-ground) 0,
-    color-mix(
-        in srgb,
-        var(--color-ground) var(--share-foil-ice-mask-near),
-        transparent
-      )
-      var(--size-foil-ice-mask-near),
-    color-mix(
-        in srgb,
-        var(--color-ground) var(--share-foil-ice-mask-mid),
-        transparent
-      )
-      var(--size-foil-ice-mask-mid),
-    transparent 100%
+}
+
+/* Reverse holo, the common finish: silver with a softer rainbow and bars. */
+.card[data-finish='reverse'] {
+  --foil-base: var(--color-foil-reverse-base);
+  --foil-run: calc(var(--shine-x) * var(--size-foil-reverse-run));
+  --foil-hue-rose: color-mix(
+    in srgb,
+    var(--color-foil-reverse-rose) var(--share-foil-reverse-hue-strong),
+    transparent
   );
-  opacity: calc(var(--share-foil-ice-cracks) * var(--foil-on));
-}
-
-/* Reverse holo: the picture is left alone and the tile round it, where the
-   label and the title are, is the foil: a light, bars and a rainbow, each a
-   share of its colour times how much of the shine shows, over the panel the
-   tile is. The words stay 7:1 at full shine with the light anywhere
-   (contrast.spec.ts). It is a tile only where the card flips (script on):
-   with script off the front is the plain panel and a reverse card draws
-   nothing, which is fine for a decoration. */
-.card[data-finish='reverse'] :is(.foil, .foil-wash),
-.card[data-finish='reverse'] .frame::before {
-  display: none;
-}
-
-.card[data-finish='reverse'][data-flips] .front {
-  background-image:
-    radial-gradient(
-      farthest-corner circle at calc(var(--shine-x) * 100%)
-        calc(var(--shine-y) * 100%),
-      color-mix(
-          in srgb,
-          var(--color-foil-glare)
-            calc(var(--share-foil-reverse-light) * var(--foil-on)),
-          transparent
-        )
-        0,
-      transparent var(--size-foil-reverse-light)
-    ),
+  --foil-tile:
     repeating-linear-gradient(
       var(--angle-foil-bars),
       transparent 0,
       transparent var(--size-foil-reverse-bar-start),
       color-mix(
           in srgb,
-          var(--color-foil-bar-light)
+          var(--color-foil-glare)
             calc(var(--share-foil-reverse-bars) * var(--foil-on)),
           transparent
         )
@@ -1408,68 +1167,51 @@ p {
       transparent var(--size-foil-reverse-bar-end),
       transparent var(--size-foil-reverse-bar-period)
     ),
+    repeating-linear-gradient(
+      calc(
+        var(--angle-foil-reverse) + var(--shine-x) *
+          var(--angle-foil-reverse-turn)
+      ),
+      var(--foil-hue-rose) var(--foil-run),
+      color-mix(
+          in srgb,
+          var(--color-foil-reverse-amber) var(--share-foil-reverse-hue-soft),
+          transparent
+        )
+        calc(var(--foil-run) + var(--size-foil-reverse-stop)),
+      color-mix(
+          in srgb,
+          var(--color-foil-reverse-mint) var(--share-foil-reverse-hue-soft),
+          transparent
+        )
+        calc(var(--foil-run) + var(--size-foil-reverse-stop) * 2),
+      color-mix(
+          in srgb,
+          var(--color-foil-reverse-sky) var(--share-foil-reverse-hue-strong),
+          transparent
+        )
+        calc(var(--foil-run) + var(--size-foil-reverse-stop) * 3),
+      color-mix(
+          in srgb,
+          var(--color-foil-reverse-violet) var(--share-foil-reverse-hue-strong),
+          transparent
+        )
+        calc(var(--foil-run) + var(--size-foil-reverse-stop) * 4),
+      var(--foil-hue-rose)
+        calc(var(--foil-run) + var(--size-foil-reverse-stop) * 5)
+    ),
     linear-gradient(
       calc(
-        var(--angle-foil-wash) + var(--shine-x) * var(--angle-foil-wash-turn)
+        var(--angle-foil-reverse-silver) + var(--shine-y) *
+          var(--angle-foil-reverse-silver-turn)
       ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-rose)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-amber)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-teal)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-sky)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-violet)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      ),
-      color-mix(
-        in srgb,
-        var(--color-foil-deep-rose)
-          calc(var(--share-foil-reverse-hues) * var(--foil-on)),
-        transparent
-      )
+      var(--color-foil-reverse-silver-light),
+      var(--color-foil-reverse-silver-dark) var(--share-foil-reverse-silver-mid),
+      var(--color-foil-reverse-silver-pale) var(--share-foil-reverse-silver-far),
+      var(--color-foil-reverse-silver-mid)
     );
-  background-size:
-    100% 100%,
-    100% 100%,
-    var(--size-foil-reverse-rainbow) 100%;
-  background-position:
-    center,
-    calc(var(--shine-x) * var(--size-foil-reverse-bars-run)) 0,
-    calc(50% - var(--shine-x) * var(--share-foil-wash-run)) 0;
-}
-
-/* On a card that flips the picture is as tall as its row leaves it, so the
-   foil and the wash are laid in the frame's own cell, as the Pause button's
-   place is, and are the frame's size. */
-.card[data-flips] :is(.foil, .foil-wash) {
-  position: relative;
-  top: auto;
-  left: auto;
-  width: auto;
-  grid-area: 1 / 1;
-  place-self: stretch;
-  aspect-ratio: auto;
+  --foil-tile-place:
+    calc(var(--shine-x) * var(--size-foil-reverse-bars-run)) 0, 0 0, 0 0;
 }
 
 /* Each face of a best card is a group of its own, so that the foil blends with
@@ -1500,26 +1242,19 @@ p {
 }
 
 /* House lights. While a card is pointed at, or holds keyboard focus, the
-   pictures of the other cards in its row are dimmed, and the words, the edges,
-   the other rows and the feature are not, so that no text changes its
-   contrast. Only the img, and a loop playing over it and a best card's foil and
-   reflection, is filtered (the foil keeps its own filter and adds the dim): a filter
-   on the card would dim its words. A late frame is dimmed the same way, whether its picture has arrived
-   or not: the flat panel colour it holds meanwhile is the frame's own
-   background, is not a picture, and is left as it is. The dim is a state and
-   so is here and not in the motion block at the foot; only its ease is there.
-   A browser without :has() draws none of this, which is the page as it was. */
+   pictures of the other cards in its row are dimmed, and the words, the tiles,
+   the edges, the other rows and the feature are not, so that no text changes
+   its contrast. Only the img, and a loop playing over it, is filtered: a
+   filter on the card would dim its words and its tile. A late frame is dimmed
+   the same way, whether its picture has arrived or not: the flat panel colour
+   it holds meanwhile is the frame's own background, is not a picture, and is
+   left as it is. The dim is a state and so is here and not in the motion block
+   at the foot; only its ease is there. A browser without :has() draws none of
+   this, which is the page as it was. */
 .strip:has(.card :focus-visible)
   .card:not(:has(:focus-visible))
-  :is(.frame img, .frame .card-loop, .foil-wash),
-.strip:has(.card :focus-visible)
-  .card:not(:has(:focus-visible))
-  .frame::before {
+  :is(.frame img, .frame .card-loop) {
   filter: brightness(var(--brightness-dim));
-}
-
-.strip:has(.card :focus-visible) .card:not(:has(:focus-visible)) .foil {
-  filter: var(--foil-filter) brightness(var(--brightness-dim));
 }
 
 /* Hover only where there is a mouse: a tap on a touch screen leaves its hover
@@ -1528,17 +1263,8 @@ p {
 @media (hover: hover) {
   .strip:has(.card:is([data-linked], [data-flips]):hover)
     .card:not(:hover)
-    :is(.frame img, .frame .card-loop, .foil-wash),
-  .strip:has(.card:is([data-linked], [data-flips]):hover)
-    .card:not(:hover)
-    .frame::before {
+    :is(.frame img, .frame .card-loop) {
     filter: brightness(var(--brightness-dim));
-  }
-
-  .strip:has(.card:is([data-linked], [data-flips]):hover)
-    .card:not(:hover)
-    .foil {
-    filter: var(--foil-filter) brightness(var(--brightness-dim));
   }
 }
 
@@ -1729,6 +1455,12 @@ main {
     display: none;
   }
 
+  /* The sheet is the dark panel, with no tile's light under its words. */
+  .card[data-finish][data-flips] .back::before,
+  .card[data-finish][data-flips] .back::after {
+    display: none;
+  }
+
   .card[data-flips][data-flipped] .front {
     transform: none;
   }
@@ -1804,15 +1536,15 @@ main {
     border-color: Highlight;
   }
 
-  /* No foil, no wash and no glitter: the card's own borders stand. */
-  .foil,
-  .foil-wash,
-  .card .frame::before {
-    display: none;
+  /* No finish: no tile image, no sparkle and no glare, on the front or the
+     back, and the words are the system's; the card's own borders stand. */
+  .card[data-finish][data-flips] :is(.front, .back) {
+    background-image: none;
   }
 
-  .card[data-finish='reverse'][data-flips] .front {
-    background-image: none;
+  .card[data-finish][data-flips] :is(.front, .back)::before,
+  .card[data-finish][data-flips] :is(.front, .back)::after {
+    display: none;
   }
 }
 
@@ -1860,11 +1592,6 @@ main {
       --tilt-x var(--duration-shine) ease-out,
       --tilt-y var(--duration-shine) ease-out,
       --foil-on var(--duration-foil-fade) ease-out;
-  }
-
-  .foil,
-  .foil-wash {
-    transition: filter var(--duration-dim) ease-out;
   }
 
   /* A best card lifts toward a mouse, and its shadow grows under it. The

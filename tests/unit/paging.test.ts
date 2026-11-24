@@ -249,9 +249,9 @@ describe('trim', () => {
   const GAP = 1.25 * REM;
   const ARROW = 3.25 * REM;
   const TARGET = 2.75 * REM;
-  // A phone's card is max(36vw, 7.75rem), and never made narrower than 6rem,
-  // the least its words need; a desk's has no least of its own here.
-  const LEAST_PHONE = 6 * REM;
+  // A phone's card is max(36vw, 7.75rem), and never made narrower than 7rem,
+  // the least its words need inside a tile's inset; a desk's has no least of its own here.
+  const LEAST_PHONE = 7 * REM;
   const site = (window: number) => {
     const phone = window <= 640;
     const start = (phone ? 1 : 3) * REM;

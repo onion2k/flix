@@ -293,13 +293,12 @@ test('with no preference the dim eases, so that the check above is not vacuous',
   );
 });
 
-// The finishes are pictures' layers, so they dim with the pictures: with a card
-// pointed at, the foil, the wash and the glitter of every other card in its row
-// are dimmed as its picture is, the finishes' own filters kept (the ice's and
-// the holo's), and the pointed card's are not. Words stay 7:1 (contrast.spec.ts
-// measures the page so, with a card hovered). The reverse holo has no such
-// layers, its sheen being the tile under the words, which is left as it is.
-test('hovering a card dims the other cards’ finishes in its row, and not its own', async ({
+// The finishes are the card's own tile, under its words, and are not dimmed: with
+// a card pointed at, only the pictures (and a loop over one) of every other card
+// in its row are dimmed, and no tile, no face and no light of one is, so that no
+// word changes its contrast (contrast.spec.ts measures the page so, with a card
+// hovered), and the pointed card's picture is not.
+test('hovering a card dims the other cards’ pictures in its row, and no tile', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -321,25 +320,26 @@ test('hovering a card dims the other cards’ finishes in its row, and not its o
   let others = 0;
   for (let at = 0; at < total; at += 1) {
     const filters = await cards.nth(at).evaluate((el) => ({
-      foil: getComputedStyle(el.querySelector('.foil') as Element).filter,
-      wash: getComputedStyle(el.querySelector('.foil-wash') as Element).filter,
-      glitter: getComputedStyle(
-        el.querySelector('.front .frame') as Element,
+      picture: getComputedStyle(el.querySelector('.frame img') as Element)
+        .filter,
+      front: getComputedStyle(el.querySelector('.front') as Element).filter,
+      back: getComputedStyle(el.querySelector('.back') as Element).filter,
+      before: getComputedStyle(
+        el.querySelector('.front') as Element,
         '::before',
       ).filter,
-      own: (el as HTMLElement).dataset['finish'],
+      after: getComputedStyle(el.querySelector('.front') as Element, '::after')
+        .filter,
     }));
-    if (filters.own === 'reverse') continue;
+    expect(
+      [filters.front, filters.back, filters.before, filters.after],
+      `card ${at}`,
+    ).toEqual(['none', 'none', 'none', 'none']);
     if (at === 1) {
-      expect(filters.wash).toBe('none');
-      expect(filters.glitter).toBe('none');
-      expect(filters.foil).not.toContain(dim);
+      expect(filters.picture).toBe('none');
       continue;
     }
-    expect(filters.wash, `card ${at}`).toContain(dim);
-    expect(filters.glitter, `card ${at}`).toContain(dim);
-    expect(filters.foil, `card ${at}`).toContain(dim);
-    expect(filters.foil, `card ${at}`).toContain('contrast(');
+    expect(filters.picture, `card ${at}`).toContain(dim);
     others += 1;
   }
   expect(others).toBeGreaterThan(2);

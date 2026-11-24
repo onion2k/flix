@@ -1,6 +1,6 @@
 # Foils for every card
 
-State: agreed 2026-11-24; landed 2026-11-24 (parts 1 to 6, with two tunings after part 4: cracked ice on a light picture, the reverse holo as dark iridescence).
+State: agreed 2026-11-24; landed 2026-11-24 (parts 1 to 6, with two tunings after part 4: cracked ice on a light picture, the reverse holo as dark iridescence). Round two (the light tiles, parts 7 to 10) agreed 2026-11-24.
 
 (On approval this file is copied to `plans/foils.md` in the project, and that
 copy is the one ticked. Facts hold on commit `3b51efe`.)
@@ -115,6 +115,58 @@ green; pictures and recordings go to the owner after parts 1 and 4.
       look pictures written again and every one looked at, a picture per
       finish added; mutations; `CLAUDE.md` moved on (Layout, Edge cases,
       Gates, What is not held, Keeps).
+
+## Round two: the light tiles (agreed 2026-11-24)
+
+Live, the owner found the gold and galaxy sparkles read as noise, cracked ice
+a static overlay that neither reflects nor shines, and the reverse holo muted
+by its dark tile. The owner's direction: every finish goes on the card's own
+tile, as the reverse holo did, not on the picture, so the picture and its
+loop are left alone; and the cards are light with dark words, so the effect
+pops. Mocked over the live build (sheet, close-ups, desk and phone
+recordings) and approved as mocked: "Build them as mocked".
+
+- **Off the picture:** the `.foil` and `.foil-wash` spans, the picture's
+  `.frame::before` glitter, and `public/foil-glitter.svg` go; nothing is laid
+  over a picture or a loop.
+- **The tile:** the front of a card that flips is a light tile in its finish,
+  the picture set into it by a small inset (a trading card's border), the
+  label and title dark (`--color-ground`), every word 7:1 on the tile at rest
+  and at full shine with the light anywhere. The back, where it is a face of
+  the card (not a phone's sheet), is the same tile with dark words, its Play
+  link given an edge that holds 3:1 on it; a phone's sheet stays the dark
+  panel. Without script the card is as before (no tile, no finish).
+- **The finishes on the tile:** holo, a vivid rainbow with bars on silver;
+  gold, brushed gold; galaxy, a pale nebula drifting; cracked ice, silver
+  shards (the tile file now sixteen greys) of which a few catch the light at
+  a time, a uniform grey the pointer sets differenced with them and given a
+  hard contrast; reverse, silver with a softer rainbow. Rainbows are moved by
+  their stops, never by their tile's place, so no seam shows.
+- **Sparkles that flash:** a new `public/foil-sparkle.svg` (soft points of
+  three sizes, some with a glint, on transparent, tiling; made by
+  `tools/foil-sparkle.mjs`) seen through narrow bands of light that sweep as
+  the pointer moves, so each point lights and fades: behind the words and
+  the picture, on every finish, strongest on gold and galaxy.
+- **Kept:** `--foil-on` (faint at rest, whole under a mouse or in focus on
+  touch), the lift and tilt, `shine.ts` and its touch focus, forced colours
+  (no finish), reduced motion (still), the house lights (pictures dimmed, no
+  tile dimmed, so no word changes contrast).
+
+- [x] 7. The tile and its words: off the picture, the light tile per finish,
+      the inset, dark words, the back's tile and its Play edge, the phone
+      sheet dark. `contrast.spec.ts` (every finish, front and back words,
+      darkest pixel under each at rest and full shine, 7:1; rings and the
+      Play edge 3:1), `contrast.test.ts` pairs, `shine.spec.ts` rewritten for
+      the tile (no layer over a picture; each finish's tile; forced colours
+      none), `tokens.test.ts`.
+- [ ] 8. Sparkles and the ice's light: the sparkle file and its generator,
+      the bands, the ice's lit shards. `shine.spec.ts` (the sparkle file sent
+      once; a lit shard changes as the light moves; sparkles move with it).
+- [ ] 9. The pass: weight against the 63,000 budget (stop and ask if over),
+      look baselines written again and every picture read, `npm run check`
+      twice, mutations, `CLAUDE.md` (Layout, Edge cases, Gates, What is not
+      held, Keeps: light cards in a dark page, the owner's, 2026-11-24).
+- [ ] 10. Shown to the owner; pushed only when asked.
 
 ## Verification
 

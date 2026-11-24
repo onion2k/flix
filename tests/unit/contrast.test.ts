@@ -80,6 +80,48 @@ const EDGES: [string, string, string][] = [
   ],
 ];
 
+// Every card is a light tile in its finish, with the ground's own dark for its
+// words (a card's front, and its back at a desk; a phone's back is the dark
+// sheet and is among the pairs above). The tile moves with the light, so what
+// is listed is each colour the tile is made of, the darkest it can come to,
+// and the page as drawn is held by tests/e2e/contrast.spec.ts. The cracked
+// ice's darkest is its overlay of the base over a black shard, worked out
+// from the two tokens that say it.
+const TILE_COLOURS = [
+  '--color-foil-holo-base',
+  '--color-foil-rose',
+  '--color-foil-cream',
+  '--color-foil-mint',
+  '--color-foil-sky',
+  '--color-foil-violet',
+  '--color-foil-gold-base',
+  '--color-foil-gold-deep',
+  '--color-foil-gold-mid',
+  '--color-foil-gold-pale',
+  '--color-foil-gold-warm',
+  '--color-foil-gold-soft',
+  '--color-foil-galaxy-base',
+  '--color-foil-galaxy-pink',
+  '--color-foil-galaxy-blue',
+  '--color-foil-galaxy-lilac',
+  '--color-foil-ice-base',
+  '--color-foil-reverse-base',
+  '--color-foil-reverse-silver-light',
+  '--color-foil-reverse-silver-dark',
+  '--color-foil-reverse-silver-pale',
+  '--color-foil-reverse-silver-mid',
+] as const;
+
+/** The ice tile's darkest: its base over black at the overlay's share. */
+function iceFloor(): string {
+  const base = resolve('--color-foil-ice-base');
+  const share = parseFloat(resolve('--share-foil-ice-overlay')) / 100;
+  const channels = [1, 3, 5].map((at) =>
+    Math.round(parseInt(base.slice(at, at + 2), 16) * share),
+  );
+  return `#${channels.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
 describe('contrast from the tokens', () => {
   it('reads the file, so that reading nothing is not a pass', () => {
     expect(tokens.length).toBeGreaterThan(0);
@@ -105,6 +147,43 @@ describe('contrast from the tokens', () => {
       ).toBeGreaterThanOrEqual(3);
     });
   }
+
+  for (const colour of TILE_COLOURS) {
+    it(`the ground’s ink on ${colour}, a colour of a card’s tile, is 7:1 or better`, () => {
+      const got = ratio(resolve('--color-ground'), resolve(colour));
+      expect(got, `${colour} is ${got.toFixed(2)}:1`).toBeGreaterThanOrEqual(7);
+    });
+  }
+
+  it('the ground’s ink on the cracked ice’s darkest shard is 7:1 or better', () => {
+    const got = ratio(resolve('--color-ground'), iceFloor());
+    expect(got, `${iceFloor()} is ${got.toFixed(2)}:1`).toBeGreaterThanOrEqual(
+      7,
+    );
+  });
+
+  // The Play link's edge, and the focus rings inside a back, are the ground's
+  // ink and not the accent, which is 1.5:1 on a light tile.
+  it('the ground’s ink, the back’s edges and rings, is 3:1 or better on the darkest of each tile', () => {
+    const darkest = [
+      '--color-foil-holo-base',
+      '--color-foil-violet',
+      '--color-foil-gold-deep',
+      '--color-foil-galaxy-base',
+      '--color-foil-reverse-silver-dark',
+    ];
+    for (const colour of [...darkest, iceFloor()]) {
+      const value = colour.startsWith('#') ? colour : resolve(colour);
+      const got = ratio(resolve('--color-ground'), value);
+      expect(got, `${colour} is ${got.toFixed(2)}:1`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('the accent is not an edge on a light tile, which is why the back has the ink', () => {
+    expect(
+      ratio(resolve('--color-accent'), resolve('--color-foil-holo-base')),
+    ).toBeLessThan(3);
+  });
 
   it('fails a token that is named and not in the file', () => {
     expect(() => resolve('--color-nope')).toThrow('not in tokens.css');

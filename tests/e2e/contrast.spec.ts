@@ -13,6 +13,14 @@ import { expect } from '@playwright/test';
 import { test } from '../clock';
 import { textPieces } from './text-pieces';
 import { settleOnFirstRow } from './card-loop';
+import {
+  channelsOf,
+  darkestOfTile,
+  darkestUnderWords,
+  luminanceOf,
+  newReader,
+  ratioOf,
+} from './tile';
 
 const WIDTHS = [1440, 390];
 const PAGES = [
@@ -346,45 +354,69 @@ for (const width of WIDTHS) {
   });
 }
 
-// A reverse holo card's sheen is the front's own background, under its label
-// and title, so the tokens' contrast says nothing and the text measure above,
-// which reads a flat colour, cannot see it. It is measured as drawn instead: at
-// full shine (a mouse on the card), with the light at the corners, the edges
-// and the middle, the words are hidden and the pixels they stand on are read,
-// and the brightest of them is the ground the words must hold 7:1 against.
-test.describe('a reverse holo card’s words, on its tile, as drawn', () => {
+// Every card is a light tile in its finish, with dark words, so the tokens
+// say nothing of what is under a word: the tile moves with the light and the
+// finish is a picture of bands, sparkles and shards. It is measured as drawn.
+// For one card of each finish (cracked ice on two), at rest and at full
+// shine (a mouse on the card), with the light at the corners, the edges and the
+// middle, the words are hidden and the pixels they stood on are read; the
+// darkest of them is the ground the words must hold 7:1 against. The front's
+// label and title, then the back's label, title and description (at a desk,
+// where the back is a face of the card: a phone's back is the dark sheet,
+// held by the text measure above). Then, on the back, the Play link's edge and
+// every focus ring in it are 3:1 against the darkest of the tile.
+const CARDS = [
+  { id: 'aquaclysm', finish: 'holo' },
+  { id: 'ooergolf', finish: 'gold' },
+  { id: 'chopdrop', finish: 'galaxy' },
+  { id: 'fruit-machine', finish: 'ice' },
+  { id: 'coinpusher', finish: 'ice' },
+  { id: 'chess', finish: 'reverse' },
+] as const;
+
+const PLACES = [
+  [0, 0],
+  [1, 0],
+  [0.5, 0.5],
+  [0, 1],
+  [1, 1],
+  [0.3, 0.9],
+  [0.9, 0.3],
+] as const;
+
+test.describe('every finish’s words, on its tile, as drawn', () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
   });
 
-  const PLACES = [
-    [0, 0],
-    [1, 0],
-    [0.5, 0.5],
-    [0, 1],
-    [1, 1],
-    [0.3, 0.9],
-    [0.9, 0.3],
-  ] as const;
-
-  test('label and title are 7:1 or better against the brightest of their tile, the light anywhere, at full shine', async ({
+  test('front and back words are 7:1 or better against the darkest of their tile, at rest and at full shine, the light anywhere; the Play edge and every ring 3:1', async ({
     page,
   }) => {
+    test.setTimeout(180_000);
     await page.goto('/');
     await expect(
       page.locator('section.row[data-arrows]').first(),
     ).toBeAttached();
     await page.evaluate(() => document.fonts.ready);
-    const cards = page.locator('li.card[data-finish="reverse"]');
-    expect(await cards.count()).toBeGreaterThan(5);
-    // The pixels are read in a blank page of their own: the site's policy
-    // does not allow a data: picture.
-    const reader = await page.context().newPage();
+    const reader = await newReader(page);
+    const ink = await page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-ground')
+        .trim(),
+    );
+    expect(ink).toMatch(/^#[0-9a-f]{6}$/);
+    const inkLuminance = luminanceOf(
+      [1, 3, 5].map((at) => parseInt(ink.slice(at, at + 2), 16)),
+    );
+    const worst: Record<string, number> = {};
+    const note = (key: string, ratio: number) => {
+      worst[key] = Math.min(worst[key] ?? Infinity, ratio);
+    };
     let measured = 0;
-    let worst = Infinity;
-    for (const at of [0, 1, 2]) {
-      const card = cards.nth(at);
+    for (const { id, finish } of CARDS) {
+      const card = page.locator(`li.card[data-entry="${id}"]`).first();
+      expect(await card.getAttribute('data-finish'), id).toBe(finish);
       await card.evaluate((el) =>
         el.scrollIntoView({
           block: 'center',
@@ -395,83 +427,157 @@ test.describe('a reverse holo card’s words, on its tile, as drawn', () => {
       const title = card.locator('.front .card-title');
       const box = await title.boundingBox();
       if (box === null) throw new Error('the title is not drawn');
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-      await expect
-        .poll(() =>
-          card.evaluate((el) =>
-            getComputedStyle(el).getPropertyValue('--foil-on'),
-          ),
-        )
-        .toBe('1');
-      for (const [x, y] of PLACES) {
-        await card.evaluate(
+      const pointAt = () =>
+        page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      const states = [
+        {
+          name: 'rest',
+          settle: async () => {
+            await page.mouse.move(2, 2);
+            await expect
+              .poll(() =>
+                card.evaluate((el) =>
+                  getComputedStyle(el).getPropertyValue('--foil-on'),
+                ),
+              )
+              .toBe('0.35');
+          },
+        },
+        {
+          name: 'full',
+          settle: async () => {
+            await pointAt();
+            await expect
+              .poll(() =>
+                card.evaluate((el) =>
+                  getComputedStyle(el).getPropertyValue('--foil-on'),
+                ),
+              )
+              .toBe('1');
+          },
+        },
+      ];
+      const light = (x: number, y: number) =>
+        card.evaluate(
           (el: HTMLElement, [x, y]) => {
             el.style.setProperty('--shine-x', String(x));
             el.style.setProperty('--shine-y', String(y));
           },
           [x, y],
         );
-        for (const part of ['.label', '.card-title']) {
-          const words = card.locator(`.front ${part}`);
-          const colour = await words.evaluate(
-            (el) => getComputedStyle(el).color,
-          );
-          await words.evaluate((el) => (el.style.color = 'transparent'));
-          const shot = (await words.screenshot()).toString('base64');
-          await words.evaluate((el) => (el.style.color = ''));
-          const ratio = await reader.evaluate(
-            async ({ shot, colour }) => {
-              const luminance = (rgb: number[]): number =>
-                [0.2126, 0.7152, 0.0722].reduce((sum, weight, i) => {
-                  const v = (rgb[i] ?? 0) / 255;
-                  return (
-                    sum +
-                    weight *
-                      (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
-                  );
-                }, 0);
-              const image = new Image();
-              image.src = `data:image/png;base64,${shot}`;
-              await image.decode();
-              const canvas = document.createElement('canvas');
-              canvas.width = image.width;
-              canvas.height = image.height;
-              const context = canvas.getContext('2d');
-              if (context === null) throw new Error('no canvas');
-              context.drawImage(image, 0, 0);
-              const { data } = context.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height,
-              );
-              let brightest = 0;
-              for (let i = 0; i < data.length; i += 4)
-                brightest = Math.max(
-                  brightest,
-                  luminance([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]),
-                );
-              const text = luminance(
-                colour.match(/[\d.]+/g)?.map(Number) ?? [],
-              );
-              return (text + 0.05) / (brightest + 0.05);
-            },
-            { shot, colour },
-          );
-          worst = Math.min(worst, ratio);
+      const readWords = async (
+        face: string,
+        parts: string[],
+        state: string,
+      ) => {
+        for (const [x, y] of PLACES) {
+          await light(x, y);
+          for (const part of parts) {
+            const words = card.locator(`${face} ${part}`);
+            const colour = await words.evaluate(
+              (el) => getComputedStyle(el).color,
+            );
+            // The words are the ink, the ground token, and not another dark.
+            expect(
+              luminanceOf(channelsOf(colour)),
+              `${id} ${face} ${part} is the ink`,
+            ).toBeCloseTo(inkLuminance, 4);
+            const ratio = ratioOf(
+              luminanceOf(channelsOf(colour)),
+              await darkestUnderWords(page, reader, words),
+            );
+            note(`${finish} ${face}`, ratio);
+            expect(
+              ratio,
+              `${id} ${face} ${part} ${state}, light at ${x},${y}`,
+            ).toBeGreaterThanOrEqual(7);
+            measured += 1;
+          }
+        }
+      };
+      for (const state of states) {
+        await state.settle();
+        await readWords('.front', ['.label', '.card-title'], state.name);
+      }
+      // Turned over (a press on the card): the back is the same tile.
+      await pointAt();
+      await card.locator('button.card-flip').click();
+      await expect(card).toHaveAttribute('data-flipped', '');
+      const back = card.locator('.face.back');
+      for (const state of states) {
+        await state.settle();
+        await readWords(
+          '.face.back',
+          ['.label', '.card-title', '.description'],
+          state.name,
+        );
+        // The rings, by a real Tab, read first (hiding the face to read its
+        // tile takes focus off what is in it): Play, then Close.
+        const rings: { what: string; colour: string }[] = [];
+        const ringNow = async () => {
+          const ring = await page.evaluate(() => {
+            const el = document.activeElement;
+            if (el === null) return null;
+            const style = getComputedStyle(el);
+            return {
+              what: el.className,
+              colour: style.outlineColor,
+              style: style.outlineStyle,
+              width: parseFloat(style.outlineWidth),
+            };
+          });
+          expect(ring, `${id} has focus`).not.toBeNull();
+          expect(ring?.style, `${id} ${ring?.what} ring`).toBe('solid');
+          expect(ring?.width).toBeGreaterThanOrEqual(2);
+          rings.push({ what: ring?.what ?? '', colour: ring?.colour ?? '' });
+        };
+        await card.locator('.face.back button.card-unflip').focus();
+        await page.keyboard.press('Shift+Tab');
+        await expect(card.locator('a.card-link')).toBeFocused();
+        await ringNow();
+        await page.keyboard.press('Tab');
+        await expect(card.locator('button.card-unflip')).toBeFocused();
+        await ringNow();
+        // The Play link's edge and every ring, against the tile's darkest.
+        const edge = await card
+          .locator('a.card-link')
+          .evaluate((el) => getComputedStyle(el).borderTopColor);
+        for (const [x, y] of PLACES) {
+          await light(x, y);
+          const darkest = await darkestOfTile(page, reader, back);
+          const edgeRatio = ratioOf(luminanceOf(channelsOf(edge)), darkest);
+          note(`${finish} play edge`, edgeRatio);
           expect(
-            ratio,
-            `${await card.getAttribute('data-entry')} ${part} light at ${x},${y}`,
-          ).toBeGreaterThanOrEqual(7);
-          measured += 1;
+            edgeRatio,
+            `${id} Play edge ${state.name}, light at ${x},${y}`,
+          ).toBeGreaterThanOrEqual(3);
+          for (const ring of rings) {
+            const ringRatio = ratioOf(
+              luminanceOf(channelsOf(ring.colour)),
+              darkest,
+            );
+            note(`${finish} ring`, ringRatio);
+            expect(
+              ringRatio,
+              `${id} ring of ${ring.what} ${state.name}, light at ${x},${y}`,
+            ).toBeGreaterThanOrEqual(3);
+          }
+          measured += 1 + rings.length;
         }
       }
+      await page.keyboard.press('Escape');
+      await expect(card).not.toHaveAttribute('data-flipped', '');
+      await page.mouse.move(2, 2);
     }
     await reader.close();
-    expect(measured).toBe(3 * PLACES.length * 2);
+    expect(measured).toBeGreaterThan(CARDS.length * PLACES.length * 10);
+    const summary = Object.entries(worst)
+      .map(([key, ratio]) => `${key} ${ratio.toFixed(2)}:1`)
+      .join('; ');
+    console.log(`TILE-WORST ${summary}`);
     test.info().annotations.push({
       type: 'measured',
-      description: `${measured} readings, worst ${worst.toFixed(2)}:1`,
+      description: `${measured} readings; worst ${summary}`,
     });
   });
 });

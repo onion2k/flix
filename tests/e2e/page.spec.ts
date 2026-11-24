@@ -116,7 +116,7 @@ test('every card is there in the order written', async ({ page }) => {
   expect(reached).toBeGreaterThan(0);
 });
 
-test('every card carries the finish buildPage gives it, and one foil and one wash, aria-hidden', async ({
+test('every card carries the finish buildPage gives it, and no layer of its own over its picture', async ({
   page,
 }) => {
   // buildPage is asked of the real catalogue, with a stand-in entry for each
@@ -149,10 +149,10 @@ test('every card carries the finish buildPage gives it, and one foil and one was
     await expect(card).toHaveAttribute('data-entry', id);
     await expect(card).toHaveAttribute('data-finish', finish);
     seen.add(finish);
-    for (const layer of ['.foil', '.foil-wash']) {
-      await expect(card.locator(layer)).toHaveCount(1);
-      await expect(card.locator(layer)).toHaveAttribute('aria-hidden', 'true');
-    }
+    // The finish is the card's own tile, drawn by the stylesheet: nothing is
+    // in the markup over a picture, aria-hidden or not.
+    await expect(card.locator('.foil, .foil-wash')).toHaveCount(0);
+    await expect(card.locator('.front > [aria-hidden="true"]')).toHaveCount(0);
     // data-best is the top picks' alone, and they are the holo ones.
     expect(await card.getAttribute('data-best')).toBe(
       finish === 'holo' ? '' : null,
@@ -166,9 +166,7 @@ test('every card carries the finish buildPage gives it, and one foil and one was
     'ice',
     'reverse',
   ]);
-  expect(await page.locator('.foil, .foil-wash').count()).toBe(
-    expected.length * 2,
-  );
+  expect(await page.locator('.foil, .foil-wash').count()).toBe(0);
 });
 
 test('every picture has loaded, with size, alt words and a modern source', async ({
