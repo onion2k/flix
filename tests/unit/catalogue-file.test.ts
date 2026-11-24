@@ -101,6 +101,23 @@ describe('src/content/catalogue.json', () => {
     expect(new Set(catalogueJson.best).size).toBe(catalogueJson.best.length);
   });
 
+  it('has finishes whose sites each have a file, are in a row, are named once across the lists, and are none of the best', () => {
+    const inRows = catalogueJson.rows.flatMap((row) => row.sites);
+    const lists = Object.entries(catalogueJson.finishes);
+    // Read, so that an absent or emptied field is a failure and not a pass.
+    expect(lists.map(([name]) => name).sort()).toEqual([
+      'galaxy',
+      'gold',
+      'ice',
+    ]);
+    const all = lists.flatMap(([, list]) => list);
+    expect(all.length).toBeGreaterThanOrEqual(1);
+    expect(all.filter((id) => !ids.includes(id))).toEqual([]);
+    expect(all.filter((id) => !inRows.includes(id))).toEqual([]);
+    expect(new Set(all).size).toBe(all.length);
+    expect(all.filter((id) => catalogueJson.best.includes(id))).toEqual([]);
+  });
+
   it('is seen to refuse a site with no file (the check itself)', () => {
     const broken = {
       feature: 'nuclear-fishin',

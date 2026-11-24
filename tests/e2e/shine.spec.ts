@@ -154,7 +154,9 @@ test('exactly the best cards carry data-best, the foil and “Top pick”, and n
     } else {
       plain += 1;
       expect(await card.getAttribute('data-best'), id).toBeNull();
-      await expect(card.locator('.foil'), id).toHaveCount(0);
+      // The spans are on every card (part 3 of plans/foils.md); until the
+      // finishes are drawn a plain card's are not displayed.
+      await expect(card.locator('.foil'), id).toBeHidden();
       expect(label, id).not.toContain('Top pick');
     }
   }
@@ -675,8 +677,8 @@ test.describe('the foil’s three layers', () => {
         }
         best += 1;
       } else {
-        expect(layers.foil, id).toBeNull();
-        expect(layers.wash, id).toBeNull();
+        expect(layers.foil?.size?.width, id).toBe(0);
+        expect(layers.wash?.size?.width, id).toBe(0);
         expect(layers.glitter?.content, id).toBe('none');
         plain += 1;
       }

@@ -61,6 +61,19 @@ export const catalogueShape = z.strictObject({
   // The best of the sites, whose cards shine like a foil trading card and say
   // so in their label, wherever a row draws them. Absent or empty, none does.
   best: z.array(z.string().min(1)).optional(),
+  // The finish of the cards that are not best ones, each a list of the sites
+  // whose cards wear it, wherever a row draws them: a decoration that says
+  // nothing a reader needs, so no label changes. The keys are the three named
+  // finishes and no other (a best card is holo and every other card reverse,
+  // and neither is named here). Absent, empty or with a list left out, those
+  // cards are reverse.
+  finishes: z
+    .strictObject({
+      gold: z.array(z.string().min(1)).optional(),
+      galaxy: z.array(z.string().min(1)).optional(),
+      ice: z.array(z.string().min(1)).optional(),
+    })
+    .optional(),
   rows: z
     .array(
       z.strictObject({

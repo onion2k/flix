@@ -280,6 +280,45 @@ describe('catalogueShape', () => {
     ).toEqual(['best.1']);
   });
 
+  it('passes finishes with any of the three lists, none, or an empty object', () => {
+    for (const finishes of [
+      { gold: ['a'], galaxy: ['b'], ice: ['c'] },
+      { ice: ['c'] },
+      { gold: [] },
+      {},
+    ]) {
+      expect(refusals(catalogueShape, { ...goodCatalogue, finishes })).toEqual(
+        [],
+      );
+    }
+  });
+
+  it('refuses finishes with a key that is not a finish, a list that is not ids, or a non-object', () => {
+    expect(
+      refusals(catalogueShape, {
+        ...goodCatalogue,
+        finishes: { gold: ['a'], holo: ['b'] },
+      }).map((f) => f.path),
+    ).toEqual(['finishes']);
+    expect(
+      refusals(catalogueShape, {
+        ...goodCatalogue,
+        finishes: { gold: [3] },
+      }).map((f) => f.path),
+    ).toEqual(['finishes.gold.0']);
+    expect(
+      refusals(catalogueShape, {
+        ...goodCatalogue,
+        finishes: { ice: ['a', ''] },
+      }).map((f) => f.path),
+    ).toEqual(['finishes.ice.1']);
+    expect(
+      refusals(catalogueShape, { ...goodCatalogue, finishes: ['gold'] }).map(
+        (f) => f.path,
+      ),
+    ).toEqual(['finishes']);
+  });
+
   it('refuses a file with no rows, and one with an empty list of rows', () => {
     expect(
       refusals(catalogueShape, without(goodCatalogue, 'rows')).map(

@@ -7,6 +7,10 @@
 import { expect, type Locator } from '@playwright/test';
 import { test } from '../clock';
 import { LABELS, readRows } from './catalogue';
+import { buildPage } from '../../src/catalogue/rows';
+import type { CatalogueFile } from '../../src/catalogue/schema';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const SITE = 'https://flix.ooer.com';
 const catalogue = readRows();
@@ -110,6 +114,61 @@ test('every card is there in the order written', async ({ page }) => {
     reached += ids.length;
   }
   expect(reached).toBeGreaterThan(0);
+});
+
+test('every card carries the finish buildPage gives it, and one foil and one wash, aria-hidden', async ({
+  page,
+}) => {
+  // buildPage is asked of the real catalogue, with a stand-in entry for each
+  // id the rows name, since only the finish is read here.
+  const ids = catalogue.rows.flatMap((each) => each.entries);
+  const model = buildPage(
+    [...new Set([catalogue.feature, ...ids])].map((id) => ({
+      id,
+      title: id,
+      kind: 'game' as const,
+      description: id,
+      picture: id,
+      pictureAlt: id,
+    })),
+    JSON.parse(
+      readFileSync(
+        resolve(import.meta.dirname, '../../src/content/catalogue.json'),
+        'utf8',
+      ),
+    ) as CatalogueFile,
+  );
+  const expected = model.rows.flatMap((each) =>
+    each.cards.map((card) => [card.id, card.finish] as const),
+  );
+  const cards = page.locator('li.card');
+  expect(await cards.count()).toBe(expected.length);
+  const seen = new Set<string>();
+  for (const [at, [id, finish]] of expected.entries()) {
+    const card = cards.nth(at);
+    await expect(card).toHaveAttribute('data-entry', id);
+    await expect(card).toHaveAttribute('data-finish', finish);
+    seen.add(finish);
+    for (const layer of ['.foil', '.foil-wash']) {
+      await expect(card.locator(layer)).toHaveCount(1);
+      await expect(card.locator(layer)).toHaveAttribute('aria-hidden', 'true');
+    }
+    // data-best is the top picks' alone, and they are the holo ones.
+    expect(await card.getAttribute('data-best')).toBe(
+      finish === 'holo' ? '' : null,
+    );
+  }
+  // Every finish was reached, so that a page with none is not a pass.
+  expect([...seen].sort()).toEqual([
+    'galaxy',
+    'gold',
+    'holo',
+    'ice',
+    'reverse',
+  ]);
+  expect(await page.locator('.foil, .foil-wash').count()).toBe(
+    expected.length * 2,
+  );
 });
 
 test('every picture has loaded, with size, alt words and a modern source', async ({

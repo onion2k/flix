@@ -2,6 +2,11 @@
   "feature": "aquaclysm",
   "features": ["ooergolf", "pushminer"],
   "best": ["aquaclysm", "pushminer", "tiny-slots"],
+  "finishes": {
+    "gold": ["ooergolf", "heist", "propshop", "snappy"],
+    "galaxy": ["chopdrop"],
+    "ice": ["fruit-machine", "coinpusher", "ooerrace"]
+  },
   "rows": [
     {
       "id": "play-now",

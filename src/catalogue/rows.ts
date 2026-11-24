@@ -9,6 +9,17 @@
 // not be seen.
 import type { CatalogueFile } from './schema';
 
+/**
+ * The finishes a card's foil may have, a decoration only: `holo` is a best
+ * card's, `gold`, `galaxy` and `ice` are those a catalogue's `finishes` names,
+ * and `reverse` is every other card's.
+ */
+export const FINISHES = ['holo', 'gold', 'galaxy', 'ice', 'reverse'] as const;
+export type Finish = (typeof FINISHES)[number];
+
+/** The finishes a catalogue file names lists for. */
+const LISTED = ['gold', 'galaxy', 'ice'] as const;
+
 const CATALOGUE_FILE = 'src/content/catalogue.json';
 
 function entryFile(id: string): string {
@@ -51,6 +62,8 @@ export interface Card<Picture> {
   label: string;
   /** True for a row's card of one of the best sites, which shines; never for the feature. */
   best: boolean;
+  /** How the card's foil is finished: holo for a best card, its list's name, else reverse. */
+  finish: Finish;
   /** The name of the button that turns the card over to its back, on every card. */
   aboutName: string;
   /** The name of the button that turns it back to its front, on every card. */
@@ -93,7 +106,11 @@ const KIND_WORDS = { game: 'Game', toy: 'Toy' } as const;
  */
 const BEST_WORDS = 'Top pick';
 
-function cardOf<Picture>(entry: Entry<Picture>, best = false): Card<Picture> {
+function cardOf<Picture>(
+  entry: Entry<Picture>,
+  best = false,
+  finish: Finish = 'reverse',
+): Card<Picture> {
   const playable = entry.url !== undefined;
   const state = best ? BEST_WORDS : playable ? 'Play now' : 'In the workshop';
   const card: Card<Picture> = {
@@ -105,6 +122,7 @@ function cardOf<Picture>(entry: Entry<Picture>, best = false): Card<Picture> {
     pictureAlt: entry.pictureAlt,
     label: `${KIND_WORDS[entry.kind]} · ${state}`,
     best,
+    finish: best ? 'holo' : finish,
     // The words of the two buttons that flip a card, said here and nowhere
     // else, since they are drafts the owner will edit: every card flips,
     // whether or not it has a link.
@@ -137,6 +155,10 @@ export function buildPage<Picture>(
   // checked after them, below, since whether a best site is in a row needs
   // the rows.
   const best = new Set(config.best ?? []);
+  const finishOf = new Map<string, Finish>();
+  for (const name of LISTED) {
+    for (const id of config.finishes?.[name] ?? []) finishOf.set(id, name);
+  }
   const inRows = new Set<string>();
 
   const rows = config.rows.map((row) => {
@@ -163,7 +185,7 @@ export function buildPage<Picture>(
       inThisRow.add(id);
       used.add(id);
       inRows.add(id);
-      return cardOf(entry, best.has(id));
+      return cardOf(entry, best.has(id), finishOf.get(id));
     });
     return { id: row.id, title: row.title, cards };
   });
@@ -224,6 +246,39 @@ export function buildPage<Picture>(
       );
     }
     inBest.add(id);
+  }
+
+  // The finishes are checked after the best, list by list in the order gold,
+  // galaxy, ice, and each in the order written: a missing file, then an id
+  // already named (in this list or an earlier one), then one in no row, then
+  // a best site (it is holo already), so that the fault named is the first a
+  // person would reach, as for the best above.
+  const inFinishes = new Set<string>();
+  for (const name of LISTED) {
+    const field = `finishes.${name}`;
+    for (const id of config.finishes?.[name] ?? []) {
+      if (!byId.has(id)) {
+        throw new CatalogueError(
+          `${CATALOGUE_FILE}: the field "${field}" names the site "${id}", and there is no ${entryFile(id)}.`,
+        );
+      }
+      if (inFinishes.has(id)) {
+        throw new CatalogueError(
+          `${CATALOGUE_FILE}: the field "${field}" names the site "${id}" twice, and a card has one finish.`,
+        );
+      }
+      if (!inRows.has(id)) {
+        throw new CatalogueError(
+          `${CATALOGUE_FILE}: the field "${field}" names the site "${id}", which is in no row, so it would shine nowhere.`,
+        );
+      }
+      if (best.has(id)) {
+        throw new CatalogueError(
+          `${CATALOGUE_FILE}: the field "${field}" names the site "${id}", which is in "best" and is holo already.`,
+        );
+      }
+      inFinishes.add(id);
+    }
   }
 
   // A site with a file that no row names is left out on purpose or by

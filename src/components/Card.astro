@@ -17,7 +17,8 @@
 // its icon, the title's words being in spans of their own that the stylesheet
 // leaves out there, never a second link. Without this each row would repeat the
 // markup, and one that forgot the alt words or a name would be the odd one out.
-// A best card (data-best) has a foil laid over its picture, a look and nothing
+// Every card has a finish (data-finish) and the foil's two spans; a best card
+// (data-best) has a foil laid over its picture, a look and nothing
 // to read, which the stylesheet draws from its tokens and src/scripts/shine.ts
 // moves; its label says "Top pick" in words.
 // A late card (see Row.astro) writes its picture with the addresses in data-
@@ -106,6 +107,7 @@ const [avif, webp, jpeg] = late
   data-linked={card.href ? '' : undefined}
   data-loop={loop}
   data-best={card.best ? '' : undefined}
+  data-finish={card.finish}
 >
   <div class="card-faces">
     <div class="face front">
@@ -155,8 +157,8 @@ const [avif, webp, jpeg] = late
           pictureAttributes={{ class: 'frame' }}
         />
       )}
-      {card.best ? <span class="foil-wash" aria-hidden="true" /> : null}
-      {card.best ? <span class="foil" aria-hidden="true" /> : null}
+      <span class="foil-wash" aria-hidden="true" />
+      <span class="foil" aria-hidden="true" />
       <p class="label" data-label>
         {card.label}
       </p>

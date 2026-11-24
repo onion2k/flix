@@ -858,6 +858,13 @@ p {
    the Pause button is above all. They are drawn over a playing loop as over the
    still, and blend with whichever is under them. */
 
+/* Every card now draws the two foil spans, and only a best card is to show
+   them until the finishes are drawn: part 4 of plans/foils.md replaces this
+   rule. */
+.card:not([data-best]) :is(.foil, .foil-wash) {
+  display: none;
+}
+
 /* The foil: a pale rainbow and bars of light, darkened away from the light,
    given a contrast and dodged onto the picture, which lights its bright parts.
    Its filter is a property of its own so that the house lights can add their

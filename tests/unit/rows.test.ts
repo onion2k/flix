@@ -11,6 +11,7 @@ import {
   buildPage,
   CatalogueError,
   NEW_WINDOW,
+  FINISHES,
 } from '../../src/catalogue/rows';
 import type { Entry } from '../../src/catalogue/rows';
 import type { CatalogueFile } from '../../src/catalogue/schema';
@@ -90,6 +91,7 @@ describe('buildPage', () => {
       pictureAlt: 'A picture of alpha.',
       label: 'Game · Play now',
       best: false,
+      finish: 'reverse',
       aboutName: 'About Title of alpha',
       closeName: 'Close Title of alpha',
       href: 'https://alpha.example.com',
@@ -420,5 +422,128 @@ describe('buildPage, with a list of the best', () => {
     expect(message).toContain('"best"');
     expect(message).toContain('gamma');
     expect(message).toContain('in no row');
+  });
+});
+
+describe('buildPage, with finishes', () => {
+  const cardsOf = (page: ReturnType<typeof buildPage>) =>
+    new Map(
+      page.rows.flatMap((row) => row.cards).map((card) => [card.id, card]),
+    );
+
+  it('names the five finishes, once each', () => {
+    expect([...FINISHES]).toEqual(['holo', 'gold', 'galaxy', 'ice', 'reverse']);
+  });
+
+  it('gives a best card holo, a listed card its list, and every other card reverse', () => {
+    const page = buildPage(entries, {
+      ...config,
+      best: ['alpha'],
+      finishes: { gold: ['beta'], galaxy: ['gamma'] },
+    });
+    const byId = cardsOf(page);
+    expect(byId.get('alpha')?.finish).toBe('holo');
+    expect(byId.get('beta')?.finish).toBe('gold');
+    expect(byId.get('gamma')?.finish).toBe('galaxy');
+    expect(byId.get('delta')?.finish).toBe('reverse');
+    expect(byId.size).toBe(4);
+  });
+
+  it('reaches ice too, and leaves a best card’s words as they were', () => {
+    const page = buildPage(entries, {
+      ...config,
+      best: ['alpha'],
+      finishes: { ice: ['delta'] },
+    });
+    const byId = cardsOf(page);
+    expect(byId.get('delta')?.finish).toBe('ice');
+    expect(byId.get('delta')?.label).toBe('Toy · In the workshop');
+    expect(byId.get('delta')?.best).toBe(false);
+    expect(byId.get('alpha')?.label).toBe('Game · Top pick');
+  });
+
+  it('gives every non-best card reverse with finishes absent, empty, or with empty lists', () => {
+    for (const each of [
+      config,
+      { ...config, finishes: {} },
+      { ...config, finishes: { gold: [], galaxy: [], ice: [] } },
+    ]) {
+      const cards = buildPage(entries, each).rows.flatMap((row) => row.cards);
+      expect(cards.length).toBe(4);
+      expect(cards.map((card) => card.finish)).toEqual([
+        'reverse',
+        'reverse',
+        'reverse',
+        'reverse',
+      ]);
+    }
+  });
+
+  it('gives the feature and its candidates reverse, since a finish is a row card’s', () => {
+    const page = buildPage(entries, {
+      ...config,
+      features: ['alpha'],
+      finishes: { gold: ['alpha'] },
+    });
+    for (const card of page.candidates) expect(card.finish).toBe('reverse');
+  });
+
+  it('refuses a finish site with no file, naming the file, the field and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      finishes: { gold: ['nobody'] },
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"finishes.gold"');
+    expect(message).toContain('nobody');
+    expect(message).toContain('src/content/entries/nobody.yaml');
+  });
+
+  it('refuses an id said twice in one list, naming the file, the field and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      finishes: { ice: ['alpha', 'delta', 'alpha'] },
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"finishes.ice"');
+    expect(message).toContain('alpha');
+    expect(message).toContain('twice');
+  });
+
+  it('refuses an id said in two lists, naming the file, the second field and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      finishes: { gold: ['alpha'], galaxy: ['alpha'] },
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"finishes.galaxy"');
+    expect(message).toContain('alpha');
+    expect(message).toContain('twice');
+  });
+
+  it('refuses an id in no row, since it would shine nowhere, naming the file, the field and the id', () => {
+    const message = refusal(entries, {
+      feature: 'beta',
+      rows: [{ id: 'one', title: 'One', sites: ['alpha', 'beta'] }],
+      finishes: { galaxy: ['gamma'] },
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"finishes.galaxy"');
+    expect(message).toContain('gamma');
+    expect(message).toContain('in no row');
+    expect(message).toContain('shine nowhere');
+  });
+
+  it('refuses a best site named in a list, since it is holo already, naming the file, the field and the id', () => {
+    const message = refusal(entries, {
+      ...config,
+      best: ['alpha'],
+      finishes: { gold: ['alpha'] },
+    }).message;
+    expect(message).toContain('src/content/catalogue.json');
+    expect(message).toContain('"finishes.gold"');
+    expect(message).toContain('alpha');
+    expect(message).toContain('"best"');
+    expect(message).toContain('holo');
   });
 });
