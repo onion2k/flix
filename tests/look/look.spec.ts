@@ -525,8 +525,96 @@ test.describe('the shine', () => {
     });
   });
 
+  // A card of each finish with the mouse held over it, at a desk's width: its
+  // sheen there, the card lifted and tilted toward it, as the picture of the
+  // top pick above is. The card is pictured with a little room round it, since
+  // it lifts past its own edge.
+  for (const [finish, id] of [
+    ['gold', 'ooergolf'],
+    ['galaxy', 'chopdrop'],
+    ['ice', 'fruit-machine'],
+    ['ice-light', 'coinpusher'],
+    ['reverse', 'chess'],
+  ] as const) {
+    test(`a ${finish} card at 1440 with the mouse held over ${id}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      await page.goto('/');
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
+      await settle(page);
+      const card = page.locator(`li.card[data-entry="${id}"]`).first();
+      await card.evaluate((el: HTMLElement) => {
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        });
+      });
+      await page.mouse.move(2, 2);
+      const box = await card.boundingBox();
+      if (box === null) throw new Error('the card is not drawn');
+      await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, {
+        steps: 4,
+      });
+      await expect
+        .poll(() =>
+          card.evaluate((el: HTMLElement) =>
+            el.style.getPropertyValue('--tilt-y'),
+          ),
+        )
+        .toMatch(/deg$/);
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .map((each) => each.finished.catch(() => null)),
+        ),
+      );
+      const now = await card.boundingBox();
+      if (now === null) throw new Error('the card is not drawn');
+      await expect(page).toHaveScreenshot(`finish-${finish}-mouse-1440.png`, {
+        ...TOLERANCE,
+        clip: {
+          x: now.x - 24,
+          y: now.y - 24,
+          width: now.width + 48,
+          height: now.height + 48,
+        },
+      });
+    });
+  }
+
   test.describe('on a touch screen', () => {
     test.use({ hasTouch: true, isMobile: true });
+
+    // The second row at a fixed scroll: one card in focus, whole, by its place,
+    // and its neighbours at rest.
+    test('the second row at 390 with one card in focus', async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/');
+      await expect(
+        page.locator('section.row[data-arrows]').first(),
+      ).toBeAttached();
+      await settle(page);
+      const row = page.locator('section.row').nth(1);
+      await row.evaluate((el: HTMLElement) => {
+        window.scrollTo({ top: el.offsetTop - 200, behavior: 'instant' });
+      });
+      await expect(row.locator('li.card[data-foil-focus]')).toHaveCount(1);
+      await page.evaluate(() =>
+        Promise.all(
+          document
+            .getAnimations()
+            .map((each) => each.finished.catch(() => null)),
+        ),
+      );
+      await expect(row).toHaveScreenshot('second-row-focus-390.png', {
+        ...TOLERANCE,
+      });
+    });
 
     test('the first row at 390 at a fixed scroll', async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
@@ -539,14 +627,8 @@ test.describe('the shine', () => {
       await row.evaluate((el: HTMLElement) => {
         window.scrollTo({ top: el.offsetTop - 200, behavior: 'instant' });
       });
-      const card = row.locator('li.card[data-entry="aquaclysm"]');
-      await expect
-        .poll(() =>
-          card.evaluate((el: HTMLElement) =>
-            el.style.getPropertyValue('--shine-y'),
-          ),
-        )
-        .not.toBe('');
+      // The card in focus is the one that shines whole, by its place.
+      await expect(row.locator('li.card[data-foil-focus]')).toHaveCount(1);
       await page.evaluate(() =>
         Promise.all(
           document

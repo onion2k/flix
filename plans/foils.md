@@ -1,6 +1,6 @@
 # Foils for every card
 
-State: agreed 2026-11-24.
+State: agreed 2026-11-24; landed 2026-11-24 (parts 1 to 6, with two tunings after part 4: cracked ice on a light picture, the reverse holo as dark iridescence).
 
 (On approval this file is copied to `plans/foils.md` in the project, and that
 copy is the one ticked. Facts hold on commit `3b51efe`.)
@@ -110,7 +110,7 @@ green; pictures and recordings go to the owner after parts 1 and 4.
       in focus moves. `shine.spec.ts` (touch: one card at full, the rest at
       rest; a mouse: the card under it), `playing.test.ts` for the rule
       without a loop.
-- [ ] 6. The pass: `npm run check`; weight measured and the budget raised by
+- [x] 6. The pass: `npm run check`; weight measured and the budget raised by
       the owner's figure; frames measured before and after and reported;
       look pictures written again and every one looked at, a picture per
       finish added; mutations; `CLAUDE.md` moved on (Layout, Edge cases,

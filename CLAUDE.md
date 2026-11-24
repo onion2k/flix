@@ -8,8 +8,8 @@ with Astro into plain files and served by Netlify from `main`, at
 
 This file says how the project is changed. It was written on 2026-11-22
 from commit `d955f12`, when only the scaffold existed; each part of
-`plans/first-site.md` moved it on as it landed, and `plans/cards.md` moved
-it on, on 2026-11-23. How work is done is the
+`plans/first-site.md` moved it on as it landed, `plans/cards.md` moved
+it on, on 2026-11-23, and `plans/foils.md` on 2026-11-24. How work is done is the
 guardrails kit's: this project carries no copy of it, and is held to
 `~/projects/guardrails/GUARDRAILS.md` and, as a website, to
 `~/.claude/rules/websites.md`. The bar is WCAG 2.2 AAA, less 3.1.3 to
@@ -25,7 +25,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the seventeen pictures, tests/look, against baselines
+    npm run look         the twenty-three pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -90,7 +90,7 @@ commit of its own that says what it is for.
   arrived, its frame wholly in the window and its front showing; the
   pointed or focused card first, else the nearest the window's centre; none
   while more than half the hero's frame shows) and when (`settled`,
-  `SETTLE_MS`, time handed in). `shine.ts` says where a best card's sheen is
+  `SETTLE_MS`, time handed in). `shine.ts` says where a card's sheen is
   and how far it tilts (`MOST_TILT`), under a mouse or from its place in the
   window. `today.ts` says which candidate is the day's feature, from a
   count and the clock's reading handed in (whole days since 1970-01-01 UTC,
@@ -98,7 +98,11 @@ commit of its own that says what it is for.
   optional `features` list of `catalogue.json`, each refused by name if it
   has no file, repeats or is `feature` itself; and marks a row's card
   `best` where `catalogue.json`'s `best` names it, refusing by name an id
-  with no file, one said twice and one in no row. A card's words are said
+  with no file, one said twice and one in no row; and gives every row card
+  a `finish` (`Finish`, `FINISHES`): `holo` for a best card, `gold`,
+  `galaxy` or `ice` where `catalogue.json`'s `finishes` lists it, else
+  `reverse`, refusing by name an id with no file, one said twice (in a list
+  or two), one in no row and a best one (it is holo already). A card's words are said
   there: `aboutName` ("About <title>"), `closeName` ("Close <title>"),
   `linkText`/`linkName`, and a best card's label "<Kind> · Top pick"
   (`BEST_WORDS`) where another's says Play now or In the workshop. Nothing
@@ -212,29 +216,47 @@ commit of its own that says what it is for.
   play mark and its name hidden in it (`cardPauseWords`), in a 44px target
   drawn clear, at the picture's lower right. A pause holds every card loop for the visit, kept
   nowhere. A loop that fails goes with its button and its card is not
-  tried again. **The shine:** a best card carries `data-best` and, in its
-  frame's cell, an `aria-hidden` `span.foil` (a pale rainbow and bars of
-  light, given a contrast and dodged onto the picture) and `span.foil-wash`
-  (the bright rainbow laid over it as overlay), with the glitter on its frame
-  (`.frame::before`: the site's own `public/foil-glitter.svg` at two sizes,
-  tinted by a rainbow and added onto the picture round the light, with a
-  glare on top; it is what shines on a dark picture). All three are drawn
-  from `--shine-x`/`--shine-y`, the foil brighter toward the card's edges
-  (`--foil-edge`, from `hypot()`), never under a word, and as much of them
-  shows as `--foil-on` says: `--share-foil-rest` at rest, all of it under a
-  mouse, which lifts the card (`scale`, a shadow; in a `(hover: hover)`
-  query, so a tap leaves nothing stuck), and `--share-foil-touch` where
-  nothing hovers. `.card-faces` tilts from `--tilt-x`/`--tilt-y` (up to
-  `MOST_TILT`, 16). The five are registered with `@property` in
-  `tokens.css`. `src/scripts/shine.ts` sets the sheen and the tilt through
-  the CSSOM by the catalogue's rule, at most once a frame and only while a
-  best card is in the window; under reduced motion it sets nothing (the
-  fade and the lift then change at once). Forced colours draw none of the
-  three. The look is round seven of the owner's mocks of 2026-11-23, after
-  simeydotme's pen of trading cards, whose code (GPL-3.0) is not used.
-  House lights (`:has()`) dim the other pictures of a row while a card is
-  hovered by a mouse or holds focus, loop, wash and glitter with them, and
-  the foil keeps its own filter (`--foil-filter`) with the dim added.
+  tried again. **The shine:** every card has a finish, `data-finish` (`holo`, the top
+  picks'; `gold`; `galaxy`; `ice`; `reverse`), and an `aria-hidden` `span.foil`
+  and `span.foil-wash` in its frame's cell, with the glitter on its frame
+  (`.frame::before`); `data-best` is the label's and no longer decides a
+  look. The foil is a pale rainbow and bars of light, given a contrast and
+  dodged onto the picture; the wash is a rainbow laid over it; the glitter is
+  the site's own `public/foil-glitter.svg` at two sizes, tinted and added onto
+  the picture round the light, with a glare on top (it is what shines on a
+  dark picture). All are drawn from `--shine-x`/`--shine-y`, brighter toward
+  the card's edges (`--foil-edge`, from `hypot()`), never under a word, and
+  as much shows as `--foil-on` says: `--share-foil-rest` at rest on every
+  screen, all of it under a mouse (which lifts the card: `scale`, a shadow;
+  in a `(hover: hover)` query, so a tap leaves nothing stuck) and, where
+  nothing hovers, on the one card marked `data-foil-focus`. `.card-faces`
+  tilts from `--tilt-x`/`--tilt-y` (up to `MOST_TILT`, 16). The five are
+  registered with `@property` in `tokens.css`, which says every figure of
+  every finish. The holo is the base rules; `gold` and `galaxy` set
+  properties the glitter's rule reads (tint, sizes, mask) and have foil and
+  wash rules of their own; `ice` has all three of its own (the foil dodged
+  at a small share, the wash multiplying `public/foil-ice.svg`, which
+  `tools/foil-ice.mjs` makes, onto the picture so a light picture keeps its
+  facets, the glitter laying cracks round the light); `reverse` draws none of
+  the three and puts the sheen on the front's tile (`.card[data-flips]
+.front`: a light, bars and five deep hues over the panel), so the words
+  stay 7:1 and every card's border is the same; with script off it draws
+  nothing. `src/scripts/shine.ts` drives every card through the CSSOM, at
+  most once a frame and only while a card is in the window: a mouse (hover
+  and fine pointer) moves the sheen and tilt of the card it is on and
+  nothing else (a scroll writes nothing); with no mouse only the card
+  `inFocus()` (`playing.ts`) picks moves, fed every card as having a loop
+  and its picture (it shines without either), nobody pointed and no settle,
+  the hero's half holding it, and it follows the scroll by its place, no
+  tilt; the card that loses it has the mark and its sheen taken off.
+  `src/scripts/reading.ts` is what it and `playing.ts` both read the page
+  with. Under reduced motion it sets nothing (the fade and the lift then
+  change at once). Forced colours draw no finish. The holo is round seven of
+  the owner's mocks of 2026-11-23, after simeydotme's pen of trading cards,
+  whose code (GPL-3.0) is not used. House lights (`:has()`) dim the other
+  pictures of a row while a card is hovered by a mouse or holds focus, loop,
+  wash and glitter with them, and the foil keeps its own filter
+  (`--foil-filter`) with the dim added.
   **The moving hero:** the feature is a band across the window
   (`.feature`, at least `--height-hero` of its height and at most
   `--height-hero-max`) with its picture filling it (`sizes` is `100vw`,
@@ -284,7 +306,13 @@ the social card uses. Empty or absent, the page is one feature as before.
 
 **To set the best cards:** `best` in `catalogue.json` is a list of site
 ids, each with a file, none twice, each in a row; those cards, wherever a
-row draws them, carry the foil and "Top pick". Empty or absent, none shines.
+row draws them, carry the holo foil and "Top pick". Empty or absent, none shines.
+
+**To set a card's finish:** `finishes` in `catalogue.json` is an object whose
+keys are `gold`, `galaxy` and `ice` (each optional) and whose values are lists
+of site ids, each with a file, in a row, none twice across the lists and none
+in `best`; a card in no list is `reverse`. A finish is decoration: no word
+changes.
 
 **To list, unlist or move a site:** edit `src/content/catalogue.json`. A
 new site also needs its `entries/<id>.yaml` and its picture in
@@ -399,10 +427,14 @@ Every new thing is taken through each of these that it can reach.
   come; mouse and focus taking over; Pause holding every card for the visit
   and Play; reduced motion (Play, fetched on press), Save-Data (nothing), a
   loop that fails, a late row, a touch screen, script off.
-- The shine: the three best cards and no other; at rest (a little) and
-  under a mouse (all of it, the lift, sheen and tilt), touch (most of it,
-  sheen by place, no tilt, a tap lifts nothing), reduced motion (still),
-  script off (a still foil), forced colours (none); never under words.
+- The shine: every card in its own finish, the best cards holo; at rest (a
+  little) and under a mouse (all of it, the lift, sheen and tilt), touch (one
+  card in focus whole by its place, the rest at rest, none while the hero's
+  half shows, no tilt, a tap lifts nothing), reduced motion (still), script
+  off (a still foil), forced colours (none, the reverse tile too); never
+  under words. Cracked ice on a light picture keeps it (Coinpusher); a
+  reverse card's label and title stay 7:1 at full shine with the light
+  anywhere.
 - The date, with a list of features: each place in the list, 60 days
   running, the first and last millisecond of a day, a zone far either side
   of UTC (the day changes at midnight UTC for everyone), and the module
@@ -433,76 +465,78 @@ Every new thing is taken through each of these that it can reach.
 
 ## Gates
 
-| Gate                                | What it holds today                                    |
-| ----------------------------------- | ------------------------------------------------------ |
-| `npm run secrets`                   | nothing staged looks like a key                        |
-| `prettier --check .`                | one formatter decides every file it should             |
-| `npm run types`                     | no type error in `.astro` or `.ts`                     |
-| `npm run lint`                      | type-aware mistakes in `.ts`                           |
-| `tests/unit/tokens.test.ts`         | the five colours and the foil's, each said once        |
-| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1            |
-| `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name     |
-| `tests/unit/rows.test.ts`           | the page's model, best, the words, refusals            |
-| `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files             |
-| `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no           |
-|                                     | global random anywhere in `src/`                       |
-| `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes    |
-| `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`;     |
-|                                     | `trim`, every rest of every width 341 to 2600          |
-| `tests/unit/flipping.test.ts`       | every press from every state: flipped, focus           |
-| `tests/unit/playing.test.ts`        | which card plays, the hero's half, the 600ms settle    |
-| `tests/unit/shine.test.ts`          | the sheen's place and the tilt, clamped; at rest       |
-| `tests/unit/hero.test.ts`           | the start rule, every case; both buttons' words        |
-| `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry       |
-| `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat    |
-| `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends         |
-| `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals    |
-| `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`           |
-| `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates          |
-| `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed      |
-| `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                   |
-| `tests/unit/weight-judging.test.ts` | counts, both ways, the four budgets, card loops        |
-| `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it      |
-| `tests/e2e/page.spec.ts`            | the model drawn, labels, head, 404, footer, header     |
-| `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line   |
-| `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows     |
-| `tests/e2e/arrows.spec.ts`          | at rest no card wholly in is under an arrow: presses   |
-|                                     | to each end and back, 341 to 2290 and in the bands,    |
-|                                     | the very start too, both motions; swipe                |
-| `tests/e2e/drag.spec.ts`            | a mouse drag, nothing flipped; touch left alone        |
-| `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll,          |
-|                                     | address, Tab, print, no observer; no address in markup |
-| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; arrows, Pause  |
-| `tests/e2e/moving.spec.ts`          | arrows through live controls; a stood-in pad, stepped  |
-| `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), Tab rings and Pause 3:1  |
-| `tests/e2e/motion.spec.ts`          | all motion in no-preference; loop and shine still      |
-| `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2, best practice; flipped, playing     |
-| `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*           |
-| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it, and     |
-|                                     | the hero and a card loop play under Permissions-Policy |
-| `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched,   |
-|                                     | no module, UTC, script off, arrows, clean console      |
-| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced;   |
-|                                     | at 320 and 339 a row scrolls and the page does not     |
-| `tests/e2e/phone.spec.ts`           | a phone: never stacks at any width or text size, small |
-|                                     | cards with square pictures, the sheet, no touch arrows |
-| `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip        |
-| `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour      |
-| `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size       |
-| `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not      |
-| `tests/e2e/shine.spec.ts`           | three best cards: foil, label, sheen, tilt, still;     |
-|                                     | its three layers, dimmed with their contrast kept; at  |
-|                                     | rest, under a mouse, on touch; the glitter sent once;  |
-|                                     | one border; a scroll before first sight                |
-| `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off    |
-| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row; a tap does not |
-| `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored |
-| `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page   |
-| `tests/look/look.spec.ts`           | seventeen pictures of the built site, as written       |
-| `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;    |
-|                                     | hero and card loops apart, each to its own budget      |
-| `scripts/links.mjs`                 | no card's address is gone (network; not in check)      |
-| `scripts/headers.mjs`               | a live address sends the whole policy (not in check)   |
+| Gate                                | What it holds today                                     |
+| ----------------------------------- | ------------------------------------------------------- |
+| `npm run secrets`                   | nothing staged looks like a key                         |
+| `prettier --check .`                | one formatter decides every file it should              |
+| `npm run types`                     | no type error in `.astro` or `.ts`                      |
+| `npm run lint`                      | type-aware mistakes in `.ts`                            |
+| `tests/unit/tokens.test.ts`         | the five colours and every finish's, each said once     |
+| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1             |
+| `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name      |
+| `tests/unit/rows.test.ts`           | the page's model, best, finishes, the words, refusals   |
+| `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files              |
+| `tests/unit/structure.test.ts`      | `src/catalogue` imports only `astro/zod`; no            |
+|                                     | global random anywhere in `src/`                        |
+| `tests/unit/colour.test.ts`         | the colour check: one spelling, nothing else passes     |
+| `tests/unit/paging.test.ts`         | the paging rule, a pixel of tolerance; `whollyIn`;      |
+|                                     | `trim`, every rest of every width 341 to 2600           |
+| `tests/unit/flipping.test.ts`       | every press from every state: flipped, focus            |
+| `tests/unit/playing.test.ts`        | which card plays or shines, the hero's half, the settle |
+| `tests/unit/shine.test.ts`          | the sheen's place and the tilt, clamped; at rest        |
+| `tests/unit/hero.test.ts`           | the start rule, every case; both buttons' words         |
+| `tests/unit/loop-address.test.ts`   | a loop's built address; a missing file, by entry        |
+| `tests/unit/moving.test.ts`         | where a move lands, the pad's direction, the repeat     |
+| `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends          |
+| `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals     |
+| `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`            |
+| `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates           |
+| `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed       |
+| `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                    |
+| `tests/unit/weight-judging.test.ts` | counts, both ways, the four budgets, card loops         |
+| `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it       |
+| `tests/e2e/page.spec.ts`            | the model drawn, labels, head, 404, footer, header      |
+| `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line    |
+| `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows      |
+| `tests/e2e/arrows.spec.ts`          | at rest no card wholly in is under an arrow: presses    |
+|                                     | to each end and back, 341 to 2290 and in the bands,     |
+|                                     | the very start too, both motions; swipe                 |
+| `tests/e2e/drag.spec.ts`            | a mouse drag, nothing flipped; touch left alone         |
+| `tests/e2e/late.spec.ts`            | late rows: unfetched, then fetched by scroll,           |
+|                                     | address, Tab, print, no observer; no address in markup  |
+| `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; arrows, Pause   |
+| `tests/e2e/moving.spec.ts`          | arrows through live controls; a stood-in pad, stepped   |
+| `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), Tab rings and Pause 3:1;  |
+|                                     | a reverse card's words on its tile, light anywhere      |
+| `tests/e2e/motion.spec.ts`          | all motion in no-preference; loop and shine still       |
+| `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2, best practice; flipped, playing      |
+| `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*            |
+| `tests/e2e/header-policy.spec.ts`   | `_headers`: all hashes in; pages run under it, and      |
+|                                     | the hero and a card loop play under Permissions-Policy  |
+| `tests/e2e/today.spec.ts`           | the day's feature: four places, one picture fetched,    |
+|                                     | no module, UTC, script off, arrows, clean console       |
+| `tests/e2e/reflow.spec.ts`          | each side of every layout step, 320 to 1440, spaced;    |
+|                                     | at 320 and 339 a row scrolls and the page does not      |
+| `tests/e2e/phone.spec.ts`           | a phone: never stacks at any width or text size, small  |
+|                                     | cards with square pictures, the sheet, no touch arrows  |
+| `tests/e2e/nojs.spec.ts`            | whole with script off: a card one link, no flip         |
+| `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour       |
+| `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size        |
+| `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not       |
+| `tests/e2e/shine.spec.ts`           | each finish's layers, rest and mouse, forced colours;   |
+|                                     | the sheen and tilt of any card under a mouse; touch:    |
+|                                     | one card in focus, none under the hero; ice keeps a     |
+|                                     | light picture; both textures sent once; one border      |
+| `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off     |
+| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row, finishes too;   |
+|                                     | a tap does not                                          |
+| `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored  |
+| `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page    |
+| `tests/look/look.spec.ts`           | twenty-three pictures of the built site, as written     |
+| `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;     |
+|                                     | hero and card loops apart, each to its own budget       |
+| `scripts/links.mjs`                 | no card's address is gone (network; not in check)       |
+| `scripts/headers.mjs`               | a live address sends the whole policy (not in check)    |
 
 Where the figures are kept, never here. The look's baselines are the
 pictures in `tests/look/baselines/` and its tolerance and the wobble
@@ -637,6 +671,16 @@ The nine points of the definition of done, as this project has them.
   buttons 12 to 15, left stick axes 0 and 1, first button 0); a pad with
   another mapping is ignored. The owner is to try one.
 - **No mutation gate.** Mutations are by hand, and reported.
+- **Frame times were measured once, and are not a gate.** Headless, CPU
+  slowed 4x, Save-Data, median of three runs, before the finishes (`3b51efe`)
+  and after: a phone's strip scroll p95 24 then 27ms, none over 33ms; a desk's
+  mouse sweep p95 33 then 32ms, 18 frames over 33ms then 10. Nothing times
+  them again.
+- **The white-share test guards Coinpusher alone** (the one light ice
+  picture); another light picture given ice is not measured. The reverse
+  tile's forced-colours background rule is held by no test (Chromium reports
+  none there anyway), and a card flipped while it is the one in focus is
+  untested. A reverse card with script off draws nothing.
 - **The cards were seen in Chromium alone.** A real phone, a real touch
   flip, Safari's and Firefox's video and autoplay, anchor positioning (the
   arrows' height; a browser without it has the 16 by 9), `@property`, and
@@ -696,9 +740,14 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
 - **No print styles.** Preflight asks for them, and the page is not one to
   print.
 - **The foil has more colours than the look's five** (`--color-foil-*`), on
-  three cards only. They are decoration and say nothing by themselves:
-  "Top pick" says it beside them, in words, and replaces Play now in a best
-  card's label.
+  every card. They are decoration and say nothing by themselves: a finish
+  changes no word, and "Top pick" says it in words, replacing Play now in a
+  best card's label.
+- **The reverse holo is a dark iridescence,** deep hues over the panel and
+  not light, because the label's amber leaves its ground about 0.02 of
+  luminance to rise and every word is held at 7:1. The ladder (the top picks
+  holo; gold, galaxy and ice by list; reverse for the rest) is the owner's,
+  set on 2026-11-24 after the mocks.
 - **The cards' Pause is a small, quiet mark** with its name hidden in it,
   where the hero's is a word: a small disc in a clear 44px target (the
   owner, 2026-11-23: a square button was big and in the way). It is kept,
