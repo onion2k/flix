@@ -1034,6 +1034,15 @@ p {
   }
 }
 
+/* Where nothing hovers, a card is at rest like the rest, and the one card in
+   focus (src/scripts/shine.ts marks it, one at a time) shows whole: its sheen
+   follows its place in the window as the page is scrolled. */
+@media (hover: none) {
+  .card[data-foil-focus] {
+    --foil-on: 1;
+  }
+}
+
 /* The glitter, on the picture's frame: the site's glitter file at two sizes,
    run a little with the pointer and tinted by the bright rainbow, added onto
    the picture, strong round the light and faint away from it, with a glare of

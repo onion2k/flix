@@ -211,3 +211,46 @@ describe('settled', () => {
       expect(settled(elapsed)).toBe(false);
     });
 });
+
+// The shine (src/scripts/shine.ts) asks the same rule which card is in focus
+// on a touch screen, feeding it every card as having a loop and its picture
+// arrived (a card shines without either) and nobody pointed at: so the card
+// nearest the window's middle, wholly in it, with its front showing, shines,
+// whether or not it has a loop, and none does while the hero holds. No change
+// to the rule was needed, and this holds the use.
+describe('inFocus, as the shine asks it', () => {
+  const asked = (cards: PlayCard[], heroBox: Box | null = null) =>
+    inFocus(cards, window_, heroBox, null);
+
+  it('picks the nearest whole card whatever its loop, with every card said to have one and its picture to have arrived', () => {
+    // The nearest to the middle (720, 500) is "near", whose frame is centred
+    // 40px from it; both are fed as the page feeds the shine.
+    const cards = [
+      card('far', 20, 40),
+      card('near', 520, 387),
+      card('other', 900, 700),
+    ];
+    expect(cards).toHaveLength(3);
+    expect(asked(cards)).toBe('near');
+  });
+
+  it('leaves out a flipped card and one not wholly in the window, so that the next nearest shines', () => {
+    const cards = [
+      card('flipped', 520, 387, { flipped: true }),
+      card('cut', 1300, 387),
+      card('whole', 100, 300),
+    ];
+    expect(asked(cards)).toBe('whole');
+  });
+
+  it('is none while more than half of the hero shows, and the nearest once less does', () => {
+    const cards = [card('a', 520, 387)];
+    expect(asked(cards, hero(400))).toBeNull();
+    expect(asked(cards, hero(250))).toBe('a');
+  });
+
+  it('is none with no card in the window', () => {
+    expect(asked([])).toBeNull();
+    expect(asked([card('out', 1500, 387)])).toBeNull();
+  });
+});

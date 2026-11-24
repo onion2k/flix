@@ -106,7 +106,7 @@ green; pictures and recordings go to the owner after parts 1 and 4.
       (each card carries its tier's finish and its layers; none on forced
       colours; still under reduced motion), `contrast.spec.ts` (words 7:1
       on every finish, reverse holo included), `motion.spec.ts`.
-- [ ] 5. The behaviour: every finish under a mouse; on touch only the card
+- [x] 5. The behaviour: every finish under a mouse; on touch only the card
       in focus moves. `shine.spec.ts` (touch: one card at full, the rest at
       rest; a mouse: the card under it), `playing.test.ts` for the rule
       without a loop.

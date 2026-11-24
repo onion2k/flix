@@ -239,44 +239,65 @@ test.describe('a mouse', () => {
     expect(reached).toBe(3);
   });
 
-  test('on a card that is not one of the best sets nothing, on it or any other', async ({
+  test('moved across a card that is not a top pick sets its sheen and tilt, and leaving takes them off', async ({
+    page,
+  }) => {
+    await ready(page);
+    await firstRowInView(page);
+    const card = cardOf(page, 'chess');
+    expect(await card.getAttribute('data-best')).toBeNull();
+    expect(await card.getAttribute('data-finish')).toBe('reverse');
+    expect(Object.values(await setOn(card)).join('')).toBe('');
+    let reached = 0;
+    for (const [fx, fy] of [
+      [0.2, 0.2],
+      [0.8, 0.7],
+    ] as const) {
+      const box = await card.boundingBox();
+      if (box === null) throw new Error('the card is not drawn');
+      const at = { x: box.x + box.width * fx, y: box.y + box.height * fy };
+      await page.mouse.move(at.x, at.y, { steps: 4 });
+      const now = box;
+      const want = underPointer(at, {
+        left: now.x,
+        top: now.y,
+        right: now.x + now.width,
+        bottom: now.y + now.height,
+      });
+      if (want === null)
+        throw new Error('the rule put the pointer off the card');
+      await expect
+        .poll(async () => parseFloat((await setOn(card))['--shine-x'] ?? ''))
+        .toBeCloseTo(want.x, 1);
+      const set = await setOn(card);
+      expect(parseFloat(set['--tilt-y'] ?? '')).not.toBe(0);
+      reached += 1;
+    }
+    await page.mouse.move(2, 2, { steps: 2 });
+    await expect
+      .poll(() => setOn(card))
+      .toEqual({
+        '--shine-x': '',
+        '--shine-y': '',
+        '--tilt-x': '',
+        '--tilt-y': '',
+      });
+    expect(reached).toBe(2);
+  });
+
+  test('a mouse writes nothing by a card’s place: a scroll moves no card’s sheen', async ({
     page,
   }) => {
     await countWrites(page);
     await ready(page);
+    await page.mouse.move(2, 2);
     await firstRowInView(page);
-    await frames(page);
-    // The scroll has set the best cards' sheen by their place (that is the
-    // shine for a mouse not on them); what follows must add nothing.
-    const before = await writes(page);
-    expect(before).toBeGreaterThanOrEqual(0);
-    const card = cardOf(page, 'chess');
-    expect(await card.getAttribute('data-best')).toBeNull();
-    const box = await card.locator('.frame').boundingBox();
-    if (box === null) throw new Error('the card is not drawn');
-    let moves = 0;
-    for (const [fx, fy] of [
-      [0.2, 0.2],
-      [0.8, 0.7],
-      [0.5, 0.5],
-    ] as const) {
-      await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy, {
-        steps: 3,
-      });
-      moves += 1;
-    }
+    await page.evaluate(() =>
+      window.scrollBy({ top: 40, behavior: 'instant' }),
+    );
     await frames(page, 6);
-    expect(await writes(page)).toBe(before);
-    // What the scroll set on the best cards stands: no tilt on any of them.
-    let best = 0;
-    for (const each of await page.locator('li.card[data-best]').all()) {
-      const now = await setOn(each);
-      for (const tilt of ['--tilt-x', '--tilt-y'])
-        expect(['', '0deg']).toContain(now[tilt]);
-      best += 1;
-    }
-    expect(best).toBe(catalogue.best.length);
-    expect(moves).toBe(3);
+    expect(await writes(page)).toBe(0);
+    expect(await page.locator('li.card[data-foil-focus]').count()).toBe(0);
   });
 });
 
@@ -287,82 +308,217 @@ test.describe('on a touch screen at a phone’s width', () => {
     viewport: { width: 390, height: 844 },
   });
 
-  test('a page scroll and a strip scroll each move the sheen as the card’s place in the window says, and nothing tilts', async ({
+  /** The ids of the cards that carry data-foil-focus. */
+  const focused = (page: Page): Promise<string[]> =>
+    page
+      .locator('li.card[data-foil-focus]')
+      .evaluateAll((all) =>
+        all.map((card) => (card as HTMLElement).dataset['entry'] ?? ''),
+      );
+
+  const onOf = (card: Locator) =>
+    card.evaluate((el) =>
+      parseFloat(getComputedStyle(el).getPropertyValue('--foil-on')),
+    );
+
+  test('after a scroll exactly one card is in focus and shows whole, by its place, and the rest stay at rest with nothing written', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await ready(page);
+    await firstRowInView(page);
+    await expect.poll(() => focused(page)).toHaveLength(1);
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    const [id] = await focused(page);
+    const card = cardOf(page, id ?? '');
+    expect(await onOf(card)).toBe(1);
+    // Its sheen is where the rule puts it for its place in the window, and
+    // it does not tilt.
+    const want = await card.evaluate((el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return {
+        box: { left: r.left, top: r.top, right: r.right, bottom: r.bottom },
+        size: {
+          width: document.documentElement.clientWidth,
+          height: document.documentElement.clientHeight,
+        },
+      };
+    });
+    const place = inWindow(want.box, want.size);
+    if (place === null) throw new Error('the card has no size');
+    const set = await setOn(card);
+    expect(parseFloat(set['--shine-x'] ?? '')).toBeCloseTo(place.x, 2);
+    expect(parseFloat(set['--shine-y'] ?? '')).toBeCloseTo(place.y, 2);
+    expect(['', '0deg', '0']).toContain(set['--tilt-x']?.replace(/deg$/, ''));
+    const rest = await page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--share-foil-rest',
+        ),
+      ),
+    );
+    let others = 0;
+    for (const each of await page.locator('li.card').all()) {
+      if ((await each.getAttribute('data-entry')) === id) continue;
+      expect(await each.getAttribute('data-foil-focus')).toBeNull();
+      expect(await onOf(each)).toBeCloseTo(rest, 5);
+      expect(Object.values(await setOn(each)).join('')).toBe('');
+      others += 1;
+    }
+    expect(others).toBe((await page.locator('li.card').count()) - 1);
+  });
+
+  test('the focus moves to another card after a strip scroll, one at a time, and the card that lost it is at rest', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await ready(page);
+    await firstRowInView(page);
+    await expect.poll(() => focused(page)).toHaveLength(1);
+    const [first] = await focused(page);
+    await page.evaluate(() =>
+      document
+        .querySelector<HTMLElement>('section.row .strip')
+        ?.scrollTo({ left: 500, behavior: 'instant' }),
+    );
+    await expect.poll(async () => (await focused(page))[0]).not.toBe(first);
+    expect(await focused(page)).toHaveLength(1);
+    const lost = cardOf(page, first ?? '');
+    await expect(lost).not.toHaveAttribute('data-foil-focus', '');
+    await expect
+      .poll(() => setOn(lost))
+      .toEqual({
+        '--shine-x': '',
+        '--shine-y': '',
+        '--tilt-x': '',
+        '--tilt-y': '',
+      });
+    await page.waitForFunction(() => document.getAnimations().length === 0);
+    expect(await onOf(lost)).toBeLessThan(1);
+    // Down the page to the next row, with the card that was in focus still
+    // in the window: the focus moves, and still there is one.
+    await page.evaluate(() =>
+      document
+        .querySelector<HTMLElement>('section.row .strip')
+        ?.scrollTo({ left: 0, behavior: 'instant' }),
+    );
+    await firstRowInView(page);
+    // The card in focus is one whole in the window across as well as down.
+    await expect
+      .poll(async () =>
+        page.evaluate(() => {
+          const card = document.querySelector('li.card[data-foil-focus]');
+          const box = card?.getBoundingClientRect();
+          return box !== undefined && box.left >= 0 && box.right <= innerWidth;
+        }),
+      )
+      .toBe(true);
+    const [before] = await focused(page);
+    await page.evaluate(() => {
+      const second = document.querySelectorAll('section.row')[1];
+      second?.scrollIntoView({ block: 'center', behavior: 'instant' });
+    });
+    await expect.poll(async () => (await focused(page))[0]).not.toBe(before);
+    expect(await focused(page)).toHaveLength(1);
+    expect(
+      await cardOf(page, before ?? '').evaluate((el) => {
+        const box = el.getBoundingClientRect();
+        return (
+          box.bottom > 0 &&
+          box.top < innerHeight &&
+          box.left >= 0 &&
+          box.right <= innerWidth
+        );
+      }),
+    ).toBe(true);
+  });
+
+  test('none is in focus while more than half of the hero’s frame is in the window, and nothing is written', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await countWrites(page);
     await ready(page);
-    // The second card: a strip at rest has a card's start at its gutter, so a
-    // strip scroll carries the first card wholly out of sight (where nothing
-    // moves its sheen), and the second card into its place.
-    const card = cardOf(page, 'tiny-slots');
-    /** Waits for the sheen to be where the rule puts it for the card as it is now. */
-    const followed = async (): Promise<{ x: number; y: number }> => {
-      await frames(page, 3);
-      // The card's place and the sheen are read together, and again until
-      // they agree: the strip's snap can still move the card a frame after a
-      // scroll, and the sheen follows it then.
-      let want: { x: number; y: number } | null = null;
-      await expect
-        .poll(async () => {
-          const read = await card.evaluate((el: HTMLElement) => {
-            const r = el.getBoundingClientRect();
-            return {
-              box: {
-                left: r.left,
-                top: r.top,
-                right: r.right,
-                bottom: r.bottom,
-              },
-              size: {
-                width: document.documentElement.clientWidth,
-                height: document.documentElement.clientHeight,
-              },
-              x: parseFloat(el.style.getPropertyValue('--shine-x')),
-              y: parseFloat(el.style.getPropertyValue('--shine-y')),
-            };
-          });
-          want = inWindow(read.box, read.size);
-          if (want === null) return false;
-          return (
-            Math.abs(read.x - want.x) < 0.005 &&
-            Math.abs(read.y - want.y) < 0.005
-          );
-        })
-        .toBe(true);
-      if (want === null) throw new Error('the card has no size');
-      const now = await setOn(card);
-      for (const tilt of ['--tilt-x', '--tilt-y'])
-        expect(['', '0deg']).toContain(now[tilt]);
-      const found: { x: number; y: number } = want;
-      return { x: found.x, y: found.y };
-    };
-    await firstRowInView(page);
-    const first = await followed();
-    // The page, by a reader's flick: the card goes up the window.
-    await page.evaluate(() =>
-      window.scrollBy({ top: 160, behavior: 'instant' }),
-    );
-    const second = await followed();
-    expect(second.y).toBeLessThan(first.y - 0.05);
-    expect(second.x).toBeCloseTo(first.x, 3);
-    // The strip: the card goes left across the window.
-    await page.evaluate(() => {
-      const strip = document.querySelector<HTMLElement>('section.row .strip');
-      strip?.scrollTo({ left: 120, behavior: 'instant' });
-    });
-    const third = await followed();
-    expect(third.x).toBeLessThan(second.x - 0.05);
-    expect(third.y).toBeCloseTo(second.y, 3);
-    // A tap that moves nothing is not a pointer the sheen follows.
-    expect(await writes(page)).toBeGreaterThan(0);
-    const faces = await card
-      .locator('.card-faces')
-      .evaluate((el) =>
-        getComputedStyle(el).getPropertyValue('--tilt-y').trim(),
+    expect(
+      await page.evaluate(() => {
+        const frame = document.querySelector(
+          'section.feature:not([hidden]) .feature-frame',
+        );
+        const box = frame?.getBoundingClientRect();
+        if (box === undefined) return -1;
+        return (
+          (Math.min(box.bottom, innerHeight) - Math.max(box.top, 0)) /
+          box.height
+        );
+      }),
+    ).toBeGreaterThan(0.5);
+    // A scroll that leaves the hero's half in the window.
+    for (const top of [20, 30, -10])
+      await page.evaluate(
+        (top) => window.scrollBy({ top, behavior: 'instant' }),
+        top,
       );
-    expect(faces).toBe('0deg');
+    await frames(page, 6);
+    expect(await focused(page)).toEqual([]);
+    expect(await writes(page)).toBe(0);
+    // Once the hero is mostly gone, the nearest whole card is in focus.
+    await firstRowInView(page);
+    await expect.poll(() => focused(page)).toHaveLength(1);
+    expect(await writes(page)).toBeGreaterThan(0);
+  });
+
+  test('a scroll that comes before the script’s first sight of the cards still puts a card in focus', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.addInitScript(() => {
+      const Own = window.IntersectionObserver;
+      const held: (() => void)[] = [];
+      Reflect.set(window, '__releaseSight', () => {
+        for (const run of held.splice(0)) run();
+      });
+      window.IntersectionObserver = class extends Own {
+        constructor(
+          callback: IntersectionObserverCallback,
+          options?: IntersectionObserverInit,
+        ) {
+          super(
+            (entries, observer) => held.push(() => callback(entries, observer)),
+            options,
+          );
+        }
+      };
+    });
+    await ready(page);
+    await frames(page, 4);
+    // The answer about the cards at load is being held; the reader scrolls.
+    await firstRowInView(page);
+    await frames(page, 4);
+    expect(await focused(page)).toEqual([]);
+    await page.evaluate(() =>
+      (Reflect.get(window, '__releaseSight') as () => void)(),
+    );
+    await expect.poll(() => focused(page)).toHaveLength(1);
+  });
+
+  test('with reduced motion no card is in focus and nothing is written, whatever is scrolled', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await countWrites(page);
+    await ready(page);
+    await firstRowInView(page);
+    await page.evaluate(() =>
+      document
+        .querySelector<HTMLElement>('section.row .strip')
+        ?.scrollTo({ left: 300, behavior: 'instant' }),
+    );
+    await frames(page, 6);
+    expect(await focused(page)).toEqual([]);
+    expect(await writes(page)).toBe(0);
+    for (const each of await page.locator('li.card').all())
+      expect(Object.values(await setOn(each)).join('')).toBe('');
   });
 });
 
@@ -395,11 +551,11 @@ test.describe('with reduced motion', () => {
     await frames(page, 6);
     expect(await writes(page)).toBe(0);
     let reached = 0;
-    for (const each of await page.locator('li.card[data-best]').all()) {
+    for (const each of await page.locator('li.card').all()) {
       expect(Object.values(await setOn(each)).join('')).toBe('');
       reached += 1;
     }
-    expect(reached).toBe(catalogue.best.length);
+    expect(reached).toBe(await page.locator('li.card').count());
     expect(await computed(card)).toEqual(rest);
     // And the foil is there, still: reduced motion is a still sheen, not none.
     await expect(card.locator('.foil')).toBeVisible();
@@ -501,51 +657,6 @@ test.describe('a press on the foil', () => {
         .map((piece) => `${piece.ratio.toFixed(2)}:1 "${piece.text}"`),
     ).toEqual([]);
   });
-});
-
-test('nothing is set while no best card is in the window, and the shine starts once one is', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await countWrites(page);
-  await ready(page);
-  // To the foot of the page, where the first row is out of the window.
-  await page.evaluate(() =>
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'instant',
-    }),
-  );
-  await frames(page, 4);
-  const start = await writes(page);
-  expect(
-    await page.evaluate(() =>
-      [...document.querySelectorAll('li.card[data-best]')].some((card) => {
-        const box = card.getBoundingClientRect();
-        return box.bottom > 0 && box.top < innerHeight;
-      }),
-    ),
-  ).toBe(false);
-  // Scrolling, a strip moved and a mouse over a card down here.
-  for (const top of [-60, -40, 30])
-    await page.evaluate(
-      (top) => window.scrollBy({ top, behavior: 'instant' }),
-      top,
-    );
-  await page.evaluate(() => {
-    const strips = document.querySelectorAll<HTMLElement>('section.row .strip');
-    strips[strips.length - 1]?.scrollTo({ left: 100, behavior: 'instant' });
-  });
-  const last = page.locator('section.row').last().locator('li.card').first();
-  const box = await last.boundingBox();
-  if (box !== null) await page.mouse.move(box.x + 20, box.y + 20, { steps: 3 });
-  await frames(page, 6);
-  expect(await writes(page)).toBe(start);
-  // And once the first row is back in the window, a scroll sets it: the count
-  // above was of a script that was there to count.
-  await firstRowInView(page);
-  await page.evaluate(() => window.scrollBy({ top: 10, behavior: 'instant' }));
-  await expect.poll(() => writes(page)).toBeGreaterThan(start);
 });
 
 test('where colours are forced there is no foil and no reflection, and the card’s own borders stand', async ({
@@ -791,7 +902,12 @@ test.describe('the shine at rest and under a mouse', () => {
     }) => {
       await ready(page);
       await firstRowInView(page);
-      const card = cardOf(page, 'aquaclysm');
+      // A card that is not the one in focus (that one shows whole).
+      const card = page
+        .locator('section.row')
+        .first()
+        .locator('li.card:not([data-foil-focus])')
+        .first();
       const on = await onOf(card);
       const rest = await page.evaluate(() =>
         parseFloat(
@@ -893,43 +1009,6 @@ test('every card has the same border and no edge of its own, and its front’s w
 // the answer was taken for the page at load, and the sheen stayed where it
 // was until the next scroll. Seen once in a full check. Here the observer's
 // answers are held back until the page has been scrolled, every time.
-test('a scroll that comes before the script’s first sight of the cards still moves the sheen', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.addInitScript(() => {
-    const Own = window.IntersectionObserver;
-    const held: (() => void)[] = [];
-    Reflect.set(window, '__releaseSight', () => {
-      for (const run of held.splice(0)) run();
-    });
-    window.IntersectionObserver = class extends Own {
-      constructor(
-        callback: IntersectionObserverCallback,
-        options?: IntersectionObserverInit,
-      ) {
-        super(
-          (entries, observer) => held.push(() => callback(entries, observer)),
-          options,
-        );
-      }
-    };
-  });
-  await ready(page);
-  const card = cardOf(page, 'aquaclysm');
-  await frames(page, 4);
-  // The answer about the cards at load is being held; the reader scrolls.
-  await firstRowInView(page);
-  await frames(page, 4);
-  await page.evaluate(() =>
-    (Reflect.get(window, '__releaseSight') as () => void)(),
-  );
-  await expect
-    .poll(async () => (await setOn(card))['--shine-y'] ?? '')
-    .not.toBe('');
-});
-
 // Every card has a finish (data-finish, from the catalogue) and draws the three
 // layers in it: the holo, gold, galaxy and ice each draw a foil, a wash and the
 // glitter's rule over the picture, with the backgrounds that finish gives them;

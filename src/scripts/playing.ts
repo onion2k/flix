@@ -36,11 +36,10 @@ import {
   inFocus,
   qualifies,
   settled,
-  type Box,
   type PlayCard,
-  type Window,
 } from '../catalogue/playing';
 import { lessMotion, savesData } from './asked';
+import { frameBox, heroBox, windowNow } from './reading';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -70,12 +69,6 @@ function mark(shape: 'pause' | 'play'): SVGSVGElement {
   path.setAttribute('fill', 'currentColor');
   svg.append(path);
   return svg;
-}
-
-/** The box of an element in the window, as the rule takes it. */
-function boxOf(element: Element): Box {
-  const { left, top, right, bottom } = element.getBoundingClientRect();
-  return { left, top, right, bottom };
 }
 
 if (start !== 'still') {
@@ -110,24 +103,15 @@ if (start !== 'still') {
 
   /** What decides whether a card may play, as the page is now. */
   const read = (card: HTMLElement, at: number): PlayCard => {
-    const picture = card.querySelector('.frame');
     const image = card.querySelector<HTMLImageElement>('.frame img');
     return {
       id: String(at),
       hasLoop: card.dataset['loop'] !== undefined && !failed.has(card),
       arrived: image !== null && image.complete && image.naturalWidth > 0,
       flipped: card.hasAttribute('data-flipped'),
-      frame:
-        picture === null
-          ? { left: 0, top: 0, right: Infinity, bottom: Infinity }
-          : boxOf(picture),
+      frame: frameBox(card),
     };
   };
-
-  const windowNow = (): Window => ({
-    width: document.documentElement.clientWidth,
-    height: document.documentElement.clientHeight,
-  });
 
   /** Takes the loop and the button down: the card's still is what is left. */
   const takeDown = (): void => {
@@ -204,16 +188,13 @@ if (start !== 'still') {
     const window_ = windowNow();
     const read_ = cards.map(read);
     const hidden = document.visibilityState === 'hidden';
-    const heroFrame = document.querySelector(
-      'section.feature:not([hidden]) .feature-frame',
-    );
     const pointed = mouse ?? focused;
     const id = hidden
       ? null
       : inFocus(
           read_,
           window_,
-          heroFrame === null ? null : boxOf(heroFrame),
+          heroBox(),
           pointed === null ? null : String(cards.indexOf(pointed)),
         );
     const want = id === null ? null : (cards[Number(id)] ?? null);
