@@ -162,7 +162,7 @@ recordings) and approved as mocked: "Build them as mocked".
 - [x] 8. Sparkles and the ice's light: the sparkle file and its generator,
       the bands, the ice's lit shards. `shine.spec.ts` (the sparkle file sent
       once; a lit shard changes as the light moves; sparkles move with it).
-- [ ] 9. The pass: weight against the 63,000 budget (stop and ask if over),
+- [x] 9. The pass: weight against the 63,000 budget (stop and ask if over),
       look baselines written again and every picture read, `npm run check`
       twice, mutations, `CLAUDE.md` (Layout, Edge cases, Gates, What is not
       held, Keeps: light cards in a dark page, the owner's, 2026-11-24).

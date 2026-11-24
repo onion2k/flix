@@ -1463,6 +1463,26 @@ test.describe('the light on a tile', () => {
         await light(card, 0.2, 0.2);
         const dark = await tileShot(page, front);
         await on('1');
+        // The grey the shards are differenced with is set by the light: the
+        // weights of its two places, the same on the whole tile.
+        const greyAt = async (x: number, y: number) => {
+          await light(card, x, y);
+          const image = await card.evaluate(
+            (el) =>
+              getComputedStyle(el.querySelector('.front') as Element, '::after')
+                .backgroundImage,
+          );
+          return parseFloat(/color\(srgb ([\d.]+)/.exec(image)?.[1] ?? 'NaN');
+        };
+        expect(await greyAt(0.2, 0.2), `${id} grey`).toBeCloseTo(
+          0.62 * 0.2 + 0.38 * 0.2,
+          2,
+        );
+        expect(await greyAt(0.8, 0.7), `${id} grey`).toBeCloseTo(
+          0.62 * 0.8 + 0.38 * 0.7,
+          2,
+        );
+        await light(card, 0.2, 0.2);
         const a = await tileShot(page, front);
         await light(card, 0.8, 0.7);
         const b = await tileShot(page, front);
@@ -1483,5 +1503,78 @@ test.describe('the light on a tile', () => {
       await reader.close();
       expect(reached).toBe(2);
     });
+  });
+});
+
+// A phone's back is a sheet fixed to the foot of the window and is not a face
+// of the card: it stays the dark panel with its light words and its accent
+// label, with no tile, no sparkle and no glare under them, whatever the
+// card's finish, and its words are 7:1 as they were.
+test.describe('a phone’s sheet', () => {
+  test.use({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+
+  test('is the dark panel with light words, whatever the finish of its card', async ({
+    page,
+  }) => {
+    await ready(page);
+    let reached = 0;
+    for (const id of [
+      'aquaclysm',
+      'ooergolf',
+      'chopdrop',
+      'fruit-machine',
+      'chess',
+    ]) {
+      const card = page.locator(`li.card[data-entry="${id}"]`).first();
+      await card.evaluate((el) =>
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        }),
+      );
+      await card.locator('button.card-flip').tap();
+      await expect(card).toHaveAttribute('data-flipped', '');
+      const sheet = await card.locator('.face.back').evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          position: style.position,
+          ground: style.backgroundColor,
+          image: style.backgroundImage,
+          ink: style.color,
+          label: getComputedStyle(el.querySelector('.label') as Element).color,
+          before: getComputedStyle(el, '::before').display,
+          after: getComputedStyle(el, '::after').display,
+          link: getComputedStyle(el.querySelector('a.card-link') as Element)
+            .borderTopColor,
+        };
+      });
+      expect(sheet, id).toEqual({
+        position: 'fixed',
+        ground: 'rgb(24, 37, 31)',
+        image: 'none',
+        ink: 'rgb(244, 241, 232)',
+        label: 'rgb(255, 184, 28)',
+        before: 'none',
+        after: 'none',
+        link: 'rgba(0, 0, 0, 0)',
+      });
+      const pieces = await textPieces(page, 'li.card[data-flipped] .face.back');
+      expect(pieces.length, id).toBeGreaterThan(2);
+      expect(
+        pieces
+          .filter((piece) => piece.ratio < (piece.large ? 4.5 : 7))
+          .map((piece) => `${piece.ratio.toFixed(2)}:1 "${piece.text}"`),
+        id,
+      ).toEqual([]);
+      await card.locator('button.card-unflip').tap();
+      await expect(card).not.toHaveAttribute('data-flipped', '');
+      reached += 1;
+    }
+    expect(reached).toBe(5);
   });
 });

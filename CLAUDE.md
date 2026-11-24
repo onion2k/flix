@@ -178,17 +178,16 @@ commit of its own that says what it is for.
   `flipping.ts`: `data-flipped` on the card, `inert` on the face turned
   away, focus as the rule says, and `data-turns` from the first press, which
   is what lets a face turn (`rotateY`, `--duration-flip`, in the
-  no-preference block only). Under `data-flips` each face is a tile, the
-  panel colour inside the picture's edge, the same on every card, with the
-  front's label and title padded inside it. The faces share one grid
+  no-preference block only). Under `data-flips` each face is a tile (below),
+  with the front's label and title padded inside it. The faces share one grid
   cell, so a card is as tall as its taller face and one size flipped or
   not; a strip stretches a row's cards level, and the front's frame takes
   the room left (never shorter than 16 by 9, the picture cropped at its
   sides to cover it). **On a phone** (to 40rem) a card is a small
   card, `--card-width-phone` (`max(36vw, 7.75rem)`, so it widens with the
   reader's text) wide, its frame square, its label and title smaller, and
-  never trimmed narrower than `--card-least-phone` (6rem: no word breaks
-  above about 5.8rem, measured), which `rows.ts` reads as the registered
+  never trimmed narrower than `--card-least-phone` (7rem: no word breaks
+  above about 5.8rem, measured, and the tile's inset takes another 0.9rem), which `rows.ts` reads as the registered
   length `--card-least`; where clearing the arrows would take it under
   that, `trim()` makes one card fewer whole and the cards wider instead. Its
   back is not a face of the card but a sheet fixed to the foot of the window
@@ -216,32 +215,42 @@ commit of its own that says what it is for.
   play mark and its name hidden in it (`cardPauseWords`), in a 44px target
   drawn clear, at the picture's lower right. A pause holds every card loop for the visit, kept
   nowhere. A loop that fails goes with its button and its card is not
-  tried again. **The shine:** every card has a finish, `data-finish` (`holo`, the top
-  picks'; `gold`; `galaxy`; `ice`; `reverse`), and an `aria-hidden` `span.foil`
-  and `span.foil-wash` in its frame's cell, with the glitter on its frame
-  (`.frame::before`); `data-best` is the label's and no longer decides a
-  look. The foil is a pale rainbow and bars of light, given a contrast and
-  dodged onto the picture; the wash is a rainbow laid over it; the glitter is
-  the site's own `public/foil-glitter.svg` at two sizes, tinted and added onto
-  the picture round the light, with a glare on top (it is what shines on a
-  dark picture). All are drawn from `--shine-x`/`--shine-y`, brighter toward
-  the card's edges (`--foil-edge`, from `hypot()`), never under a word, and
-  as much shows as `--foil-on` says: `--share-foil-rest` at rest on every
-  screen, all of it under a mouse (which lifts the card: `scale`, a shadow;
-  in a `(hover: hover)` query, so a tap leaves nothing stuck) and, where
-  nothing hovers, on the one card marked `data-foil-focus`. `.card-faces`
-  tilts from `--tilt-x`/`--tilt-y` (up to `MOST_TILT`, 16). The five are
-  registered with `@property` in `tokens.css`, which says every figure of
-  every finish. The holo is the base rules; `gold` and `galaxy` set
-  properties the glitter's rule reads (tint, sizes, mask) and have foil and
-  wash rules of their own; `ice` has all three of its own (the foil dodged
-  at a small share, the wash multiplying `public/foil-ice.svg`, which
-  `tools/foil-ice.mjs` makes, onto the picture so a light picture keeps its
-  facets, the glitter laying cracks round the light); `reverse` draws none of
-  the three and puts the sheen on the front's tile (`.card[data-flips]
-.front`: a light, bars and five deep hues over the panel), so the words
-  stay 7:1 and every card's border is the same; with script off it draws
-  nothing. `src/scripts/shine.ts` drives every card through the CSSOM, at
+  tried again. **The shine and the tile:** every card has a finish, `data-finish` (`holo`,
+  the top picks'; `gold`; `galaxy`; `ice`; `reverse`), and a card that flips
+  (`data-flips`) is a **light tile** in it: `.front` is the finish's base
+  colour under its layers (`--foil-tile`, with its size and place, set per
+  finish in `site.css` from `tokens.css`), a dark edge, the picture set into
+  it by `--space-tile-inset` (7px) with a thin ring, and the label and title
+  in `--color-ground`, the ink (the accent cannot be on a light tile). At a
+  desk (`width > 40rem`) the back is the same tile with the same ink, its Play
+  link given the ink for its edge and a ring inside it the ink; a phone's back
+  is the sheet and stays the dark panel, with no tile, sparkle or glare. With
+  script off a card is as it was, no tile and no finish. **Nothing is laid
+  over a picture or a loop** (the owner's choice, below): no layer span in
+  the markup, no `.frame::before`. `data-best` is the label's and no longer
+  decides a look. Every tile has a glare (`.front::after`, a soft light where
+  the pointer is) and sparkles (`.front::before`: bands of light, which sweep
+  fast as the pointer moves, seen through `public/foil-sparkle.svg` at two
+  sizes, which `tools/foil-sparkle.mjs` makes, intersected with a falloff
+  round the light; each finish's sizes and strength are tokens); the ice's
+  `::after` is instead its lit shards (a grey set by the light, differenced
+  with `public/foil-ice.svg`, sixteen greys, made by `tools/foil-ice.mjs`,
+  then inverted, given a hard contrast and tinted: a few shards at a time).
+  Rainbows are moved by their stops and never by their tile's place, so no
+  seam shows. All are drawn from `--shine-x`/`--shine-y` and as much shows
+  as `--foil-on` says: `--share-foil-rest` at rest on every screen, all of it
+  under a mouse (which lifts the card: `scale`, a shadow; in a `(hover:
+hover)` query, so a tap leaves nothing stuck) and, where nothing hovers, on
+  the one card marked `data-foil-focus`. `.card-faces` tilts from
+  `--tilt-x`/`--tilt-y` (up to `MOST_TILT`, 16). The five are registered with
+  `@property` in `tokens.css`, which says every figure of every finish.
+  **Every word on a tile is 7:1**, the ink on its darkest colour, at rest
+  and at full shine with the light anywhere (`contrast.spec.ts` reads the
+  darkest pixel under each word with the words hidden); the colours are all
+  light enough, gold's deep stop only just (7.2:1), so nothing darker is laid
+  over a tile (the gold's brushing is light lines only, and the sparkles and
+  shards only lighten). The ice's overlay share and base are what hold it.
+  `src/scripts/shine.ts` drives every card through the CSSOM, at
   most once a frame and only while a card is in the window: a mouse (hover
   and fine pointer) moves the sheen and tilt of the card it is on and
   nothing else (a scroll writes nothing); with no mouse only the card
@@ -251,12 +260,12 @@ commit of its own that says what it is for.
   tilt; the card that loses it has the mark and its sheen taken off.
   `src/scripts/reading.ts` is what it and `playing.ts` both read the page
   with. Under reduced motion it sets nothing (the fade and the lift then
-  change at once). Forced colours draw no finish. The holo is round seven of
-  the owner's mocks of 2026-11-23, after simeydotme's pen of trading cards,
-  whose code (GPL-3.0) is not used. House lights (`:has()`) dim the other
-  pictures of a row while a card is hovered by a mouse or holds focus, loop,
-  wash and glitter with them, and the foil keeps its own filter
-  (`--foil-filter`) with the dim added.
+  change at once). Forced colours draw no tile image, sparkle or glare. The
+  holo's look is round seven of the owner's mocks of 2026-11-23, after
+  simeydotme's pen of trading cards, whose code (GPL-3.0) is not used; the
+  tiles are the owner's mock of 2026-11-24, built as mocked. House lights
+  (`:has()`) dim the pictures of a row's other cards while a card is hovered
+  by a mouse or holds focus, loop with them, and no tile, so no word changes.
   **The moving hero:** the feature is a band across the window
   (`.feature`, at least `--height-hero` of its height and at most
   `--height-hero-max`) with its picture filling it (`sizes` is `100vw`,
@@ -427,14 +436,15 @@ Every new thing is taken through each of these that it can reach.
   come; mouse and focus taking over; Pause holding every card for the visit
   and Play; reduced motion (Play, fetched on press), Save-Data (nothing), a
   loop that fails, a late row, a touch screen, script off.
-- The shine: every card in its own finish, the best cards holo; at rest (a
-  little) and under a mouse (all of it, the lift, sheen and tilt), touch (one
-  card in focus whole by its place, the rest at rest, none while the hero's
-  half shows, no tilt, a tap lifts nothing), reduced motion (still), script
-  off (a still foil), forced colours (none, the reverse tile too); never
-  under words. Cracked ice on a light picture keeps it (Coinpusher); a
-  reverse card's label and title stay 7:1 at full shine with the light
-  anywhere.
+- The shine and the tile: every card a light tile in its own finish, the best
+  cards holo; at rest (a little) and under a mouse (all of it, the lift,
+  sheen, sparkles and tilt), touch (one card in focus whole by its place, the
+  rest at rest, none while the hero's half shows, no tilt, a tap lifts
+  nothing), reduced motion (still), script off (no tile), forced colours
+  (none), a phone's sheet (dark); nothing over a picture, and a picture's
+  pixels the same at rest and at full shine; every word of a tile, front and
+  back, 7:1 at rest and at full shine with the light anywhere, the Play edge
+  and the rings in a back 3:1; the house lights dim no tile.
 - The date, with a list of features: each place in the list, 60 days
   running, the first and last millisecond of a day, a zone far either side
   of UTC (the day changes at midnight UTC for everyone), and the module
@@ -471,8 +481,10 @@ Every new thing is taken through each of these that it can reach.
 | `prettier --check .`                | one formatter decides every file it should              |
 | `npm run types`                     | no type error in `.astro` or `.ts`                      |
 | `npm run lint`                      | type-aware mistakes in `.ts`                            |
-| `tests/unit/tokens.test.ts`         | the five colours and every finish's, each said once     |
-| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1             |
+| `tests/unit/tokens.test.ts`         | the five colours and every finish's, each said once,    |
+|                                     | and every foil token read by site.css                   |
+| `tests/unit/contrast.test.ts`       | listed pairs: text 7:1, edges and rings 3:1; the ink on |
+|                                     | every colour of every tile, the ice's floor             |
 | `tests/unit/schema.test.ts`         | an entry and the rows file refused by path or name      |
 | `tests/unit/rows.test.ts`           | the page's model, best, finishes, the words, refusals   |
 | `tests/unit/catalogue-file.test.ts` | the real catalogue.json and its site files              |
@@ -507,7 +519,9 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/keyboard.spec.ts`        | real Tab: order, ring, uncovered; 44px; arrows, Pause   |
 | `tests/e2e/moving.spec.ts`          | arrows through live controls; a stood-in pad, stepped   |
 | `tests/e2e/contrast.spec.ts`        | drawn text 7:1 (large 4.5:1), Tab rings and Pause 3:1;  |
-|                                     | a reverse card's words on its tile, light anywhere      |
+|                                     | every finish's words, front and back, on its tile as    |
+|                                     | drawn (darkest pixel), light anywhere, rest and full;   |
+|                                     | the Play edge and rings in a back 3:1                   |
 | `tests/e2e/motion.spec.ts`          | all motion in no-preference; loop and shine still       |
 | `tests/e2e/axe.spec.ts`             | axe, WCAG 2.0-2.2, best practice; flipped, playing      |
 | `tests/e2e/policy.spec.ts`          | the meta policy's script-src has no unsafe-*            |
@@ -523,13 +537,15 @@ Every new thing is taken through each of these that it can reach.
 | `tests/e2e/waiting.spec.ts`         | waiting frames: colour, arrival, ease, bad colour       |
 | `tests/e2e/flip.spec.ts`            | the flip and back, one at a time, tree, one size        |
 | `tests/e2e/playing.spec.ts`         | the card in focus plays, stepped; Pause; when not       |
-| `tests/e2e/shine.spec.ts`           | each finish's layers, rest and mouse, forced colours;   |
-|                                     | the sheen and tilt of any card under a mouse; touch:    |
-|                                     | one card in focus, none under the hero; ice keeps a     |
-|                                     | light picture; both textures sent once; one border      |
+| `tests/e2e/shine.spec.ts`           | each finish's tile, rest and mouse, forced colours;     |
+|                                     | nothing over a picture (its pixels the same); the       |
+|                                     | sheen and tilt under a mouse; touch: one card in focus; |
+|                                     | sparkles at their sizes and share, moving with the      |
+|                                     | light; the ice's lit shards; a phone's sheet dark;      |
+|                                     | both textures sent once; one border                     |
 | `tests/e2e/hero.spec.ts`            | the moving hero, each feature day: load, Pause, off     |
-| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row, finishes too;   |
-|                                     | a tap does not                                          |
+| `tests/e2e/lights.spec.ts`          | a hovered or focused card dims its row's pictures, no   |
+|                                     | tile; a tap does not                                    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored  |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page    |
 | `tests/look/look.spec.ts`           | twenty-three pictures of the built site, as written     |
@@ -675,19 +691,27 @@ The nine points of the definition of done, as this project has them.
   slowed 4x, Save-Data, median of three runs, before the finishes (`3b51efe`)
   and after: a phone's strip scroll p95 24 then 27ms, none over 33ms; a desk's
   mouse sweep p95 33 then 32ms, 18 frames over 33ms then 10. Nothing times
-  them again.
-- **The white-share test guards Coinpusher alone** (the one light ice
-  picture); another light picture given ice is not measured. The reverse
-  tile's forced-colours background rule is held by no test (Chromium reports
-  none there anyway), and a card flipped while it is the one in focus is
-  untested. A reverse card with script off draws nothing.
+  them again, and not after the tiles of round two (2026-11-24).
+- **The tiles' contrast is measured on the darkest pixel under a box,
+  at seven places of the light and two strengths of shine**, one card of
+  each finish (ice on two), and not on every card or every place: a tile's
+  colours do not depend on the picture, so the darkest is the tile's, but a
+  light between the seven could be darker by a pixel. Gold's deep stop is
+  7.2:1, the least, and a mix of colours in the tile that is darker than a
+  token (a new layer) would be seen only by this measure. The ice is paler
+  than the owner's mock (base `#c4cfdb` under an 80% overlay, not `#a9b5c3`
+  under 72%), which the ink at 7:1 on a black shard needed. A phone's sheet
+  is dark and its colours are held by the one spec above, not by a picture.
+  A card flipped while it is the one in focus is untested.
 - **The cards were seen in Chromium alone.** A real phone, a real touch
   flip, Safari's and Firefox's video and autoplay, anchor positioning (the
   arrows' height; a browser without it has the 16 by 9), `@property`, and
-  the foil's blends, mask, `color-mix()`, `hypot()` and the glitter's SVG
-  filter are not seen elsewhere (a browser without `hypot()` draws the foil
-  with no filter). The glitter's points stretch a little while a card is
-  tilted, as the browser samples a turned layer. A screen reader hearing the
+  the tile's blends (`soft-light`, `screen`), `mask-composite`, `color-mix()`
+  and the ice's filter are not seen elsewhere. The sparkles' points stretch
+  a little while a card is tilted, as the browser samples a turned layer. The
+  light on a tile moves through the CSSOM each frame and repaints masks and
+  gradients on up to a row of cards; frame times were not measured again after
+  the tiles (the figures above are the round before), so a slow phone is untried. A screen reader hearing the
   flip, the face away being inert and the Pause button's name is a
   person's to try; the tree is read from Chromium's own. Forced colours as
   drawn are not pictured. When the cards' Pause button has focus and its
@@ -739,15 +763,18 @@ What `/ooer-design:polish` or a reader may question, kept on purpose.
   the panel token by `--share-waiting` so they stay inside the dark look.
 - **No print styles.** Preflight asks for them, and the page is not one to
   print.
+- **Light cards in a dark page** (the owner, 2026-11-24). The page is dark
+  and every card is a light tile in its finish with dark words, so that the
+  finishes pop and the picture and its loop are left alone, with nothing laid
+  over them. It is a deliberate break from the one dark theme below, held to
+  the same bar: every word on a tile is 7:1 and a back's edges and rings 3:1,
+  as drawn. A phone's sheet stays dark.
 - **The foil has more colours than the look's five** (`--color-foil-*`), on
   every card. They are decoration and say nothing by themselves: a finish
   changes no word, and "Top pick" says it in words, replacing Play now in a
-  best card's label.
-- **The reverse holo is a dark iridescence,** deep hues over the panel and
-  not light, because the label's amber leaves its ground about 0.02 of
-  luminance to rise and every word is held at 7:1. The ladder (the top picks
-  holo; gold, galaxy and ice by list; reverse for the rest) is the owner's,
-  set on 2026-11-24 after the mocks.
+  best card's label. The ladder (the top picks holo; gold, galaxy and ice by
+  list; reverse for the rest) is the owner's, set on 2026-11-24 after the
+  mocks.
 - **The cards' Pause is a small, quiet mark** with its name hidden in it,
   where the hero's is a word: a small disc in a clear 44px target (the
   owner, 2026-11-23: a square button was big and in the way). It is kept,

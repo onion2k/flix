@@ -542,6 +542,13 @@ test.describe('every finish’s words, on its tile, as drawn', () => {
         const edge = await card
           .locator('a.card-link')
           .evaluate((el) => getComputedStyle(el).borderTopColor);
+        // The edge is drawn, and is the ink itself: a clear one would read as
+        // black to a ratio and pass.
+        expect(edge, `${id} Play edge is drawn`).toMatch(/^rgb\(/);
+        expect(
+          luminanceOf(channelsOf(edge)),
+          `${id} Play edge is the ink`,
+        ).toBeCloseTo(inkLuminance, 4);
         for (const [x, y] of PLACES) {
           await light(x, y);
           const darkest = await darkestOfTile(page, reader, back);
