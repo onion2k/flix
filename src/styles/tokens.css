@@ -41,6 +41,10 @@
 
   --size-mark: 2.5rem;
   --size-mark-phone: 2rem;
+  /* How much taller the wordmark's end letters stand than its middle ones, as
+     a share of a capital's height: the depth of its arc (the owner's choice of
+     2026-11-25, from mocks at 18% and 30%). */
+  --share-mark-arc: 0.18;
   --size-row-title-phone: 1.9rem;
   /* A card's title on a phone, smaller in step with the card, so that the
      title stays below the row's in weight and a long one keeps to two lines. */

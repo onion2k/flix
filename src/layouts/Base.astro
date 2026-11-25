@@ -9,6 +9,7 @@
 // which astro.config.mjs says once.
 import { Font, getImage } from 'astro:assets';
 import Footer from '../components/Footer.astro';
+import Wordmark from '../components/Wordmark.astro';
 import '../styles/tokens.css';
 import '../styles/site.css';
 
@@ -90,10 +91,12 @@ const cardImage = card
     </a>
     <header class="site-header">
       {home ? (
-        <h1 class="mark">ooerflix</h1>
+        <h1 class="mark">
+          <Wordmark />
+        </h1>
       ) : (
         <a class="mark" href="/">
-          ooerflix
+          <Wordmark />
         </a>
       )}
     </header>

@@ -129,6 +129,13 @@ commit of its own that says what it is for.
 - `src/layouts/`, `src/pages/`, `src/components/` and `src/scripts/` are
   **the page**. They draw what the catalogue returns and work nothing
   out. `Base.astro` is the head, skip link and header (the wordmark alone);
+  `Wordmark.astro` is the word in it, on an arc (the owner's, 2026-11-25,
+  after Netflix's mark): its eight letters drawn one by one and hidden from
+  the tree, beside the word whole and in its own case for a screen reader;
+  `site.css` stretches each letter down from its head by its place
+  (`sibling-index()`) so the ends stand `--share-mark-arc` (18%) taller, and
+  cuts the foot to an ellipse, inside an `@supports` (a browser without
+  `text-box`, `sibling-index()` or `abs()` draws the word straight);
   `Footer.astro` (drawn by `Base` on every page: Privacy, the licences,
   Source); `OutsideLink.astro` and `NewWindowIcon.astro` draw a link that
   leaves the site (words: `NEW_WINDOW`, `rows.ts`); `index.astro`, `404.astro` and `privacy.astro` are the pages, `Feature`, `Row` and
@@ -512,6 +519,8 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/weight-judging.test.ts` | counts, both ways, the four budgets, card loops         |
 | `tests/unit/headers-build.test.ts`  | the `_headers` step: union, hashes, what stops it       |
 | `tests/e2e/page.spec.ts`            | the model drawn, labels, head, 404, footer, header      |
+| `tests/e2e/wordmark.spec.ts`        | the wordmark's arc from its pixels (ends 18% taller,    |
+|                                     | the foot one curve), script off; heard whole, its case  |
 | `tests/e2e/privacy.spec.ts`         | the privacy page: sections, links, 80-character line    |
 | `tests/e2e/rows.spec.ts`            | edge arrows, marks and words, ends; a phone's rows      |
 | `tests/e2e/arrows.spec.ts`          | at rest no card wholly in is under an arrow: presses    |
@@ -735,6 +744,14 @@ The nine points of the definition of done, as this project has them.
   tries another root size or a classic scrollbar there, though the sum reads
   the strip as drawn. A picture's `sizes` does not know the trim, so a
   trimmed card may fetch a file a little larger than it needs.
+
+- **The wordmark's arc is seen in Chromium alone.** It needs `text-box`,
+  `sibling-index()` and `abs()`; Firefox has no `sibling-index()` and draws
+  the word straight, which nothing here sees. A letter's stretch is from its
+  count and not its width, so each is stretched a little past the curve
+  (`0.03`) for the ellipse to cut; a word of letters far wider or narrower
+  than these could leave one short of it, and `wordmark.spec.ts` holds only
+  this word. Forced colours are looked at once, not held.
 
 - **A scrollbar is only seen with flags.** Headless Chromium on this Mac
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with

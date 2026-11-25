@@ -1,0 +1,18 @@
+---
+// The wordmark's word, drawn on an arc (the owner's choice of 2026-11-25, after
+// Netflix's mark): its letters stand taller toward the ends, and site.css cuts
+// the foot of the word to one curve. The stretch is worked out per letter from
+// its place, so the letters are drawn one by one, and they are hidden from the
+// tree, where the word is given whole by a hidden copy in its own case: without
+// it a screen reader could be handed eight letters, or the capitals the page
+// draws, and spell them out. The mark around it is Base.astro's, the h1 on the
+// home page and a link home elsewhere.
+const word = 'ooerflix';
+---
+
+<span class="visually-hidden mark-word">{word}</span>
+<span class="mark-letters" aria-hidden="true">
+  {[...word].map((letter) => (
+    <span>{letter}</span>
+  ))}
+</span>

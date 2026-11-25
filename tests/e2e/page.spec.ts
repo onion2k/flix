@@ -53,7 +53,7 @@ test('there is one h1, and no heading level is skipped', async ({ page }) => {
 
 test('the wordmark is the h1 and is not a link', async ({ page }) => {
   const h1 = page.getByRole('heading', { level: 1 });
-  await expect(h1).toHaveText('ooerflix');
+  await expect(h1).toHaveAccessibleName('ooerflix');
   await expect(h1.getByRole('link')).toHaveCount(0);
 });
 
@@ -343,7 +343,8 @@ for (const { name, path, home } of [
       await page.goto(path);
       const header = page.getByRole('banner');
       await expect(header).toHaveCount(1);
-      await expect(header).toHaveText('ooerflix');
+      // The word is drawn letter by letter and heard whole (wordmark.spec.ts).
+      await expect(header.locator('.mark')).toHaveAccessibleName('ooerflix');
       await expect(header.getByRole('navigation')).toHaveCount(0);
       await expect(header.getByRole('list')).toHaveCount(0);
       await expect(

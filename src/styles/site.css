@@ -83,6 +83,50 @@ a {
   color: var(--color-accent);
 }
 
+/* The word as it is heard, in its own case: the capitals are only drawn. */
+.mark-word {
+  text-transform: none;
+}
+
+/* The wordmark's arc. Each letter is stretched down from its head by the
+   square of how far its outer edge is from the middle, so the ends stand
+   --share-mark-arc taller, and the box is then cut to an ellipse, so that the
+   foot of the word is one curve and not a step a letter. The box is trimmed to
+   the capitals (text-box), which is what makes 1cap a letter's height and the
+   ellipse meet the foot. A letter's place is its count (sibling-index) and not
+   its width, so each is stretched a little past the curve (the 0.03) for the
+   ellipse to cut; the ellipse is as wide as the box (100%) and tall enough to
+   meet both its lower corners, which for that width is the sag over
+   1 - sqrt(3)/2 (7.4641). A browser without these draws the word straight. */
+@supports (text-box: trim-both cap alphabetic) and (order: sibling-index()) and
+  (width: abs(1px)) {
+  .mark-letters {
+    --mark-sag: calc(var(--share-mark-arc) / (1 + var(--share-mark-arc)));
+    --mark-reach: calc(var(--mark-sag) * 7.4641);
+    display: inline-flex;
+    align-items: flex-start;
+    padding-bottom: calc(var(--share-mark-arc) * 1cap);
+    mask-image: radial-gradient(
+      ellipse 100% calc(var(--mark-reach) * 100%) at 50%
+        calc((1 - var(--mark-sag) + var(--mark-reach)) * 100%),
+      transparent 99.5%,
+      black 100%
+    );
+  }
+
+  .mark-letters > span {
+    --mark-from: calc(2 * (sibling-index() - 1) / sibling-count() - 1);
+    --mark-to: calc(2 * sibling-index() / sibling-count() - 1);
+    --mark-out: max(abs(var(--mark-from)), abs(var(--mark-to)));
+    display: inline-block;
+    text-box: trim-both cap alphabetic;
+    transform-origin: top;
+    transform: scaleY(
+      calc(1 + var(--share-mark-arc) * var(--mark-out) * var(--mark-out) + 0.03)
+    );
+  }
+}
+
 /* Words that must never run past their box, whatever they say or however
    they are spaced. break-word, not anywhere: it breaks a word only when the
    word cannot fit on a line by itself, so a short title is never cut. */

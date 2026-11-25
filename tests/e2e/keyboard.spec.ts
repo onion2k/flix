@@ -52,6 +52,14 @@ async function tabbable(page: Page): Promise<Stop[]> {
       const style = getComputedStyle(el);
       return box.width > 0 && box.height > 0 && style.visibility !== 'hidden';
     };
+    // A stop's words, less what is hidden from the tree: the wordmark's
+    // letters are drawn one by one and hidden, beside the word given whole.
+    const heard = (el: Element) => {
+      const copy = el.cloneNode(true) as Element;
+      for (const hidden of copy.querySelectorAll('[aria-hidden="true"]'))
+        hidden.remove();
+      return copy.textContent;
+    };
     return (
       [
         ...document.querySelectorAll<HTMLElement>(
@@ -64,7 +72,7 @@ async function tabbable(page: Page): Promise<Stop[]> {
         .filter((el) => el.closest('[inert]') === null)
         .map((el) => ({
           tag: el.tagName.toLowerCase(),
-          name: (el.getAttribute('aria-label') ?? el.textContent ?? '')
+          name: (el.getAttribute('aria-label') ?? heard(el) ?? '')
             .trim()
             .slice(0, 60),
           focused: el === document.activeElement,
@@ -79,6 +87,10 @@ function active(page: Page) {
     if (el === null) return null;
     const box = el.getBoundingClientRect();
     const style = getComputedStyle(el);
+    // As tabbable() reads a stop's words, so that the two compare.
+    const copy = el.cloneNode(true) as Element;
+    for (const hidden of copy.querySelectorAll('[aria-hidden="true"]'))
+      hidden.remove();
     const hit = document.elementFromPoint(
       box.left + box.width / 2,
       box.top + box.height / 2,
@@ -99,7 +111,7 @@ function active(page: Page) {
     return {
       ringSeen: seen !== undefined,
       tag: el.tagName.toLowerCase(),
-      name: (el.getAttribute('aria-label') ?? el.textContent ?? '')
+      name: (el.getAttribute('aria-label') ?? copy.textContent ?? '')
         .trim()
         .slice(0, 60),
       inside:
