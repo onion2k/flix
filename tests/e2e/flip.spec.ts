@@ -1140,6 +1140,8 @@ test.describe('a card keeps one size', () => {
         await ready(page);
         let reached = 0;
         let looked = 0;
+        // Cards whose Play and Close are on lines of their own.
+        let wraps = 0;
         for (const card of await page.locator('main li.card').all()) {
           looked += 1;
           if ((await card.locator('a.card-link').count()) === 0) continue;
@@ -1176,7 +1178,7 @@ test.describe('a card keeps one size', () => {
           });
           expect(found, 'Play and Close are both there').not.toBeNull();
           if (!found) continue;
-          const what = `card ${reached}`;
+          const what = `card ${reached} (${(await card.getAttribute('data-entry')) ?? ''})`;
           expect(found.target, `${what}: the target size`).toBeGreaterThan(40);
           expect(found.height, `${what} tall`).toBeGreaterThanOrEqual(
             found.target - 0.5,
@@ -1188,14 +1190,22 @@ test.describe('a card keeps one size', () => {
             found.height,
             `${what} tall, against one line and its padding`,
           ).toBeLessThanOrEqual(Math.max(found.need, found.target) + 0.5);
-          const apart = Math.abs(found.height - found.closeHeight) + 0.5;
-          expect(Math.abs(found.top), `${what}'s top`).toBeLessThanOrEqual(
-            apart,
-          );
-          expect(
-            Math.abs(found.bottom),
-            `${what}'s bottom`,
-          ).toBeLessThanOrEqual(apart);
+          // The two share a line where the card is wide enough for both, and
+          // are level there; where a long title leaves no room (as "Play Ooer
+          // Art Experiments" at a desk), the line wraps (.card-actions) and
+          // Close stands wholly below Play, clear of it.
+          const wrapped = found.top + found.height <= 0.5;
+          if (wrapped) wraps += 1;
+          else {
+            const apart = Math.abs(found.height - found.closeHeight) + 0.5;
+            expect(Math.abs(found.top), `${what}'s top`).toBeLessThanOrEqual(
+              apart,
+            );
+            expect(
+              Math.abs(found.bottom),
+              `${what}'s bottom`,
+            ).toBeLessThanOrEqual(apart);
+          }
           await page.keyboard.press('Escape');
           await expect(card).not.toHaveAttribute('data-flipped', '');
           reached += 1;
@@ -1209,6 +1219,8 @@ test.describe('a card keeps one size', () => {
         expect(reached).toBe(
           await page.locator('main li.card a.card-link').count(),
         );
+        // A wrap is for the long title alone: most cards are level.
+        expect(wraps, 'cards wrapped').toBeLessThan(reached / 4);
       });
     });
   }

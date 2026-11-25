@@ -1,0 +1,6 @@
+title: 'Light'
+kind: toy
+description: 'God rays from a shader, with CSS grid boxes standing in the way of the light.'
+picture: ../pictures/light.png
+pictureAlt: 'A bright light behind a grid of grey boxes, its rays falling between them.'
+url: https://light.ooer.com

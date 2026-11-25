@@ -62,8 +62,8 @@ commit of its own that says what it is for.
 
 - `src/catalogue/` is **the thing**: plain TypeScript with no Astro in
   it, importing nothing of the page and nothing outside the folder but
-  `astro/zod`. `schema.ts` holds the shape of an entry and of the
-  catalogue file, and `rows.ts` builds the page's model from them, refuses
+  `astro/zod`. `schema.ts` holds the shape of an entry (its kind a
+  game, a toy or a tool, `KINDS`; the label says it) and of the catalogue file, and `rows.ts` builds the page's model from them, refuses
   a catalogue that does not hold together (naming file and id) and returns
   the sites that have a file and are not listed. `paging.ts` says, from a strip's
   scroll position, whether its Previous and Next arrows are live, where
@@ -752,6 +752,17 @@ The nine points of the definition of done, as this project has them.
   (`0.03`) for the ellipse to cut; a word of letters far wider or narrower
   than these could leave one short of it, and `wordmark.spec.ts` holds only
   this word. Forced colours are looked at once, not held.
+
+- **The subdomain sites' cards are drafts** (2026-11-25): twenty-three of
+  the ooer.com subdomains found by certificate transparency (crt.sh) and
+  DNS, in four rows (Arcade, Generative art, Music, Tools for the web), less
+  the blog, Speedlify, React Neon's docs and a Storybook, by the owner's
+  choice. Their titles, descriptions and alt words are Claude's drafts for
+  the owner to edit, and their pictures are screenshots of that day, at
+  1280 by 800, some after a press (Quack Attack, Smash, Pong, McCree,
+  Scratchy) and some with the GPU on (Disco, Artshape). None has a loop. A
+  subdomain made later is found by nothing here. A tool's link says "Play
+  <title>", as every card's does.
 
 - **A scrollbar is only seen with flags.** Headless Chromium on this Mac
   draws none, so `rows.spec.ts` and `nojs.spec.ts` launch with

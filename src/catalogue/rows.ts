@@ -7,7 +7,7 @@
 // hold that logic, a broken catalogue would draw a gap or a
 // blank card, the build would not stop, and a site left out by mistake would
 // not be seen.
-import type { CatalogueFile } from './schema';
+import type { CatalogueFile, Kind } from './schema';
 
 /**
  * The finishes a card's foil may have, a decoration only: `holo` is a best
@@ -38,7 +38,7 @@ export class CatalogueError extends Error {
 export interface Entry<Picture> {
   id: string;
   title: string;
-  kind: 'game' | 'toy';
+  kind: Kind;
   description: string;
   picture: Picture;
   pictureAlt: string;
@@ -51,7 +51,7 @@ export interface Entry<Picture> {
 export interface Card<Picture> {
   id: string;
   title: string;
-  kind: 'game' | 'toy';
+  kind: Kind;
   description: string;
   picture: Picture;
   pictureAlt: string;
@@ -96,7 +96,11 @@ export interface Page<Picture> {
  */
 export const NEW_WINDOW = '(opens in a new window)';
 
-const KIND_WORDS = { game: 'Game', toy: 'Toy' } as const;
+const KIND_WORDS: Record<Kind, string> = {
+  game: 'Game',
+  toy: 'Toy',
+  tool: 'Tool',
+};
 
 /**
  * What the label of a best card says after its kind, where another's says

@@ -65,6 +65,15 @@ describe('entryShape', () => {
     expect(refusals(shape, { ...goodEntry, kind: 'toy' })).toEqual([]);
   });
 
+  // The tool kind came with the subdomain sites (2026-11-25): a site to use,
+  // as Typo or ImgSVG are, and not one to play.
+  it('accepts the tool kind, and refuses a kind it does not know, naming the field', () => {
+    expect(refusals(shape, { ...goodEntry, kind: 'tool' })).toEqual([]);
+    const found = refusals(shape, { ...goodEntry, kind: 'app' });
+    expect(found).toHaveLength(1);
+    expect(found[0]?.path).toBe('kind');
+  });
+
   it('refuses an unknown field, naming it', () => {
     const found = refusals(shape, { ...goodEntry, colour: 'red' });
     expect(found).toHaveLength(1);

@@ -48,7 +48,7 @@ export function readRows(): RowsFile {
   };
 }
 
-/** The six label lines the model can make. */
+/** The nine label lines the model can make: three kinds, three states. */
 export const LABELS = [
   'Game · Play now',
   'Game · In the workshop',
@@ -56,6 +56,9 @@ export const LABELS = [
   'Toy · Play now',
   'Toy · In the workshop',
   'Toy · Top pick',
+  'Tool · Play now',
+  'Tool · In the workshop',
+  'Tool · Top pick',
 ];
 
 /** The sites the day's feature is taken from, in order: `feature`, then `features`. */

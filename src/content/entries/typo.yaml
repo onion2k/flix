@@ -1,0 +1,6 @@
+title: 'Typo'
+kind: tool
+description: 'Explore fifty CSS properties for text, changing one copy and sliding to compare it with the original.'
+picture: ../pictures/typo.png
+pictureAlt: 'Two panels of the same paragraph of text with a slider between them, above lists of CSS text properties.'
+url: https://typo.ooer.com

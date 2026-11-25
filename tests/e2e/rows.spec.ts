@@ -734,7 +734,9 @@ test.describe('on a phone', () => {
     await ready(page);
     let reached = 0;
     for (const each of catalogue.rows) {
-      if (each.entries.length < 2) continue;
+      // Two small cards fit a phone's width (Music's do), so a row of two
+      // need not scroll; three never fit at 390.
+      if (each.entries.length < 3) continue;
       const list = strip(page, each.id);
       expect(await overflows(list), `${each.id} scrolls sideways`).toBe(true);
       expect(await left(list)).toBe(0);

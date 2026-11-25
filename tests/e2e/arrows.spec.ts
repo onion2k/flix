@@ -83,6 +83,10 @@ test.describe('where an arrow press leaves a strip', () => {
       test(`at ${width} wide, motion ${motion}: no card wholly in the window is under an arrow, and the mark says where`, async ({
         page,
       }) => {
+        // Every row is pressed to each end and back with the browser's own
+        // smooth scroll, so the time grows with the rows: with eight, 341 wide
+        // took 24.7s alone (2026-11-25), past the 15s every other test has.
+        test.setTimeout(8_000 * catalogue.rows.length);
         await page.setViewportSize({ width, height: 844 });
         await page.emulateMedia({ reducedMotion: motion });
         await ready(page);

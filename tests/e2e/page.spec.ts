@@ -197,7 +197,7 @@ test('every picture has loaded, with size, alt words and a modern source', async
   }
 });
 
-test('each card says one of the six labels, and is a link only where it can be played', async ({
+test('each card says one of the nine labels, and is a link only where it can be played', async ({
   page,
 }) => {
   const cards = page.locator('main [data-entry]:not([hidden])');

@@ -14,11 +14,11 @@ import {
   FINISHES,
 } from '../../src/catalogue/rows';
 import type { Entry } from '../../src/catalogue/rows';
-import type { CatalogueFile } from '../../src/catalogue/schema';
+import type { CatalogueFile, Kind } from '../../src/catalogue/schema';
 
 // The picture is passed through untouched, so the test uses an object it can
 // compare by identity: the module must not look inside it.
-function entry(id: string, withUrl: boolean, kind: 'game' | 'toy' = 'game') {
+function entry(id: string, withUrl: boolean, kind: Kind = 'game') {
   return {
     id,
     title: `Title of ${id}`,
@@ -117,6 +117,25 @@ describe('buildPage', () => {
     expect(NEW_WINDOW).toBe('(opens in a new window)');
     const card = buildPage(entries, config).rows[0]?.cards[1];
     expect(card?.linkName?.endsWith(` ${NEW_WINDOW}`)).toBe(true);
+  });
+
+  it('says "Tool" in a tool’s label, linked, in the workshop and a top pick', () => {
+    const tools = [entry('use', true, 'tool'), entry('bench', false, 'tool')];
+    const page = buildPage(tools, {
+      feature: 'use',
+      best: ['bench'],
+      rows: [{ id: 'tools', title: 'Tools', sites: ['use', 'bench'] }],
+    });
+    expect(page.feature.label).toBe('Tool · Play now');
+    expect(page.rows[0]?.cards.map((card) => card.label)).toEqual([
+      'Tool · Play now',
+      'Tool · Top pick',
+    ]);
+    const unpicked = buildPage(tools, {
+      feature: 'use',
+      rows: [{ id: 'tools', title: 'Tools', sites: ['bench'] }],
+    });
+    expect(unpicked.rows[0]?.cards[0]?.label).toBe('Tool · In the workshop');
   });
 
   it('gives a card without an address no link and "In the workshop"', () => {

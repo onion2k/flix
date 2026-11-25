@@ -9,6 +9,14 @@
 import { z } from 'astro/zod';
 
 /**
+ * What a site is: one to play (a game), one to play with (a toy), or one to
+ * use (a tool, which came with the subdomain sites on 2026-11-25). Its label
+ * says it, in rows.ts.
+ */
+export const KINDS = ['game', 'toy', 'tool'] as const;
+export type Kind = (typeof KINDS)[number];
+
+/**
  * The strict shape of one entry. Strict, so that an unknown field is refused
  * and not quietly dropped: a field that is ignored is a field that looks as
  * though it works.
@@ -16,7 +24,7 @@ import { z } from 'astro/zod';
 export function entryShape<Picture extends z.ZodType>(picture: Picture) {
   return z.strictObject({
     title: z.string().min(1),
-    kind: z.enum(['game', 'toy']),
+    kind: z.enum(KINDS),
     description: z.string().min(1),
     picture,
     pictureAlt: z.string().min(1),

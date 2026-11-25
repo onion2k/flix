@@ -160,8 +160,13 @@ test('the home page has no axe violation once the late rows have loaded', async 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
   await expect(page.locator('section.row[data-arrows]').first()).toBeAttached();
-  // Scroll to the foot, as a reader does, and wait for every picture to come.
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  // Scroll down through every row, as a reader does, and wait for every
+  // picture to come. A jump straight to the foot passes the middle rows by,
+  // and their pictures are rightly never asked for.
+  for (const row of await page.locator('section.row').all()) {
+    await row.scrollIntoViewIfNeeded();
+    await expect(row.locator('img[data-src]')).toHaveCount(0);
+  }
   await expect(page.locator('section.row img[data-src]')).toHaveCount(0);
   await page.waitForFunction(() =>
     // The pictures of a feature candidate that is hidden are never fetched.

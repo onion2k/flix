@@ -22,7 +22,6 @@ test.use({ viewport: { width: 1440, height: 1000 } });
 
 const catalogue = readRows();
 const FIRST = catalogue.rows[0]?.id ?? '';
-const LAST = catalogue.rows[catalogue.rows.length - 1]?.id ?? '';
 
 function strip(page: Page, id: string): Locator {
   return page.locator(`section[id="${id}"] ul.strip`);
@@ -325,12 +324,20 @@ test('a row that fits cannot be dragged and shows no sign of it', async ({
   page,
 }) => {
   await open(page);
-  const list = strip(page, LAST);
+  // The first row whose cards all fit in the window (Music's two, today):
+  // a row that fits is found and not assumed, since rows are added.
+  let list: Locator | undefined;
+  for (const each of catalogue.rows) {
+    const candidate = strip(page, each.id);
+    if (
+      await candidate.evaluate((el) => el.scrollWidth - el.clientWidth <= 1)
+    ) {
+      list = candidate;
+      break;
+    }
+  }
+  if (list === undefined) throw new Error('no row fits, so none was tried');
   await list.scrollIntoViewIfNeeded();
-  expect(
-    await list.evaluate((el) => el.scrollWidth - el.clientWidth <= 1),
-    'the last row fits',
-  ).toBe(true);
   await page.evaluate(() => {
     const seen: string[] = [];
     Object.assign(window, { marks: seen });

@@ -1,0 +1,6 @@
+title: 'Pong'
+kind: game
+description: 'A bat, a ball and a field of pins inside an eight-sided fence.'
+picture: ../pictures/pong.png
+pictureAlt: 'A round green table seen from above, an eight-sided pink fence around rows of blue pins, an orange ball and a bat at the foot.'
+url: https://pong.ooer.com

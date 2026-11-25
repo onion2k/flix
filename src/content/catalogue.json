@@ -41,6 +41,50 @@
       "id": "in-the-workshop",
       "title": "In the workshop",
       "sites": ["nuclear-fishin", "snappy", "ooerrace"]
+    },
+    {
+      "id": "arcade",
+      "title": "Arcade",
+      "sites": [
+        "quack-attack",
+        "pong",
+        "mccree",
+        "smash",
+        "scratchy",
+        "advent-calendar"
+      ]
+    },
+    {
+      "id": "generative-art",
+      "title": "Generative art",
+      "sites": [
+        "ooer-art",
+        "mandala",
+        "autograph",
+        "pixel-heart",
+        "snowfall",
+        "light",
+        "disco",
+        "artshape"
+      ]
+    },
+    {
+      "id": "music",
+      "title": "Music",
+      "sites": ["synthboard", "decks"]
+    },
+    {
+      "id": "tools-for-the-web",
+      "title": "Tools for the web",
+      "sites": [
+        "typo",
+        "imgsvg",
+        "bg",
+        "emoji-layer",
+        "copper",
+        "fh4-tracker",
+        "ai-field-guide"
+      ]
     }
   ]
 }

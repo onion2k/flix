@@ -1,0 +1,6 @@
+title: 'Copper'
+kind: tool
+description: 'A node editor for shaders: wire time and inputs into a shader and watch it run.'
+picture: ../pictures/copper.png
+pictureAlt: 'Two nodes wired together on a grid, a timer feeding a shader that draws red and black chevrons.'
+url: https://copper.ooer.com
