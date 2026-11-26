@@ -690,3 +690,34 @@ test.describe('a touch phone', () => {
     });
   });
 });
+
+// The first row at 1440 in a browser with no WebGPU adapter: Pushminer,
+// Chess, Ooergolf and Chopdrop say on their fronts that they will not run in
+// it (plans/webgpu.md). Every other picture here has the adapter tests/clock.ts
+// stands in, which is what most browsers have. Reduced motion, the mouse off
+// the row, the strip at its start.
+test('the first row at 1440 in a browser without WebGPU', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __gpu?: string }).__gpu = 'null';
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('html[data-webgpu="lacks"]')).toHaveCount(1);
+  await settle(page);
+  const row = page.locator('section.row').first();
+  await row.evaluate((el: HTMLElement) => {
+    window.scrollTo({ top: el.offsetTop - 24, behavior: 'instant' });
+  });
+  await page.mouse.move(2, 2);
+  await expect(row.locator('.front .card-webgpu:visible')).not.toHaveCount(0);
+  await page.evaluate(
+    () =>
+      new Promise<void>((done) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => done())),
+      ),
+  );
+  await expect(row).toHaveScreenshot('first-row-no-webgpu-1440.png', {
+    ...TOLERANCE,
+  });
+});

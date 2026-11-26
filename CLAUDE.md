@@ -25,7 +25,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the twenty-four pictures, tests/look, against baselines
+    npm run look         the twenty-five pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -81,6 +81,11 @@ commit of its own that says what it is for.
   computer." or "Needs a keyboard."), and the order a touch screen's row is
   drawn in (`touchFirst`, a stable partition). `buildPage` refuses, naming
   file and id, a linked entry that says no `needs`.
+  `webgpu.ts` says what a browser feature a site requires may be
+  (`REQUIRES`: `webgpu`), the words for a browser that lacks it
+  (`WEBGPU_WORDS`), how long the page waits for its answer (`WEBGPU_WAIT_MS`,
+  3 s) and the verdict (`webgpuVerdict`: lacks with no API, a null adapter or
+  a refusal; has with an adapter; unknown while the request is open).
   `hero.ts` says what the moving hero does at load (play its loop, offer
   it on a button, or leave the still) from three facts, the Pause
   button's words (`pauseWords`) and the cards' (`cardPauseWords`).
@@ -349,6 +354,18 @@ and put the page over its budget. A desk, a phone with a mouse and script off
 keep the catalogue's order. The needs written on 2026-11-26 are Claude's,
 from trying each live site (see What is not held); the owner corrects them.
 
+**To say a site requires WebGPU:** `requires: [webgpu]` in its YAML (eight
+do, held by `catalogue-file.test.ts`: Artshape, Chess, Chopdrop, Coinpush,
+Heist, Nuclear Fishin', Ooergolf, Pushminer, all on one engine with no
+fallback). Its card and feature section are marked `data-requires="webgpu"`,
+and no words are in the markup. `src/scripts/webgpu.ts` asks
+`navigator.gpu.requestAdapter()` once, after `load`, and sets
+`html[data-webgpu]` to the verdict; only where the browser lacks WebGPU does
+it add `p.card-webgpu` with the words to each marked card's front (after the
+title or a front needs line) and back, and to a marked feature's panel. With
+an adapter, an answer slower than 3 s, or script off, nothing is said. Play is
+never taken away. The privacy page says the page asks this.
+
 **To set the best cards:** `best` in `catalogue.json` is a list of site
 ids, each with a file, none twice, each in a row; those cards, wherever a
 row draws them, carry the holo foil and "Top pick". Empty or absent, none shines.
@@ -435,6 +452,14 @@ run. A test that makes a context of its own calls `holdClock(context)`; a
 test for another day calls `page.clock.setFixedTime(noonOf(day))` before
 `goto`. `moving.spec.ts` and `playing.spec.ts` install the stepped clock
 themselves on day 0, which replaces the held one.
+
+**WebGPU.** The same holding (`holdClock`) also stands in a WebGPU adapter in
+every context, since most browsers have one and headless Chromium has none:
+`navigator.gpu.requestAdapter()` answers by `window.__gpu`, read when it is
+called (`adapter` by default; `null`, `reject`, `pending`, or `none` for no
+`navigator.gpu`), counts its calls in `window.__gpuCalls` and records whether
+`load` had come in `window.__gpuCalledAfterLoad`. A spec sets `__gpu` with an
+init script of its own.
 
 ## Edge cases
 
@@ -542,6 +567,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/prefixes.test.ts`       | every `user-select` beside its `-webkit-` twin          |
 | `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates           |
 | `tests/unit/fitting.test.ts`        | needs words, fits touch, touchFirst stable, every row   |
+| `tests/unit/webgpu.test.ts`         | the WebGPU verdict, every case; the words, the wait     |
 | `tests/unit/touch-first.test.ts`    | the touch-first script equals the rule; still on a      |
 |                                     | desk, with a mouse, without matchMedia; static text     |
 | `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed       |
@@ -591,10 +617,13 @@ Every new thing is taken through each of these that it can reach.
 |                                     | tile; a tap does not                                    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored  |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page    |
+| `tests/e2e/webgpu.spec.ts`          | no WebGPU: the line on exactly the eight, front, back,  |
+|                                     | sheet, the panel by day; none with an adapter, a slow   |
+|                                     | answer (stepped) or script off; asked once, after load  |
 | `tests/e2e/needs.spec.ts`           | needs words on backs, sheet, panel; touch: front lines, |
 |                                     | touch-first order, also with the module blocked; desk,  |
 |                                     | a phone with a mouse and script off keep the order      |
-| `tests/look/look.spec.ts`           | twenty-four pictures of the built site, as written      |
+| `tests/look/look.spec.ts`           | twenty-five pictures of the built site, as written      |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;     |
 |                                     | hero and card loops apart, each to its own budget       |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)       |
@@ -806,6 +835,15 @@ The nine points of the definition of done, as this project has them.
   (`0.03`) for the ellipse to cut; a word of letters far wider or narrower
   than these could leave one short of it, and `wordmark.spec.ts` holds only
   this word. Forced colours are looked at once, not held.
+
+- **The WebGPU check is stood in, not met.** No real browser without WebGPU
+  (an Android phone without it, iOS below 26, Firefox on Android) has been
+  tried; headless Chromium's own `null` adapter is what is real here, and the
+  test default hides it. Whether a real `requestAdapter()` takes longer than
+  3 s often enough to matter is not known (a slow answer says nothing). The
+  eight were found from their code and run on 2026-11-26; a site that moves to
+  or from WebGPU later is found by nothing. `webgpu.spec` passed once in
+  Playwright's WebKit by hand, less its tree test (Chromium's protocol).
 
 - **What each site needs is Claude's judgement** (2026-11-26), from opening
   each live site headless at a desk and on a touch phone, reading its own

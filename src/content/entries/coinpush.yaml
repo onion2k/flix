@@ -5,3 +5,4 @@ picture: ../pictures/coinpush.png
 pictureAlt: 'A dark coin-pusher machine: a field of pegs above shelves crowded with gold coins.'
 url: https://onion2k.github.io/coinpush/
 needs: []
+requires: [webgpu]

@@ -9,6 +9,7 @@
 // not be seen.
 import { fitsTouch, needsWords } from './fitting';
 import type { Need } from './fitting';
+import type { Requirement } from './webgpu';
 import type { CatalogueFile, Kind } from './schema';
 
 /**
@@ -48,6 +49,7 @@ export interface Entry<Picture> {
   heroLoop?: string | undefined;
   url?: string | undefined;
   needs?: Need[] | undefined;
+  requires?: Requirement[] | undefined;
 }
 
 /** What one card draws. `href`, `linkText` and `linkName` exist only where there is a link. */
@@ -82,6 +84,12 @@ export interface Card<Picture> {
   needsWords?: string;
   /** Whether the site plays by touch (needs nothing); present exactly when `needs` is. */
   fitsTouch?: boolean;
+  /**
+   * What the site requires of the browser (webgpu.ts), present only when the
+   * entry says something: a card that requires nothing carries no key, so the
+   * page writes no attribute for it.
+   */
+  requires?: Requirement[];
 }
 
 export interface Page<Picture> {
@@ -160,6 +168,9 @@ function cardOf<Picture>(
     card.needs = entry.needs;
     card.needsWords = needsWords(entry.needs);
     card.fitsTouch = fitsTouch(entry.needs);
+  }
+  if (entry.requires !== undefined && entry.requires.length > 0) {
+    card.requires = entry.requires;
   }
   return card;
 }

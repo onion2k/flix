@@ -27,6 +27,9 @@
 // the title too, which the stylesheet draws only where nothing points finely
 // (a touch-only device); data-touch marks a card whose site plays by touch, for
 // the row's inline script that puts those first (src/scripts/touch-first-inline.js).
+// A card whose site requires something of the browser (webgpu.ts) carries it as
+// data-requires, with no words: src/scripts/webgpu.ts adds the line, only where
+// the visitor's browser lacks it.
 // A late card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
 // <noscript>, so that script brings the one in and no script has the other. It
@@ -115,6 +118,7 @@ const [avif, webp, jpeg] = late
   data-best={card.best ? '' : undefined}
   data-finish={card.finish}
   data-touch={card.fitsTouch === true ? '' : undefined}
+  data-requires={card.requires?.join(' ')}
 >
   <div class="card-faces">
     <div class="face front">

@@ -168,6 +168,38 @@ describe('entryShape, needs', () => {
   });
 });
 
+describe('entryShape, requires', () => {
+  it('passes none, an empty list and webgpu', () => {
+    expect(refusals(shape, goodEntry)).toEqual([]);
+    expect(refusals(shape, { ...goodEntry, requires: [] })).toEqual([]);
+    expect(refusals(shape, { ...goodEntry, requires: ['webgpu'] })).toEqual([]);
+  });
+
+  it('refuses an item that is not webgpu, at its place in requires', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      requires: ['webgpu', 'webgl'],
+    });
+    expect(found).toHaveLength(1);
+    expect(found[0]?.path).toBe('requires.1');
+  });
+
+  it('refuses a requirement said twice, at requires, with words that say so', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      requires: ['webgpu', 'webgpu'],
+    });
+    expect(found).toHaveLength(1);
+    expect(found[0]?.path).toBe('requires');
+    expect(found[0]?.message).toBe('a requirement is said once');
+  });
+
+  it('refuses requires that is not a list, at requires', () => {
+    const found = refusals(shape, { ...goodEntry, requires: 'webgpu' });
+    expect(found.map((f) => f.path)).toEqual(['requires']);
+  });
+});
+
 describe('entryShape, loop', () => {
   it('passes an entry with none named, as it always did', () => {
     expect(refusals(shape, goodEntry)).toEqual([]);

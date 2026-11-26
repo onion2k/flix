@@ -83,6 +83,7 @@ const files = listed
           aria-labelledby={`feature-title-${at}`}
           data-entry={card.id}
           data-place={at}
+          data-requires={card.requires?.join(' ')}
           data-hero-loop={
             card.heroLoop === undefined
               ? undefined
@@ -142,6 +143,7 @@ const files = listed
       class="feature"
       aria-labelledby="feature-title"
       data-entry={card.id}
+      data-requires={card.requires?.join(' ')}
       data-hero-loop={
         card.heroLoop === undefined
           ? undefined

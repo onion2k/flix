@@ -8,6 +8,7 @@
 // picture is: at build it is Astro's image(), in a unit test a string.
 import { z } from 'astro/zod';
 import { NEEDS } from './fitting';
+import { REQUIRES } from './webgpu';
 
 /**
  * What a site is: one to play (a game), one to play with (a toy), or one to
@@ -56,6 +57,15 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
       .array(z.enum(NEEDS))
       .refine((list) => new Set(list).size === list.length, {
         error: 'a need is said once',
+      })
+      .optional(),
+    // What the site requires of the browser that opens it (webgpu so far),
+    // each said once. Optional: most sites require nothing. The page asks the
+    // visitor's browser and the card says so where it lacks it (webgpu.ts).
+    requires: z
+      .array(z.enum(REQUIRES))
+      .refine((list) => new Set(list).size === list.length, {
+        error: 'a requirement is said once',
       })
       .optional(),
     // Only a secure address: a card links straight to the game, and a page

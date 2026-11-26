@@ -7,3 +7,4 @@ url: https://golf.ooer.com
 loop: ../loops/ooergolf.webm
 heroLoop: ../loops/ooergolf.hero.webm
 needs: []
+requires: [webgpu]

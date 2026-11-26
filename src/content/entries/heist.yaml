@@ -6,3 +6,4 @@ pictureAlt: 'A cut diamond lit on a dark bench, with panels of its measurements 
 url: https://heist.ooer.com
 loop: ../loops/heist.webm
 needs: []
+requires: [webgpu]

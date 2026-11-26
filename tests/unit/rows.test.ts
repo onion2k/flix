@@ -16,6 +16,7 @@ import {
 import type { Entry } from '../../src/catalogue/rows';
 import type { CatalogueFile, Kind } from '../../src/catalogue/schema';
 import type { Need } from '../../src/catalogue/fitting';
+import type { Requirement } from '../../src/catalogue/webgpu';
 
 // The picture is passed through untouched, so the test uses an object it can
 // compare by identity: the module must not look inside it.
@@ -24,6 +25,7 @@ function entry(
   withUrl: boolean,
   kind: Kind = 'game',
   needs?: Need[],
+  requires?: Requirement[],
 ) {
   // A linked entry must say what it needs, so a helper's default is nothing.
   const said = needs ?? (withUrl ? [] : undefined);
@@ -36,6 +38,7 @@ function entry(
     pictureAlt: `A picture of ${id}.`,
     ...(withUrl ? { url: `https://${id}.example.com` } : {}),
     ...(said === undefined ? {} : { needs: said }),
+    ...(requires === undefined ? {} : { requires }),
   } satisfies Entry<{ src: string }>;
 }
 
@@ -151,6 +154,31 @@ describe('buildPage', () => {
       'Needs a keyboard and a mouse.',
       'Needs a gamepad.',
     ]);
+  });
+
+  it('carries requires on a card exactly where the entry says something, for a card, the feature and a candidate', () => {
+    const page = buildPage(
+      [
+        entry('gpu', true, 'game', [], ['webgpu']),
+        entry('plain', true),
+        entry('empty', true, 'game', [], []),
+      ],
+      {
+        feature: 'plain',
+        features: ['gpu'],
+        rows: [{ id: 'all', title: 'All', sites: ['gpu', 'plain', 'empty'] }],
+      },
+    );
+    const [gpu, plain, empty] = page.rows[0]?.cards ?? [];
+    expect(gpu?.requires).toEqual(['webgpu']);
+    expect(plain && 'requires' in plain).toBe(false);
+    // An empty list says nothing, so the card carries nothing.
+    expect(empty && 'requires' in empty).toBe(false);
+    expect(page.candidates.map((card) => card.requires)).toEqual([
+      undefined,
+      ['webgpu'],
+    ]);
+    expect(page.candidates[0] && 'requires' in page.candidates[0]).toBe(false);
   });
 
   it('lets an entry with no address leave needs out, and keeps them if it has them', () => {

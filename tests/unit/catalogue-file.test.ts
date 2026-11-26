@@ -54,6 +54,40 @@ function withoutFile(
   return missing;
 }
 
+// The sites built on WebGPU with no fallback, measured 2026-11-26 by running
+// each without an adapter. The card says so where a browser lacks it, so the
+// list is held here as the owner's survey: a ninth entry that says it, or one
+// of these that does not, fails until this list and the files agree.
+const NEEDING_WEBGPU = [
+  'artshape',
+  'chess',
+  'chopdrop',
+  'coinpush',
+  'heist',
+  'nuclear-fishin',
+  'ooergolf',
+  'pushminer',
+];
+
+describe('the entries that require WebGPU', () => {
+  const saying = Object.entries(files)
+    .filter(([, text]) => /^requires:\s*\[\s*webgpu\s*\]\s*$/m.test(text))
+    .map(([name]) => /([^/]+)\.yaml$/.exec(name)?.[1] ?? name)
+    .sort();
+  const mentioning = Object.entries(files)
+    .filter(([, text]) => /^requires:/m.test(text))
+    .map(([name]) => /([^/]+)\.yaml$/.exec(name)?.[1] ?? name)
+    .sort();
+
+  it('are exactly the eight, each as requires: [webgpu]', () => {
+    expect(saying).toEqual([...NEEDING_WEBGPU].sort());
+  });
+
+  it('are the only entries that say requires at all', () => {
+    expect(mentioning).toEqual(saying);
+  });
+});
+
 describe('src/content/catalogue.json', () => {
   const ids = fileIds(Object.keys(files));
 

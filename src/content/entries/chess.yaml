@@ -6,3 +6,4 @@ pictureAlt: "A chessboard lit from above on a dark table, silver and gold pieces
 url: https://onion2k.github.io/chess/
 loop: ../loops/chess.webm
 needs: []
+requires: [webgpu]

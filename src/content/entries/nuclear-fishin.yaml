@@ -6,3 +6,4 @@ pictureAlt: 'A green lake below a dark rock face with two waterfalls, pine trees
 url: https://fish.ooer.com
 loop: ../loops/nuclear-fishin.webm
 needs: []
+requires: [webgpu]

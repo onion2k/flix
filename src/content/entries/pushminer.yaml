@@ -7,3 +7,4 @@ url: https://miner.ooer.com
 loop: ../loops/pushminer.webm
 heroLoop: ../loops/pushminer.hero.webm
 needs: []
+requires: [webgpu]

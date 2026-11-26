@@ -677,3 +677,83 @@ test.describe('the needs line on a touch screen’s front, on its tile', () => {
     expect(measured).toBe(cards.length * 2 * PLACES.length);
   });
 });
+
+// The line that says the browser cannot run a site (plans/webgpu.md) is drawn
+// on a card's front at every width and on every device, so it is read as the
+// needs line is: with no adapter stood in, at a desk, every front line is the
+// ink and 7:1 or better against the darkest pixel of its tile under it, at rest
+// and at full shine, the light at each of the seven places. Reduced motion, so
+// that shine.ts sets nothing and the test sets the shine itself.
+test.describe('the WebGPU line on a front, on its tile', () => {
+  test.use({ viewport: { width: 1440, height: 1000 } });
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => Reflect.set(window, '__gpu', 'null'));
+  });
+
+  test('every front WebGPU line is the ink, 7:1 or better against the darkest of its tile, at rest and at full shine, the light anywhere', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.goto('/');
+    await expect(page.locator('html')).toHaveAttribute('data-webgpu', 'lacks');
+    await page.evaluate(() => document.fonts.ready);
+    for (const row of await page.locator('section.row').all()) {
+      await row.scrollIntoViewIfNeeded();
+    }
+    const reader = await newReader(page);
+    const ink = await page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-ground')
+        .trim(),
+    );
+    const inkLuminance = luminanceOf(
+      [1, 3, 5].map((at) => parseInt(ink.slice(at, at + 2), 16)),
+    );
+    const cards = await page
+      .locator('li.card')
+      .filter({ has: page.locator('.front .card-webgpu') })
+      .all();
+    expect(cards.length).toBe(8);
+    let measured = 0;
+    for (const card of cards) {
+      const id = (await card.getAttribute('data-entry')) ?? '?';
+      await card.evaluate((el) =>
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        }),
+      );
+      const words = card.locator('.front .card-webgpu');
+      await expect(words, id).toBeVisible();
+      const colour = await words.evaluate((el) => getComputedStyle(el).color);
+      expect(luminanceOf(channelsOf(colour)), `${id} is the ink`).toBeCloseTo(
+        inkLuminance,
+        4,
+      );
+      for (const on of ['0.35', '1']) {
+        for (const [x, y] of PLACES) {
+          await card.evaluate(
+            (el: HTMLElement, [on, x, y]) => {
+              el.style.setProperty('--foil-on', on);
+              el.style.setProperty('--shine-x', x);
+              el.style.setProperty('--shine-y', y);
+            },
+            [on, String(x), String(y)],
+          );
+          const ratio = ratioOf(
+            luminanceOf(channelsOf(colour)),
+            await darkestUnderWords(page, reader, words),
+          );
+          expect(
+            ratio,
+            `${id} front WebGPU line, shine ${on}, light at ${x},${y}`,
+          ).toBeGreaterThanOrEqual(7);
+          measured += 1;
+        }
+      }
+    }
+    expect(measured).toBe(cards.length * 2 * PLACES.length);
+  });
+});

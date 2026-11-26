@@ -6,7 +6,7 @@
 // rows, brings in the late rows' pictures, lets a mouse drag a strip, moves
 // focus by arrow key and gamepad, turns a card over when it is pressed, plays
 // the hero's loop and the loop of the card most in focus, and moves the best
-// cards' shine, is added here and nowhere else.
+// cards' shine, and says on a card where the browser cannot run its site, is added here and nowhere else.
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Feature from '../components/Feature.astro';
@@ -63,4 +63,5 @@ if (page.notListed.length > 0) {
   import '../scripts/hero';
   import '../scripts/playing';
   import '../scripts/shine';
+  import '../scripts/webgpu';
 </script>

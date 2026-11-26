@@ -176,3 +176,34 @@ test('the home page has no axe violation once the late rows have loaded', async 
   );
   await audit(page, 'home with the late rows loaded');
 });
+
+// Where the browser cannot run WebGPU (stood in: no adapter) eight cards, and
+// the feature's panel on its days, carry a line that says so; it must break no
+// rule, at a desk and on a phone, with one of the cards flipped.
+for (const width of WIDTHS) {
+  test(`the home page with the WebGPU line drawn has no axe violation at ${width}`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => Reflect.set(window, '__gpu', 'null'));
+    await page.setViewportSize({ width, height: width > 800 ? 1000 : 844 });
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await expect(page.locator('html')).toHaveAttribute('data-webgpu', 'lacks');
+    // The lines are drawn: one on each of eight fronts and eight backs.
+    await expect(page.locator('.card-webgpu')).toHaveCount(8 + 8 + 2);
+    await audit(page, `home with the WebGPU line at ${width}`);
+    // And with one flipped, so that a back's line is in the tree.
+    const card = page.locator('li.card[data-requires~="webgpu"]').first();
+    await card.scrollIntoViewIfNeeded();
+    await card.locator('button.card-flip').click();
+    await expect(card).toHaveAttribute('data-flipped', '');
+    await page.evaluate(() =>
+      Promise.all(
+        document.getAnimations().map((each) => each.finished.catch(() => null)),
+      ),
+    );
+    await audit(page, `home with the WebGPU line, flipped, at ${width}`);
+  });
+}

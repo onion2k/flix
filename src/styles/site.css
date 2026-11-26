@@ -612,7 +612,12 @@ p {
    cannot read it drops the whole rule and draws no front line, which is the
    page as it was (the back still says it). Without script the line is in the
    flow like the description. */
-.card-needs {
+/* The line that says the browser cannot run the site (webgpu.ts has the words;
+   src/scripts/webgpu.ts adds it, only where the browser certainly lacks the
+   API) is placed and drawn as the needs line is, on a front, a back, a phone's
+   sheet and the feature's panel, but on every device. */
+.card-needs,
+.card-webgpu {
   margin: var(--space-xs) 0 0;
 }
 
@@ -716,8 +721,9 @@ p {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   /* The fourth row is the needs line's, which a touch-only device draws for a
-     site a phone cannot play; empty, it is no height. */
-  grid-template-rows: 1fr auto auto auto;
+     site a phone cannot play, and the fifth the line that says the browser
+     cannot run the site; empty, each is no height. */
+  grid-template-rows: 1fr auto auto auto auto;
   /* A tile, as the back is: the panel colour inside the picture's edge, the
      same on every card (the owner, 2026-11-23), with the label and the title
      padded inside it. */
@@ -725,11 +731,11 @@ p {
   border: var(--size-edge) solid var(--color-picture-edge);
 }
 
-.card[data-flips] .front > :is(.label, .card-title, .card-needs) {
+.card[data-flips] .front > :is(.label, .card-title, .card-needs, .card-webgpu) {
   padding-inline: var(--space-m);
 }
 
-.card[data-flips] .front > .card-needs {
+.card[data-flips] .front > :is(.card-needs, .card-webgpu) {
   margin-top: 0;
   padding-bottom: var(--space-m);
 }
@@ -1003,7 +1009,9 @@ p {
    enough for (7:1, as drawn: tests/e2e/contrast.spec.ts). The label cannot be
    the accent here, which is 1.5:1 on a light tile. The flip button's words are
    hidden and are the ink too, so that a measure of every text node holds. */
-.card[data-flips] .front > :is(.label, .card-title, .card-needs, .card-flip) {
+.card[data-flips]
+  .front
+  > :is(.label, .card-title, .card-needs, .card-webgpu, .card-flip) {
   color: var(--color-ground);
 }
 
@@ -1537,11 +1545,13 @@ main {
     aspect-ratio: 1;
   }
 
-  .card[data-flips] .front > :is(.label, .card-title, .card-needs) {
+  .card[data-flips]
+    .front
+    > :is(.label, .card-title, .card-needs, .card-webgpu) {
     padding-inline: var(--space-s);
   }
 
-  .card[data-flips] .front > .card-needs {
+  .card[data-flips] .front > :is(.card-needs, .card-webgpu) {
     padding-bottom: var(--space-s);
     font-size: var(--size-card-label-phone);
   }
