@@ -513,6 +513,7 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/dragging.test.ts`       | the drag rule: threshold, direction, both ends          |
 | `tests/unit/today.test.ts`          | the day's index: day 0, steps, wraps, UTC, refusals     |
 | `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`            |
+| `tests/unit/prefixes.test.ts`       | every `user-select` beside its `-webkit-` twin          |
 | `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates           |
 | `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed       |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                    |
@@ -687,8 +688,29 @@ The nine points of the definition of done, as this project has them.
 - **Whether a real browser lets a gamepad's button open a window is not
   known.** `moving.ts` falls back to this window; a test stands in a
   refusal. Nothing here tries a real pop-up blocker.
-- **One browser, Chromium, on one machine.** Firefox, Safari and a real
-  phone are not looked at. A screen reader is a person's to try.
+- **One browser, Chromium, on one machine.** Firefox and a real phone are
+  not looked at, and the owner has no iPhone. A screen reader is a person's
+  to try.
+- **Safari was tried once, through Playwright's WebKit** (27.2, build 2388,
+  2026-11-26), by hand and not as a gate: the e2e specs run under a
+  WebKit-only config, against a copy of `dist/` served on `localhost` with
+  `upgrade-insecure-requests` taken out (WebKit upgrades `http://localhost`
+  where Chromium does not, so the page as built fetches nothing in a local
+  WebKit; on the live https site it does not matter). Desktop Safari, an
+  iPhone 15 and 320px were pictured. The page, its script, the hero loop,
+  the flip, late pictures and the wordmark's arc all ran. One fault was
+  found and mended: a mouse drag along a strip selected card words, since
+  WebKit selects by `-webkit-user-select` alone (`prefixes.test.ts`,
+  seen failing first; the drag specs then passed in WebKit). What it cannot
+  tell: Playwright's WebKit screenshots paint no 3D (a card's mirrored back
+  shows over its front in every picture, and a textbook flip card does the
+  same), so the tiles' contrast, the picture's pixels and the look are not
+  read in WebKit; `tree.ts` is Chromium's protocol; and Safari's Tab reaches
+  only form fields unless the reader turns on "Press Tab to highlight each
+  item" (or uses Option-Tab), so the keyboard specs fail there by design of
+  the browser. Seen and left: WebKit fetches a `loading="lazy"` picture only
+  near the window, sideways too, so on a phone a row's later cards are
+  fetched as a swipe nears them, where Chromium fetches them at once.
 - **Node.** This machine runs 23.4.0, which vitest 5.1.1 does not list
   and on which npm 10.9.2 needed `--legacy-peer-deps` to install it.
   Netlify builds on 22. Neither has been seen to matter.

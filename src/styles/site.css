@@ -493,10 +493,14 @@ p {
    snap would pull against it, so both are off until the button comes up, when
    the snap settles the strip on a card. Words are not selected by the drag,
    and the grabbing hand shows over the strip and all that is in it, the card
-   links included. None of this is motion: the strip moves under the hand. */
+   links included. None of this is motion: the strip moves under the hand.
+   Safari selects by the prefixed name alone (it computes the plain one as
+   none and selects anyway), so both are said; prefixes.test.ts holds
+   the pair. */
 .strip[data-dragging],
 .strip[data-dragging] * {
   cursor: grabbing;
+  -webkit-user-select: none;
   user-select: none;
 }
 
