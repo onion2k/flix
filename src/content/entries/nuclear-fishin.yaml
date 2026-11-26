@@ -5,3 +5,4 @@ picture: ../pictures/nuclear-fishin.png
 pictureAlt: 'A green lake below a dark rock face with two waterfalls, pine trees to the left.'
 url: https://fish.ooer.com
 loop: ../loops/nuclear-fishin.webm
+needs: []

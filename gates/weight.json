@@ -11,8 +11,8 @@
     "1440x1000": {
       "document": {
         "count": 1,
-        "bytes": 195011,
-        "gzip": 24185
+        "bytes": 199520,
+        "gzip": 24721
       },
       "script": {
         "count": 1,
@@ -48,8 +48,8 @@
     "1440x1000 day 1": {
       "document": {
         "count": 1,
-        "bytes": 195011,
-        "gzip": 24185
+        "bytes": 199520,
+        "gzip": 24721
       },
       "script": {
         "count": 1,
@@ -85,8 +85,8 @@
     "1440x1000 day 2": {
       "document": {
         "count": 1,
-        "bytes": 195011,
-        "gzip": 24185
+        "bytes": 199520,
+        "gzip": 24721
       },
       "script": {
         "count": 1,
@@ -122,8 +122,8 @@
     "390x844": {
       "document": {
         "count": 1,
-        "bytes": 195011,
-        "gzip": 24185
+        "bytes": 199520,
+        "gzip": 24721
       },
       "script": {
         "count": 1,

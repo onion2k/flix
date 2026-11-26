@@ -7,6 +7,8 @@
 // hold that logic, a broken catalogue would draw a gap or a
 // blank card, the build would not stop, and a site left out by mistake would
 // not be seen.
+import { fitsTouch, needsWords } from './fitting';
+import type { Need } from './fitting';
 import type { CatalogueFile, Kind } from './schema';
 
 /**
@@ -45,6 +47,7 @@ export interface Entry<Picture> {
   loop?: string | undefined;
   heroLoop?: string | undefined;
   url?: string | undefined;
+  needs?: Need[] | undefined;
 }
 
 /** What one card draws. `href`, `linkText` and `linkName` exist only where there is a link. */
@@ -73,6 +76,12 @@ export interface Card<Picture> {
   linkText?: string;
   /** What it is named to a screen reader: its text and the new window's words. */
   linkName?: string;
+  /** What the site needs of a device, where the entry says (every linked one must). */
+  needs?: Need[];
+  /** The words that say it, from fitting.ts; present exactly when `needs` is. */
+  needsWords?: string;
+  /** Whether the site plays by touch (needs nothing); present exactly when `needs` is. */
+  fitsTouch?: boolean;
 }
 
 export interface Page<Picture> {
@@ -116,6 +125,13 @@ function cardOf<Picture>(
   finish: Finish = 'reverse',
 ): Card<Picture> {
   const playable = entry.url !== undefined;
+  // A card is a link out, and a visitor must be told what the site needs
+  // before they leave, so a linked entry that does not say is refused.
+  if (playable && entry.needs === undefined) {
+    throw new CatalogueError(
+      `${entryFile(entry.id)}: the site "${entry.id}" has a url and says no "needs", and a card must say what its site needs before a visitor is sent there (an empty list, needs: [], says it needs nothing).`,
+    );
+  }
   const state = best ? BEST_WORDS : playable ? 'Play now' : 'In the workshop';
   const card: Card<Picture> = {
     id: entry.id,
@@ -139,6 +155,11 @@ function cardOf<Picture>(
     card.href = entry.url;
     card.linkText = `Play ${entry.title}`;
     card.linkName = `${card.linkText} ${NEW_WINDOW}`;
+  }
+  if (entry.needs !== undefined) {
+    card.needs = entry.needs;
+    card.needsWords = needsWords(entry.needs);
+    card.fitsTouch = fitsTouch(entry.needs);
   }
   return card;
 }

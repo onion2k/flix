@@ -10,22 +10,30 @@ import {
   hasFeatures,
   inlineScriptText,
   scriptHash,
+  touchFirstScriptText,
+  touchFirstCallText,
 } from './src/build/inline-script.ts';
 
-// With a list of features the page carries one inline script, which picks the
-// day's feature before the page is drawn. Astro hashes the scripts it bundles
-// and not this one, which is written by hand, so its hash is given here, worked
-// out from the file the page reads. With no list there is no such script and so
-// no hash, and the policy is what it was.
+// With a list of features the page carries an inline script that picks the
+// day's feature before the page is drawn, and every row carries one that puts a
+// touch screen's playable cards first. Astro hashes the scripts it bundles and
+// not these, which are written by hand, so their hashes are given here, worked
+// out from the files the page reads. With no list there is no feature script
+// and so no hash for it.
 const catalogue = JSON.parse(
   readFileSync(
     new URL('./src/content/catalogue.json', import.meta.url),
     'utf8',
   ),
 );
-const todayHash = hasFeatures(catalogue)
-  ? [scriptHash(inlineScriptText())]
-  : [];
+// Every page has rows: the first carries the touch-first function and each row
+// the one-line call to it, the same text in all of them, so both hashes are
+// always given.
+const scriptHashes = [
+  ...(hasFeatures(catalogue) ? [scriptHash(inlineScriptText())] : []),
+  scriptHash(touchFirstScriptText()),
+  scriptHash(touchFirstCallText()),
+];
 
 export default defineConfig({
   site: 'https://flix.ooer.com',
@@ -44,9 +52,7 @@ export default defineConfig({
      * which src/build/write-headers.mjs writes after the build.
      */
     csp: {
-      ...(todayHash.length > 0
-        ? { scriptDirective: { hashes: todayHash } }
-        : {}),
+      scriptDirective: { hashes: scriptHashes },
       directives: [
         "default-src 'self'",
         // Nothing is embedded, plugged in or submitted by a form.

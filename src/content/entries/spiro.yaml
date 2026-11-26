@@ -4,3 +4,4 @@ description: 'Spirograph curves, drawn from the pattern and style you set.'
 picture: ../pictures/spiro.png
 pictureAlt: 'A thin looping curve on a dark ground beside a panel of pattern and style settings.'
 url: https://spiro.ooer.com
+needs: []

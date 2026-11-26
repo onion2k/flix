@@ -6,3 +6,4 @@ pictureAlt: 'An L-shaped minigolf hole from above, a white ball at one end and t
 url: https://golf.ooer.com
 loop: ../loops/ooergolf.webm
 heroLoop: ../loops/ooergolf.hero.webm
+needs: []

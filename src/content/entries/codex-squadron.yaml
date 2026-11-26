@@ -5,3 +5,4 @@ picture: ../pictures/codex-squadron.png
 pictureAlt: 'The Codex Squadron title over a dark blue sea and a green coast seen from above.'
 url: https://shump.ooer.com
 loop: ../loops/codex-squadron.webm
+needs: []

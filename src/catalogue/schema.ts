@@ -7,6 +7,7 @@
 // The module takes its picture field as an argument and never learns what a
 // picture is: at build it is Astro's image(), in a unit test a string.
 import { z } from 'astro/zod';
+import { NEEDS } from './fitting';
 
 /**
  * What a site is: one to play (a game), one to play with (a toy), or one to
@@ -44,6 +45,18 @@ export function entryShape<Picture extends z.ZodType>(picture: Picture) {
     heroLoop: z
       .string()
       .regex(/\.webm$/, { error: 'a heroLoop is a path to a .webm file' })
+      .optional(),
+    // What the site needs of a device that a phone may not have: any of a
+    // keyboard, a mouse and a gamepad, each said once, and an empty list for
+    // a site that plays by touch, mouse or keys alike. The card says it in
+    // words before a visitor leaves (fitting.ts). Optional here, since a site
+    // in the workshop has no address to be sent to; that a linked entry says
+    // it is held by buildPage (rows.ts), which names the file and the id.
+    needs: z
+      .array(z.enum(NEEDS))
+      .refine((list) => new Set(list).size === list.length, {
+        error: 'a need is said once',
+      })
       .optional(),
     // Only a secure address: a card links straight to the game, and a page
     // served over https must not send a visitor to one that is not.

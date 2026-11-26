@@ -4,3 +4,4 @@ description: 'A coinpush arcade game toy thing in React, react-three-fiber, and 
 picture: ../pictures/coinpusher.png
 pictureAlt: 'A pale coin-pusher cabinet seen from above, pink pegs on its back wall and white coins on a green shelf.'
 url: https://coins.ooer.com
+needs: []

@@ -126,6 +126,48 @@ describe('entryShape', () => {
   });
 });
 
+describe('entryShape, needs', () => {
+  it('passes none, an empty list and each need, in any order', () => {
+    expect(refusals(shape, goodEntry)).toEqual([]);
+    expect(refusals(shape, { ...goodEntry, needs: [] })).toEqual([]);
+    for (const need of ['keyboard', 'mouse', 'gamepad']) {
+      expect(refusals(shape, { ...goodEntry, needs: [need] }), need).toEqual(
+        [],
+      );
+    }
+    expect(
+      refusals(shape, {
+        ...goodEntry,
+        needs: ['gamepad', 'keyboard', 'mouse'],
+      }),
+    ).toEqual([]);
+  });
+
+  it('refuses an item that is not one of the three, at its place in needs', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      needs: ['keyboard', 'touch'],
+    });
+    expect(found).toHaveLength(1);
+    expect(found[0]?.path).toBe('needs.1');
+  });
+
+  it('refuses a need said twice, at needs, with words that say so', () => {
+    const found = refusals(shape, {
+      ...goodEntry,
+      needs: ['mouse', 'keyboard', 'mouse'],
+    });
+    expect(found).toHaveLength(1);
+    expect(found[0]?.path).toBe('needs');
+    expect(found[0]?.message).toBe('a need is said once');
+  });
+
+  it('refuses needs that is not a list, at needs', () => {
+    const found = refusals(shape, { ...goodEntry, needs: 'keyboard' });
+    expect(found.map((f) => f.path)).toEqual(['needs']);
+  });
+});
+
 describe('entryShape, loop', () => {
   it('passes an entry with none named, as it always did', () => {
     expect(refusals(shape, goodEntry)).toEqual([]);

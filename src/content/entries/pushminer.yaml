@@ -6,3 +6,4 @@ pictureAlt: 'A dark cave floor scattered with glowing coins and purple crystal, 
 url: https://miner.ooer.com
 loop: ../loops/pushminer.webm
 heroLoop: ../loops/pushminer.hero.webm
+needs: []

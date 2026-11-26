@@ -4,3 +4,4 @@ description: 'Press the button and a page of The Wizard of Oz shatters into piec
 picture: ../pictures/smash.png
 pictureAlt: 'The title The Wizard of Oz and a column of its text cracked into shards, beside a red Smash button.'
 url: https://smash.ooer.com
+needs: []

@@ -4,3 +4,4 @@ description: 'A scratch card: rub away the grey to find the symbols underneath.'
 picture: ../pictures/scratchy.png
 pictureAlt: 'A grey scratch card half scratched away, showing tech company logos on pink and mint squares.'
 url: https://scratchy.ooer.com
+needs: [mouse]

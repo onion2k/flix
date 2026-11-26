@@ -68,7 +68,11 @@ test('the feature has its label, title, words and Play link', async ({
   expect(name.length).toBeGreaterThan(0);
   const label = await feature.locator('[data-label]').textContent();
   expect(LABELS).toContain(label);
-  await expect(feature.locator('p:not([data-label])')).not.toBeEmpty();
+  await expect(feature.locator('p.description')).not.toBeEmpty();
+  // What the site needs, in words (fitting.ts): every linked site says it.
+  await expect(feature.locator('p.card-needs')).toHaveText(
+    /^(Plays on a phone or a computer|Needs .+)\.$/,
+  );
   const play = feature.getByRole('link');
   await expect(play).toHaveCount(1);
   await expect(play).toHaveAccessibleName(

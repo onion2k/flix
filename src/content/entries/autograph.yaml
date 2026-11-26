@@ -4,3 +4,4 @@ description: 'Two iterators and an oscillator trace a curve, like a harmonograph
 picture: ../pictures/autograph.png
 pictureAlt: 'A red ring of finely traced lines beside three grey dials.'
 url: https://autograph.ooer.com
+needs: []

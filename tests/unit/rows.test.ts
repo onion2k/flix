@@ -15,10 +15,18 @@ import {
 } from '../../src/catalogue/rows';
 import type { Entry } from '../../src/catalogue/rows';
 import type { CatalogueFile, Kind } from '../../src/catalogue/schema';
+import type { Need } from '../../src/catalogue/fitting';
 
 // The picture is passed through untouched, so the test uses an object it can
 // compare by identity: the module must not look inside it.
-function entry(id: string, withUrl: boolean, kind: Kind = 'game') {
+function entry(
+  id: string,
+  withUrl: boolean,
+  kind: Kind = 'game',
+  needs?: Need[],
+) {
+  // A linked entry must say what it needs, so a helper's default is nothing.
+  const said = needs ?? (withUrl ? [] : undefined);
   return {
     id,
     title: `Title of ${id}`,
@@ -27,6 +35,7 @@ function entry(id: string, withUrl: boolean, kind: Kind = 'game') {
     picture: { src: `/${id}.png` },
     pictureAlt: `A picture of ${id}.`,
     ...(withUrl ? { url: `https://${id}.example.com` } : {}),
+    ...(said === undefined ? {} : { needs: said }),
   } satisfies Entry<{ src: string }>;
 }
 
@@ -97,6 +106,9 @@ describe('buildPage', () => {
       href: 'https://alpha.example.com',
       linkText: 'Play Title of alpha',
       linkName: 'Play Title of alpha (opens in a new window)',
+      needs: [],
+      needsWords: 'Plays on a phone or a computer.',
+      fitsTouch: true,
     });
   });
 
@@ -111,6 +123,78 @@ describe('buildPage', () => {
     // Both kinds were reached: a card with a link and a card with none.
     expect(cards.some((card) => card.href === undefined)).toBe(true);
     expect(cards.some((card) => card.href !== undefined)).toBe(true);
+  });
+
+  it('carries needs, its words and whether it fits touch on a linked card', () => {
+    const wanting = [
+      entry('keys', true, 'game', ['mouse', 'keyboard']),
+      entry('free', true),
+      entry('pad', true, 'toy', ['gamepad']),
+    ];
+    const page = buildPage(wanting, {
+      feature: 'keys',
+      features: ['pad'],
+      rows: [{ id: 'all', title: 'All', sites: ['keys', 'free', 'pad'] }],
+    });
+    const [keys, free, pad] = page.rows[0]?.cards ?? [];
+    expect(keys?.needs).toEqual(['mouse', 'keyboard']);
+    expect(keys?.needsWords).toBe('Needs a keyboard and a mouse.');
+    expect(keys?.fitsTouch).toBe(false);
+    expect(free?.needs).toEqual([]);
+    expect(free?.needsWords).toBe('Plays on a phone or a computer.');
+    expect(free?.fitsTouch).toBe(true);
+    expect(pad?.needsWords).toBe('Needs a gamepad.');
+    expect(pad?.fitsTouch).toBe(false);
+    // The feature and every candidate say it too.
+    expect(page.feature.needsWords).toBe('Needs a keyboard and a mouse.');
+    expect(page.candidates.map((card) => card.needsWords)).toEqual([
+      'Needs a keyboard and a mouse.',
+      'Needs a gamepad.',
+    ]);
+  });
+
+  it('lets an entry with no address leave needs out, and keeps them if it has them', () => {
+    const page = buildPage(
+      [entry('shop', false), entry('bench', false, 'tool', ['keyboard'])],
+      {
+        feature: 'shop',
+        rows: [{ id: 'w', title: 'W', sites: ['shop', 'bench'] }],
+      },
+    );
+    const [shop, bench] = page.rows[0]?.cards ?? [];
+    expect(shop).toBeDefined();
+    expect(shop && 'needs' in shop).toBe(false);
+    expect(shop && 'needsWords' in shop).toBe(false);
+    expect(shop && 'fitsTouch' in shop).toBe(false);
+    expect(bench?.needs).toEqual(['keyboard']);
+    expect(bench?.needsWords).toBe('Needs a keyboard.');
+    expect(bench?.fitsTouch).toBe(false);
+  });
+
+  it('refuses a linked entry that says no needs, naming its file and id, in a row, as the feature and as a candidate', () => {
+    const bare: Entry<{ src: string }> = {
+      ...entry('bare', true),
+      needs: undefined,
+    };
+    const ok = entry('ok', true);
+    const inRow = refusal([bare, ok], {
+      feature: 'ok',
+      rows: [{ id: 'r', title: 'R', sites: ['bare'] }],
+    });
+    expect(inRow.message).toContain('src/content/entries/bare.yaml');
+    expect(inRow.message).toContain('"bare"');
+    expect(inRow.message).toContain('needs');
+    const asFeature = refusal([bare, ok], {
+      feature: 'bare',
+      rows: [{ id: 'r', title: 'R', sites: ['ok'] }],
+    });
+    expect(asFeature.message).toContain('src/content/entries/bare.yaml');
+    const asCandidate = refusal([bare, ok], {
+      feature: 'ok',
+      features: ['bare'],
+      rows: [{ id: 'r', title: 'R', sites: ['ok'] }],
+    });
+    expect(asCandidate.message).toContain('src/content/entries/bare.yaml');
   });
 
   it('says in one constant that a link opens in a new window, and ends a card’s name with it', () => {

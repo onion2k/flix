@@ -25,7 +25,7 @@ guardrails kit's: this project carries no copy of it, and is held to
     npm run check:quick  the pre-commit hook: see below
     npm run test:e2e     Playwright, tests/e2e, against the built site:
                          the page, contrast as drawn, motion, axe, policy
-    npm run look         the twenty-three pictures, tests/look, against baselines
+    npm run look         the twenty-four pictures, tests/look, against baselines
     npm run look:update  writes them again, for a change meant to move them
     npm run weight       page weight, tests/gates, against gates/weight.json
     npm run weight:update  writes that baseline again, on purpose
@@ -74,6 +74,13 @@ commit of its own that says what it is for.
   stop. `dragging.ts` says, from a mouse's press and where it is now, whether that is a drag and where the strip is then scrolled. `colour.ts` says whether text is a colour the page may
   use (`#` and six lower-case hex digits, nothing else), and works out the
   colour a picture waits in from the pixels of a small copy of it.
+  `fitting.ts` says what a site needs to be played (`NEEDS`: `keyboard`,
+  `mouse`, `gamepad`, each one required; an empty list plays by touch,
+  mouse or keys alike), whether it fits a touch screen (`fitsTouch`: only an
+  empty list does), its words (`needsWords`: "Plays on a phone or a
+  computer." or "Needs a keyboard."), and the order a touch screen's row is
+  drawn in (`touchFirst`, a stable partition). `buildPage` refuses, naming
+  file and id, a linked entry that says no `needs`.
   `hero.ts` says what the moving hero does at load (play its loop, offer
   it on a button, or leave the still) from three facts, the Pause
   button's words (`pauseWords`) and the cards' (`cardPauseWords`).
@@ -323,6 +330,25 @@ day's is `[feature, ...features]` at index whole days since 1970-01-01 UTC
 modulo its length. `feature` is still what shows with script off and what
 the social card uses. Empty or absent, the page is one feature as before.
 
+**To say what a site needs:** `needs` in its YAML, a list of `keyboard`,
+`mouse` and `gamepad` (each one the site cannot be used without; a mouse is a
+pointer a finger cannot stand in for: hover, right-click, a wheel, a drag a
+touch would scroll), or `[]` for one that plays by touch too. Every site with
+a `url` must say it. The back of its card, a phone's sheet and the feature's
+panel say the words on every device; on a touch-only screen (`any-pointer:
+coarse` and not `fine`) a card with needs says them on its front too, under
+its title (CSS alone), and each row is drawn with the cards that play by touch
+first, each group in the catalogue's order. That is done before the row is
+drawn by `src/scripts/touch-first-inline.js`, a classic script defining
+`flixTouchFirst()`, written once before the first row with its leading comment
+taken off (`withoutLeadingComment`, `src/build/inline-script.ts`), and
+`touch-first-call.js`, its one-line call after each row's strip, which finds
+the strip as `document.currentScript`'s previous element. Both are allowed by
+hash (`astro.config.mjs`); written whole in every row the function was 15 KB
+and put the page over its budget. A desk, a phone with a mouse and script off
+keep the catalogue's order. The needs written on 2026-11-26 are Claude's,
+from trying each live site (see What is not held); the owner corrects them.
+
 **To set the best cards:** `best` in `catalogue.json` is a list of site
 ids, each with a file, none twice, each in a row; those cards, wherever a
 row draws them, carry the holo foil and "Top pick". Empty or absent, none shines.
@@ -515,6 +541,9 @@ Every new thing is taken through each of these that it can reach.
 | `tests/unit/fixture-used.test.ts`   | no spec takes `test` from `@playwright/test`            |
 | `tests/unit/prefixes.test.ts`       | every `user-select` beside its `-webkit-` twin          |
 | `tests/unit/today-inline.test.ts`   | the inline script equals the rule, many dates           |
+| `tests/unit/fitting.test.ts`        | needs words, fits touch, touchFirst stable, every row   |
+| `tests/unit/touch-first.test.ts`    | the touch-first script equals the rule; still on a      |
+|                                     | desk, with a mouse, without matchMedia; static text     |
 | `tests/unit/inline-script.test.ts`  | the policy's hash is the script file's, if listed       |
 | `tests/unit/favicon.test.ts`        | the icon's colours equal the tokens'                    |
 | `tests/unit/weight-judging.test.ts` | counts, both ways, the four budgets, card loops         |
@@ -562,7 +591,10 @@ Every new thing is taken through each of these that it can reach.
 |                                     | tile; a tap does not                                    |
 | `tests/e2e/origin.spec.ts`          | own origin only, clean console, a loop; nothing stored  |
 | `tests/e2e/windows.spec.ts`         | outside links: target, rel, name, icon; one new page    |
-| `tests/look/look.spec.ts`           | twenty-three pictures of the built site, as written     |
+| `tests/e2e/needs.spec.ts`           | needs words on backs, sheet, panel; touch: front lines, |
+|                                     | touch-first order, also with the module blocked; desk,  |
+|                                     | a phone with a mouse and script off keep the order      |
+| `tests/look/look.spec.ts`           | twenty-four pictures of the built site, as written      |
 | `tests/gates/weight.spec.ts`        | requests and bytes by kind, 1440 (three days), 390;     |
 |                                     | hero and card loops apart, each to its own budget       |
 | `scripts/links.mjs`                 | no card's address is gone (network; not in check)       |
@@ -774,6 +806,22 @@ The nine points of the definition of done, as this project has them.
   (`0.03`) for the ellipse to cut; a word of letters far wider or narrower
   than these could leave one short of it, and `wordmark.spec.ts` holds only
   this word. Forced colours are looked at once, not held.
+
+- **What each site needs is Claude's judgement** (2026-11-26), from opening
+  each live site headless at a desk and on a touch phone, reading its own
+  instructions and trying taps and drags, and, for the three that need more,
+  reading their code: Pong's bat moves on arrow keys alone, Scratchy and
+  Copper listen for mouse events alone. 37 say `[]`. Chess is the least sure
+  (moves by tap were not seen; its board is small in portrait), and games
+  were not played past their start screens. The survey is in
+  `plans/needs.md`. Seven games (Artshape, Chopdrop, Coinpush, Heist, Nuclear
+  Fishin', Ooergolf, Pushminer) need WebGPU and show only an error without
+  it; no need says so yet. `any-pointer` on hybrids (an iPad with a trackpad,
+  a Surface) and a phone with a Bluetooth keyboard are not tried: the front
+  line is advice and Play is never taken away. The contrast of a front line is
+  measured on touch in Chromium; the needs spec also passed once in
+  Playwright's WebKit, by hand. On touch, cards moved forward may have been
+  written `loading="lazy"` and load as they near the window.
 
 - **The subdomain sites' cards are drafts** (2026-11-25): twenty-three of
   the ooer.com subdomains found by certificate transparency (crt.sh) and

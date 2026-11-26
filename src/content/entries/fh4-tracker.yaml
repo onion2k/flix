@@ -4,3 +4,4 @@ description: 'Every car in Forza Horizon 4 by maker, with its class and rarity, 
 picture: ../pictures/fh4-tracker.png
 pictureAlt: 'Rows of car cards by maker, each with a class, a rating and a year, under filters for owned and complete.'
 url: https://fh4.ooer.com
+needs: []

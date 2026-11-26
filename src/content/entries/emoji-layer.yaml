@@ -4,3 +4,4 @@ description: 'An emoji layer for OBS.'
 picture: ../pictures/emoji-layer.png
 pictureAlt: 'Rows of emoji on a dark strip above a white page.'
 url: https://emoji.ooer.com
+needs: []

@@ -5,3 +5,4 @@ picture: ../pictures/fruit-machine.png
 pictureAlt: 'A gold fruit machine with three reels of fruit and a dot-matrix sign above them.'
 url: https://slots.ooer.com
 loop: ../loops/fruit-machine.webm
+needs: []

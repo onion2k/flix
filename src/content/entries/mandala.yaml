@@ -4,3 +4,4 @@ description: 'Type a name and it becomes a mandala.'
 picture: ../pictures/mandala.png
 pictureAlt: 'A round mandala of green, yellow and purple petals on black, with the name Chris above it.'
 url: https://mandala.ooer.com
+needs: []

@@ -22,6 +22,11 @@
 // the picture or a loop, and the markup holds no layer for it), and
 // src/scripts/shine.ts moves; a best card (data-best) is a top pick, and its
 // label says "Top pick" in words.
+// A card says what its site needs (card.needsWords, from fitting.ts) on its back
+// after the description and, for a site a phone cannot play, on its front under
+// the title too, which the stylesheet draws only where nothing points finely
+// (a touch-only device); data-touch marks a card whose site plays by touch, for
+// the row's inline script that puts those first (src/scripts/touch-first-inline.js).
 // A late card (see Row.astro) writes its picture with the addresses in data-
 // attributes, which no browser fetches, and the ordinary picture in a
 // <noscript>, so that script brings the one in and no script has the other. It
@@ -109,6 +114,7 @@ const [avif, webp, jpeg] = late
   data-loop={loop}
   data-best={card.best ? '' : undefined}
   data-finish={card.finish}
+  data-touch={card.fitsTouch === true ? '' : undefined}
 >
   <div class="card-faces">
     <div class="face front">
@@ -162,6 +168,11 @@ const [avif, webp, jpeg] = late
         {card.label}
       </p>
       <h3 class="card-title">{card.title}</h3>
+      {card.needsWords !== undefined && card.fitsTouch === false ? (
+        <p class="card-needs" data-front>
+          {card.needsWords}
+        </p>
+      ) : null}
       <button type="button" class="card-flip" hidden>
         <span class="visually-hidden">{card.aboutName}</span>
       </button>
@@ -174,6 +185,9 @@ const [avif, webp, jpeg] = late
         {card.title}
       </p>
       <p class="description">{card.description}</p>
+      {card.needsWords !== undefined ? (
+        <p class="card-needs">{card.needsWords}</p>
+      ) : null}
       <div class="card-actions">
         {card.href && card.linkText ? (
           <a

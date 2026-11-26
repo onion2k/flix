@@ -5,3 +5,4 @@ picture: ../pictures/book-worm.png
 pictureAlt: 'A grid of blue letter tiles, eight across, under the title Book Worm.'
 url: https://bookworm.ooer.com
 loop: ../loops/book-worm.webm
+needs: []

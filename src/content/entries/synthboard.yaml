@@ -4,3 +4,4 @@ description: 'A retro synthwave drum board: pick sounds and lay down a track.'
 picture: ../pictures/synthboard.png
 pictureAlt: 'A grid of neon synthwave pictures above a list of drum sounds and a sequencer.'
 url: https://synth.ooer.com
+needs: []

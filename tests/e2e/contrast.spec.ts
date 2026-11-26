@@ -474,6 +474,8 @@ test.describe('every finish’s words, on its tile, as drawn', () => {
           await light(x, y);
           for (const part of parts) {
             const words = card.locator(`${face} ${part}`);
+            // A site in the workshop has no needs line; every other card does.
+            if (part === '.card-needs' && (await words.count()) === 0) continue;
             const colour = await words.evaluate(
               (el) => getComputedStyle(el).color,
             );
@@ -508,7 +510,7 @@ test.describe('every finish’s words, on its tile, as drawn', () => {
         await state.settle();
         await readWords(
           '.face.back',
-          ['.label', '.card-title', '.description'],
+          ['.label', '.card-title', '.description', '.card-needs'],
           state.name,
         );
         // The rings, by a real Tab, read first (hiding the face to read its
@@ -586,5 +588,92 @@ test.describe('every finish’s words, on its tile, as drawn', () => {
       type: 'measured',
       description: `${measured} readings; worst ${summary}`,
     });
+  });
+});
+
+// The needs line is drawn on a card's front only on a touch-only screen, so the
+// desk test above never sees it there. Here, on a touch phone, every front line
+// is read as the words above are: the ink, and 7:1 or better against the
+// darkest pixel of its tile under it, at rest and at full shine, the light at
+// each of the seven places. Reduced motion, so that shine.ts sets nothing and
+// the test sets the shine itself.
+test.describe('the needs line on a touch screen’s front, on its tile', () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  test.beforeEach(async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+  });
+
+  test('every front needs line is the ink, 7:1 or better against the darkest of its tile, at rest and at full shine, the light anywhere', async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await page.evaluate(() => document.fonts.ready);
+    // Bring every late row's pictures in, so that a tile is read as drawn.
+    for (const row of await page.locator('section.row').all()) {
+      await row.scrollIntoViewIfNeeded();
+    }
+    const reader = await newReader(page);
+    const ink = await page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-ground')
+        .trim(),
+    );
+    const inkLuminance = luminanceOf(
+      [1, 3, 5].map((at) => parseInt(ink.slice(at, at + 2), 16)),
+    );
+    const cards = await page
+      .locator('li.card')
+      .filter({ has: page.locator('.front .card-needs') })
+      .all();
+    expect(cards.length).toBeGreaterThan(0);
+    let measured = 0;
+    for (const card of cards) {
+      const id = (await card.getAttribute('data-entry')) ?? '?';
+      await card.evaluate((el) =>
+        el.scrollIntoView({
+          block: 'center',
+          inline: 'center',
+          behavior: 'instant',
+        }),
+      );
+      const words = card.locator('.front .card-needs');
+      await expect(words, id).toBeVisible();
+      const colour = await words.evaluate((el) => getComputedStyle(el).color);
+      expect(luminanceOf(channelsOf(colour)), `${id} is the ink`).toBeCloseTo(
+        inkLuminance,
+        4,
+      );
+      for (const on of ['0.35', '1']) {
+        for (const [x, y] of PLACES) {
+          await card.evaluate(
+            (el: HTMLElement, [on, x, y]) => {
+              el.style.setProperty('--foil-on', on);
+              el.style.setProperty('--shine-x', x);
+              el.style.setProperty('--shine-y', y);
+            },
+            [on, String(x), String(y)],
+          );
+          const ratio = ratioOf(
+            luminanceOf(channelsOf(colour)),
+            await darkestUnderWords(page, reader, words),
+          );
+          expect(
+            ratio,
+            `${id} front needs line, shine ${on}, light at ${x},${y}`,
+          ).toBeGreaterThanOrEqual(7);
+          measured += 1;
+        }
+      }
+    }
+    // Two strengths of shine at seven places, for every card with the line.
+    expect(measured).toBe(cards.length * 2 * PLACES.length);
   });
 });

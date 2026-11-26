@@ -4,3 +4,4 @@ description: 'Two decks for YouTube tracks: queue them up and play.'
 picture: ../pictures/decks.png
 pictureAlt: 'A grey deck with play controls and a list of YouTube tracks beside a spinning black record.'
 url: https://yt1210.ooer.com
+needs: []

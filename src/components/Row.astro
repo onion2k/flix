@@ -8,11 +8,19 @@
 // markup but hidden, since only script can know that the row overflows and
 // where it is, and an arrow shown without it would do nothing. Previous comes
 // before the strip and Next after it, so that Tab meets them in the order the
-// eye does. The marks and the words are filled in by the same script and are
+// eye does. A one-line inline script straight after the strip
+// (src/scripts/touch-first-call.js) puts the cards that play by touch first on
+// a device with nothing to point finely with, before the row is first drawn, by
+// the function the first row writes once before itself
+// (src/scripts/touch-first-inline.js).
+// The marks and the words are filled in by the same script and are
 // empty without it. Without this the three rows would repeat the markup and
 // drift apart.
 import type { Page } from '../catalogue/rows';
 import Card from './Card.astro';
+import { withoutLeadingComment } from '../build/inline-script';
+import touchFirstRaw from '../scripts/touch-first-inline.js?raw';
+import touchFirstCall from '../scripts/touch-first-call.js?raw';
 
 interface Props {
   row: Page<ImageMetadata>['rows'][number];
@@ -21,6 +29,9 @@ interface Props {
 }
 
 const { row, at } = Astro.props;
+
+// The function's code without its comment, the same text the policy hashes.
+const touchFirstScript = withoutLeadingComment(touchFirstRaw);
 
 // A desk's width shows three cards and the edge of a fourth, so the first row
 // loads four pictures at once. Everything below that waits until it is near.
@@ -35,6 +46,7 @@ const LATE_ROWS_FROM = 2;
 const late = at >= LATE_ROWS_FROM;
 ---
 
+{at === 0 && <script is:inline set:html={touchFirstScript} />}
 <section
   class="row"
   id={row.id}
@@ -74,6 +86,7 @@ const late = at >= LATE_ROWS_FROM;
         <Card card={card} eager={at === 0 && index < EAGER_CARDS} late={late} />
       ))}
     </ul>
+    <script is:inline set:html={touchFirstCall} />
     <button
       type="button"
       class="row-arrow"

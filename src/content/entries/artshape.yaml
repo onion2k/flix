@@ -4,3 +4,4 @@ description: 'Parametric parts, mated by anchors, multiplied by symmetry and lit
 picture: ../pictures/artshape.png
 pictureAlt: 'A gold rosette of pierced leaves under a spotlight, above a palette of parts and a code editor, with material and light settings beside it.'
 url: https://fab.ooer.com
+needs: []

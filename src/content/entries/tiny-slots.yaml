@@ -5,3 +5,4 @@ picture: ../pictures/tiny-slots.png
 pictureAlt: 'A neon slot machine in the dark, five reels of fruit and stars, with bet and start buttons below.'
 url: https://tinyslots.ooer.com
 loop: ../loops/tiny-slots.webm
+needs: []

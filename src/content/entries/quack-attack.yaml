@@ -4,3 +4,4 @@ description: 'Aim a cannon by rotation and elevation and knock the rubber ducks 
 picture: ../pictures/quack-attack.png
 pictureAlt: 'A cannon in the foreground aimed at a brick wall on a green field, rubber ducks in hats on its posts, with rotation and elevation dials and a red fire button.'
 url: https://q3a.ooer.com
+needs: []

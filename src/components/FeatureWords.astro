@@ -1,7 +1,7 @@
 ---
 // The feature's panel of words and its Pause button, the two things the
 // moving hero draws over its picture: the label line, the title, the
-// description and the Play link, on a solid ground-coloured panel at the lower
+// description, the words that say what the site needs (as a card's back does) and the Play link, on a solid ground-coloured panel at the lower
 // left, and the button at the lower right. They are one component because the
 // hero is written in two places (one section a candidate when there is a list,
 // one section when there is not) and the words, which are held to 7:1 and to
@@ -27,6 +27,9 @@ const { card, titleId } = Astro.props;
   </p>
   <h2 id={titleId}>{card.title}</h2>
   <p class="description">{card.description}</p>
+  {card.needsWords !== undefined ? (
+    <p class="card-needs">{card.needsWords}</p>
+  ) : null}
   {card.href ? (
     <OutsideLink class="button" href={card.href}>
       {card.linkText}

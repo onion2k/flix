@@ -602,6 +602,30 @@ p {
   margin: 0;
 }
 
+/* What the site needs of a device (rows.ts says the words). It is on every
+   card's back, in the feature's panel and a phone's sheet, styled as the
+   description it follows; and on the front, under the title, only where the
+   device has no mouse, trackpad or stylus to point with (nothing fine) and the
+   site is not one a phone plays: a card is a link out, and a touch-only visitor
+   should be told before leaving. The query is Media Queries 4's
+   `(not (any-pointer: fine))` inside `and`, held in one at-rule: a browser that
+   cannot read it drops the whole rule and draws no front line, which is the
+   page as it was (the back still says it). Without script the line is in the
+   flow like the description. */
+.card-needs {
+  margin: var(--space-xs) 0 0;
+}
+
+.card .front .card-needs[data-front] {
+  display: none;
+}
+
+@media (any-pointer: coarse) and (not (any-pointer: fine)) {
+  .card .front .card-needs[data-front] {
+    display: block;
+  }
+}
+
 /* The back's repeat of the label and the title is for a card that flips, whose
    front is then turned away: without script, and until it runs, the two faces
    flow one under the other and the front already says them, so the repeat is
@@ -691,7 +715,9 @@ p {
 .card[data-flips] .front {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 1fr auto auto;
+  /* The fourth row is the needs line's, which a touch-only device draws for a
+     site a phone cannot play; empty, it is no height. */
+  grid-template-rows: 1fr auto auto auto;
   /* A tile, as the back is: the panel colour inside the picture's edge, the
      same on every card (the owner, 2026-11-23), with the label and the title
      padded inside it. */
@@ -699,8 +725,13 @@ p {
   border: var(--size-edge) solid var(--color-picture-edge);
 }
 
-.card[data-flips] .front > :is(.label, .card-title) {
+.card[data-flips] .front > :is(.label, .card-title, .card-needs) {
   padding-inline: var(--space-m);
+}
+
+.card[data-flips] .front > .card-needs {
+  margin-top: 0;
+  padding-bottom: var(--space-m);
 }
 
 .card[data-flips] .front > .card-title {
@@ -972,7 +1003,7 @@ p {
    enough for (7:1, as drawn: tests/e2e/contrast.spec.ts). The label cannot be
    the accent here, which is 1.5:1 on a light tile. The flip button's words are
    hidden and are the ink too, so that a measure of every text node holds. */
-.card[data-flips] .front > :is(.label, .card-title, .card-flip) {
+.card[data-flips] .front > :is(.label, .card-title, .card-needs, .card-flip) {
   color: var(--color-ground);
 }
 
@@ -1506,8 +1537,13 @@ main {
     aspect-ratio: 1;
   }
 
-  .card[data-flips] .front > :is(.label, .card-title) {
+  .card[data-flips] .front > :is(.label, .card-title, .card-needs) {
     padding-inline: var(--space-s);
+  }
+
+  .card[data-flips] .front > .card-needs {
+    padding-bottom: var(--space-s);
+    font-size: var(--size-card-label-phone);
   }
 
   .card[data-flips] .front > .card-title {

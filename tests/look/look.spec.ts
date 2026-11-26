@@ -648,3 +648,45 @@ test.describe('the shine', () => {
     });
   });
 });
+
+// The Arcade row on a touch phone, at its end: the one picture of what a
+// touch-only screen alone draws. The cards that play by touch come first and
+// the two that need more (Pong a keyboard, Scratchy a mouse) last, each saying
+// so on its front under its title (plans: needs). Every other phone picture
+// here is a 390-wide window with a mouse, which draws neither. Reduced motion,
+// so the shine is at rest, and the strip is put at its end by a jump.
+test.describe('a touch phone', () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test('the Arcade row at its end on a touch phone, the needs lines on the fronts', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await expect(
+      page.locator('section.row[data-arrows]').first(),
+    ).toBeAttached();
+    await settle(page);
+    const row = page.locator('section#arcade');
+    await row.evaluate((el: HTMLElement) => {
+      const strip = el.querySelector<HTMLElement>('.strip');
+      if (strip === null) throw new Error('no strip');
+      strip.scrollTo({ left: strip.scrollWidth, behavior: 'instant' });
+      window.scrollTo({ top: el.offsetTop - 24, behavior: 'instant' });
+    });
+    await expect(row.locator('.front .card-needs:visible')).toHaveCount(2);
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done())),
+        ),
+    );
+    await expect(row).toHaveScreenshot('arcade-touch-phone-390.png', {
+      ...TOLERANCE,
+    });
+  });
+});

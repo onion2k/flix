@@ -12,6 +12,9 @@ import {
   hasFeatures,
   inlineScriptText,
   scriptHash,
+  touchFirstScriptText,
+  touchFirstCallText,
+  withoutLeadingComment,
 } from '../../src/build/inline-script';
 
 const files = import.meta.glob<string>('../../src/scripts/today-inline.js', {
@@ -19,6 +22,11 @@ const files = import.meta.glob<string>('../../src/scripts/today-inline.js', {
   import: 'default',
   eager: true,
 });
+
+const touchFiles = import.meta.glob<string>(
+  '../../src/scripts/touch-first-inline.js',
+  { query: '?raw', import: 'default', eager: true },
+);
 
 describe('scriptHash', () => {
   it('is sha256- and the base64 of the digest, as a policy writes it', () => {
@@ -41,6 +49,39 @@ describe('inlineScriptText', () => {
   });
 });
 
+describe('touchFirstScriptText', () => {
+  it('is its file’s code without the comment at its head, and not the other script’s', () => {
+    const [raw] = Object.values(touchFiles);
+    expect(raw?.length).toBeGreaterThan(100);
+    expect(raw?.startsWith('//')).toBe(true);
+    expect(touchFirstScriptText().startsWith('function flixTouchFirst()')).toBe(
+      true,
+    );
+    expect(raw?.endsWith(touchFirstScriptText())).toBe(true);
+    expect(touchFirstScriptText()).not.toBe(inlineScriptText());
+    expect(scriptHash(touchFirstScriptText())).not.toBe(
+      scriptHash(inlineScriptText()),
+    );
+  });
+});
+
+describe('withoutLeadingComment', () => {
+  it('takes off the comment lines at the head and nothing else', () => {
+    expect(withoutLeadingComment('// a\n// b\nfoo(); // c\n// d\n')).toBe(
+      'foo(); // c\n// d\n',
+    );
+    expect(withoutLeadingComment('foo();\n')).toBe('foo();\n');
+    expect(withoutLeadingComment('  // a\nfoo();')).toBe('foo();');
+  });
+});
+
+describe('touchFirstCallText', () => {
+  it('is the one-line call of the function the other script defines', () => {
+    expect(touchFirstCallText().trim()).toBe('flixTouchFirst();');
+    expect(touchFirstScriptText()).toMatch(/^function flixTouchFirst\(\)/m);
+  });
+});
+
 describe('hasFeatures', () => {
   it('is true for a list with something in it only', () => {
     expect(hasFeatures({ features: ['a'] })).toBe(true);
@@ -50,12 +91,14 @@ describe('hasFeatures', () => {
 });
 
 describe('the config', () => {
-  it('allows the inline script by the hash of its file where features are set, and by none where they are not', () => {
+  it('allows the touch-first script by its hash always, and the feature script by its own where features are set', () => {
     const hashes = config.security?.csp;
     const directive =
       typeof hashes === 'object' ? hashes.scriptDirective?.hashes : undefined;
-    expect(directive).toEqual(
-      hasFeatures(catalogueJson) ? [scriptHash(inlineScriptText())] : undefined,
-    );
+    expect(directive).toEqual([
+      ...(hasFeatures(catalogueJson) ? [scriptHash(inlineScriptText())] : []),
+      scriptHash(touchFirstScriptText()),
+      scriptHash(touchFirstCallText()),
+    ]);
   });
 });
